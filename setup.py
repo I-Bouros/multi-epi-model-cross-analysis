@@ -20,7 +20,7 @@ def get_version():
     import os
     import sys
 
-    sys.path.append(os.path.abspath('branchpro'))
+    sys.path.append(os.path.abspath('epi-models'))
     from version_info import VERSION as version
     sys.path.pop()
 
