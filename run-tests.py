@@ -2,7 +2,7 @@
 #
 # This file is part of EPIMODELS
 # (https://github.com/I-Bouros/multi-epi-model-cross-analysis.git) which is
-# released under the MIT license. See accompanying LICENSE.md for copyright
+# released under the MIT license. See accompanying LICENSE for copyright
 # notice and full license details.
 #
 
@@ -30,7 +30,7 @@ def run_unit_tests():
 # https://github.com/pints-team/pints/blob/master/run-tests.py
 def run_copyright_checks():
     """
-    Checks that the copyright year in LICENSE.md is up-to-date and that each
+    Checks that the copyright year in LICENSE is up-to-date and that each
     file contains the copyright header
     """
     print('\nChecking that copyright is up-to-date and complete.')
@@ -38,12 +38,12 @@ def run_copyright_checks():
     year_check = True
     current_year = str(datetime.datetime.now().year)
 
-    with open('LICENSE.md', 'r') as license_file:
+    with open('LICENSE', 'r') as license_file:
         license_text = license_file.read()
         if 'Copyright (c) ' + current_year in license_text:
-            print("Copyright notice in LICENSE.md is up-to-date.")
+            print("Copyright notice in LICENSE is up-to-date.")
         else:
-            print('Copyright notice in LICENSE.md is NOT up-to-date.')
+            print('Copyright notice in LICENSE is NOT up-to-date.')
             year_check = False
 
     # Recursively walk the epimodels directory and check copyright header is in
@@ -53,7 +53,7 @@ def run_copyright_checks():
     copyright_header = """#
 # This file is part of EPIMODELS
 # (https://github.com/I-Bouros/multi-epi-model-cross-analysis.git) which is
-# released under the MIT license. See accompanying LICENSE.md for copyright
+# released under the MIT license. See accompanying LICENSE for copyright
 # notice and full license details.
 #"""
 
