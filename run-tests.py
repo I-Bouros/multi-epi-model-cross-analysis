@@ -1,8 +1,8 @@
 # This file contains code for running all tests.
 #
-# This file is part of BRANCHPRO
-# (https://github.com/SABS-R3-Epidemiology/branchpro.git) which is released
-# under the BSD 3-clause license. See accompanying LICENSE.md for copyright
+# This file is part of EPIMODELS
+# (https://github.com/I-Bouros/multi-epi-model-cross-analysis.git) which is
+# released under the MIT license. See accompanying LICENSE.md for copyright
 # notice and full license details.
 #
 
@@ -19,7 +19,7 @@ def run_unit_tests():
     """
     This function runs our unit tests.
     """
-    tests = os.path.join('branchpro', 'tests')
+    tests = os.path.join('epimodels', 'tests')
     tests_suite = unittest.defaultTestLoader.discover(tests,
                                                       pattern='test*.py')
     result = unittest.TextTestRunner(verbosity=2).run(tests_suite)
@@ -46,18 +46,18 @@ def run_copyright_checks():
             print('Copyright notice in LICENSE.md is NOT up-to-date.')
             year_check = False
 
-    # Recursively walk the branchpro directory and check copyright header is in
+    # Recursively walk the epimodels directory and check copyright header is in
     # each checked file type
     header_check = True
     checked_file_types = ['.py']
     copyright_header = """#
-# This file is part of BRANCHPRO
-# (https://github.com/SABS-R3-Epidemiology/branchpro.git) which is released
-# under the BSD 3-clause license. See accompanying LICENSE.md for copyright
+# This file is part of EPIMODELS
+# (https://github.com/I-Bouros/multi-epi-model-cross-analysis.git) which is
+# released under the MIT license. See accompanying LICENSE.md for copyright
 # notice and full license details.
 #"""
 
-    for dirname, subdir_list, file_list in os.walk('branchpro'):
+    for dirname, subdir_list, file_list in os.walk('epimodels'):
         for f_name in file_list:
             if any([f_name.endswith(x) for x in checked_file_types]):
                 path = os.path.join(dirname, f_name)
@@ -132,26 +132,22 @@ def doctest_rst_and_public_interface():
     print('\nChecking that all classes and methods are documented in an RST '
           'file and that public interfaces are clean.')
 
-    # Import all public branchpro modules. We list
-    # everything here for completeness. If a new module is added to branchpro
+    # Import all public epimodels modules. We list
+    # everything here for completeness. If a new module is added to epimodels
     # it should be imported here for this doctest.
-    import branchpro
+    import epimodels
 
     # If any modules other than these are exposed it may indicate that a module
     # has been inadvertently exposed in a public context, or that a new module
-    # has been added to branchpro and should be imported above and included in
+    # has been added to epimodels and should be imported above and included in
     # this list.
-    branchpro_submodules = [
-        'branchpro.models',
-        'branchpro.version_info',
-        'branchpro.simulation',
-        'branchpro.apps',
-        'branchpro.posterior'
+    epimodels_submodules = [
+        'epimodels.version_info'
         ]
 
     doc_symbols = get_all_documented_symbols()
 
-    check_exposed_symbols(branchpro, branchpro_submodules, doc_symbols)
+    check_exposed_symbols(epimodels, epimodels_submodules, doc_symbols)
 
     print('All classes and methods are documented in an RST file, and all '
           'public interfaces are clean.')
@@ -191,7 +187,7 @@ def check_exposed_symbols(module, submodule_names, doc_symbols):
 
         print('For python modules such as numpy you may need to confine the '
               'import to the function scope. If you have created a new'
-              'branchpro submodule, you will need to make %s (doctest) aware'
+              'epimodels submodule, you will need to make %s (doctest) aware'
               'of this.'
               % __file__)
         print('FAILED')
@@ -285,9 +281,9 @@ def get_all_documented_symbols():
 if __name__ == '__main__':
     # Set up argument parsing
     parser = argparse.ArgumentParser(
-        description='Run unit test for branchpro',
+        description='Run unit test for epimodels',
         epilog='To run individual unit tests, use e.g.'
-               ' $ python3 branchpro/tests/test_dummy.py',
+               ' $ python3 epimodels/tests/test_dummy.py',
     )
     # Unit tests
     parser.add_argument(

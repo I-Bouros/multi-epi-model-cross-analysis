@@ -2,15 +2,15 @@
 # Version information for pkmodel.
 #
 # This file is part of BRANCHPRO
-# (https://github.com/SABS-R3-Epidemiology/branchpro.git) which is released
-# under the BSD 3-clause license. See accompanying LICENSE.md for copyright
+# (https://github.com/I-Bouros/multi-epi-model-cross-analysis.git) which is
+# released under the MIT license. See accompanying LICENSE.md for copyright
 # notice and full license details.
 #
 # See: https://packaging.python.org/guides/single-sourcing-package-version/
 #
-# This file is part of BRANCHPRO
-# (https://github.com/SABS-R3-Epidemiology/branchpro.git) which is released
-# under the BSD 3-clause license. See accompanying LICENSE.md for copyright
+# This file is part of EPIMODELS
+# (https://github.com/I-Bouros/multi-epi-model-cross-analysis.git) which is
+# released under the MIT license. See accompanying LICENSE.md for copyright
 # notice and full license details.
 #
 # Version as a tuple (major, minor, revision)

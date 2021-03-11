@@ -1,9 +1,9 @@
 #
-# branchpro setuptools script
+# epimodels setuptools script
 #
-# This file is part of BRANCHPRO
-# (https://github.com/SABS-R3-Epidemiology/branchpro.git) which is released
-# under the BSD 3-clause license. See accompanying LICENSE.md for copyright
+# This file is part of EPIMODELS
+# (https://github.com/I-Bouros/multi-epi-model-cross-analysis.git) which is
+# released under the MIT license. See accompanying LICENSE.md for copyright
 # notice and full license details.
 #
 from setuptools import setup, find_packages
@@ -11,8 +11,8 @@ from setuptools import setup, find_packages
 
 def get_version():
     """
-    Get version number from the branchpro module.
-    The easiest way would be to just ``import branchpro ``, but note that this may  # noqa
+    Get version number from the epimodels module.
+    The easiest way would be to just ``import epimodels ``, but note that this may  # noqa
     fail if the dependencies have not been installed yet. Instead, we've put
     the version number in a simple version_info module, that we'll import here
     by temporarily adding the oxrse directory to the pythonpath using sys.path.
@@ -20,7 +20,7 @@ def get_version():
     import os
     import sys
 
-    sys.path.append(os.path.abspath('epi-models'))
+    sys.path.append(os.path.abspath('epimodels'))
     from version_info import VERSION as version
     sys.path.pop()
 
@@ -37,16 +37,18 @@ def get_readme():
 
 setup(
     # Module name (lowercase)
-    name='branchpro',
+    name='epimodels',
 
     # Version
     version=get_version(),
 
-    description='This is a one-week project in which we are using branching processes to estimate the time-dependent reproduction number of a disease.',  # noqa
+    description='A collection of multiple epidemiological models used in the modelling of cases observed during the COVID-19 pandemic.',  # noqa
+
+    long_description_content_type='text/markdown',
 
     long_description=get_readme(),
 
-    license='BSD 3-Clause "New" or "Revised" License',
+    license='MIT "New" or "Revised" License',
 
     # author='',
 
@@ -56,22 +58,17 @@ setup(
 
     maintainer_email='',
 
-    url='https://github.com/SABS-R3-Epidemiology/branchpro.git',
+    url='https://github.com/I-Bouros/multi-epi-model-cross-analysis.git',
 
     # Packages to include
-    packages=find_packages(include=('branchpro', 'branchpro.*')),
+    packages=find_packages(include=('epimodels', 'epimodels.*')),
     include_package_data=True,
 
     # List of dependencies
     install_requires=[
         # Dependencies go here!
         'numpy>=1.8',
-        'dash>=1.18',
-        'dash_bootstrap_components',
-        'dash_daq',
-        'dash_defer_js_import',
         'pandas',
-        'plotly',
         'scipy'
     ],
     extras_require={
