@@ -69,7 +69,8 @@ setup(
         # Dependencies go here!
         'numpy>=1.8',
         'pandas',
-        'scipy'
+        'scipy',
+        'seaborn'
     ],
     extras_require={
         'docs': [
