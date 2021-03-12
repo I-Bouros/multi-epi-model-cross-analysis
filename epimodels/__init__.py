@@ -1,6 +1,6 @@
 #
 # Root of the epimodels module.
-# Provides access to all shared functionality (models, simulation, etc.).
+# Provides access to all shared functionality (phe, roche, etc.).
 #
 # This file is part of EPIMODELS
 # (https://github.com/I-Bouros/multi-epi-model-cross-analysis.git) which is
