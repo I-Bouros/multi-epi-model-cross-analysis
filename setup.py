@@ -69,7 +69,8 @@ setup(
         # Dependencies go here!
         'numpy>=1.8',
         'pandas',
-        'scipy'
+        'scipy',
+        'plotly'
     ],
     extras_require={
         'docs': [
