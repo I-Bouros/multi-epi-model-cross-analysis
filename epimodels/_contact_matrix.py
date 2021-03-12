@@ -9,7 +9,7 @@
 
 import numpy as np
 import pandas as pd
-import seaborn as sns
+import plotly.graph_objects as go
 
 
 class ContactMatrix():
@@ -47,20 +47,17 @@ class ContactMatrix():
         if np.asarray(data_matrix).ndim != 2:
             raise ValueError(
                 'Contact matrix storage format must be 2-dimensional')
-        if np.asarray(data_matrix).shape[0] != np.asarray(
-                data_matrix).shape[1]:
-            raise ValueError(
-                'Contact matrix storage format must be a square matrix')
         if np.asarray(data_matrix).shape[0] != len(age_groups):
             raise ValueError(
                     'Wrong number of rows for the contact matrix')
         if np.asarray(data_matrix).shape[1] != len(age_groups):
             raise ValueError(
                     'Wrong number of columns for the contact matrix')
-        for _ in np.nditer(np.asarray(data_matrix)):
-            if not isinstance(_, [int, float]):
-                raise TypeError(
-                    'Contact matrix elements must be integer or float')
+        for r in np.asarray(data_matrix):
+            for _ in r:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'Contact matrix elements must be integer or float')
 
         self.ages = age_groups
         self.num_a_groups = len(age_groups)
@@ -104,6 +101,10 @@ class ContactMatrix():
         # Chech new_age_groups have correct format
         self._check_age_groups_format(new_age_groups)
 
+        if len(new_age_groups) != self.num_a_groups:
+            raise ValueError(
+                'Wrong number of age group passed for the given data.')
+
         self.ages = new_age_groups
         self.num_a_groups = len(new_age_groups)
         self._create_contact_matrix()
@@ -121,7 +122,12 @@ class ContactMatrix():
         Plots a heat map of the contact matrix.
 
         """
-        contact_matrix = self.contact_matrix.pivot(
-            "infectives age", "infected age", "num contacts")
-        fig = sns.heatmap(contact_matrix)
-        return(fig)
+        self.figure = go.Figure(data=go.Heatmap(
+            x=self.contact_matrix.columns.values,
+            y=self.contact_matrix.index.values,
+            z=self.contact_matrix
+        ))
+        self.figure.update_layout(
+            xaxis_title="Infectives Age",
+            yaxis_title="Infected Age")
+        self.figure.show()

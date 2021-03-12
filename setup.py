@@ -70,7 +70,7 @@ setup(
         'numpy>=1.8',
         'pandas',
         'scipy',
-        'seaborn'
+        'plotly'
     ],
     extras_require={
         'docs': [
