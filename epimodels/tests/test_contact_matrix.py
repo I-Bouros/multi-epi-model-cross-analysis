@@ -47,12 +47,10 @@ class TestContactMatrixlass(unittest.TestCase):
             em.ContactMatrix(age_groups, [1])
 
         with self.assertRaises(ValueError):
-            em.ContactMatrix(age_groups, np.array([[10, 5, 0], [0, 3]],
-                             dtype=object))
+            em.ContactMatrix(age_groups, np.array([[10, 5, 0], [0, 0, 3]]))
 
         with self.assertRaises(ValueError):
-            em.ContactMatrix(age_groups, np.array([[10, 5], [0, 3, 0]],
-                             dtype=object))
+            em.ContactMatrix(age_groups, np.array([[10, 5], [0, 3], [0, 0]]))
 
         with self.assertRaises(TypeError):
             em.ContactMatrix(age_groups, np.array([[10, 5], [0, '3']]))
