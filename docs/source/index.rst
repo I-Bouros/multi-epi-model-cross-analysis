@@ -9,7 +9,7 @@ Welcome to epimodels's documentation!
 This is the documentation for the implementation of a collection of multiple epidemiological models used in the modelling of cases observed during the COVID-19 pandemic.
 
 .. toctree::
-   models
+   setup_matrices
 
 
 Indices and tables
