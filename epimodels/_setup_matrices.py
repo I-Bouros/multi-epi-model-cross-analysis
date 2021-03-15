@@ -20,7 +20,7 @@ class ContactMatrix():
     with people in a different age group (j) at a given time point (t_k).
 
     .. math::
-        C^{t_{k}} = {C_{i,j}^{t_{k}}
+        C^{t_k} = \{C_{i, j}^{t_k}\}
 
     Parameters
     ----------
@@ -148,7 +148,7 @@ class RegionMatrix(ContactMatrix):
     time point (t_k), assuming contact.
 
     .. math::
-        M_{r}^{t_{k}} = {M_{r,i,j}^{t_{k}}
+        M_{r}^{t_k} = \{M_{r, i, j}^{t_k}\}
 
     Parameters
     ----------
