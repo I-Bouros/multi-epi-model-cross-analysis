@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 
 
 class ContactMatrix():
-    """ContactMatrix Class:
+    r"""ContactMatrix Class:
     Base class for constructing a contact matrix to be used in the
     modelling of epidemics. These matrices indicate the number
     of people a person in a given age group (i) will interact on average
@@ -140,7 +140,7 @@ class ContactMatrix():
 
 
 class RegionMatrix(ContactMatrix):
-    """RegionMatrix Class:
+    r"""RegionMatrix Class:
     Base class for constructing a region matrix to be used in the
     modelling of epidemics. These matrices indicate the region-specific
     relative susceptibility of someone in a given age group (i) will get
