@@ -131,3 +131,14 @@ class ContactMatrix():
             xaxis_title="Infectives Age",
             yaxis_title="Infected Age")
         self.figure.show()
+
+#
+# RegionMatrix Class
+#
+
+
+class RegionMatrix():
+    """
+    """
+    def __init__(self):
+        pass
