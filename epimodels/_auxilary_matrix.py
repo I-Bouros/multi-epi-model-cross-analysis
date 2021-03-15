@@ -109,7 +109,7 @@ class ContactMatrix():
 
         self.ages = new_age_groups
         self.num_a_groups = len(new_age_groups)
-        self._create_contact_matrix()
+        self.contact_matrix = self._create_contact_matrix()
 
     def _create_contact_matrix(self):
         """
@@ -167,7 +167,7 @@ class RegionMatrix(ContactMatrix):
     """
     def __init__(self, region_name, age_groups, data_matrix):
         # Chech region_name have correct format
-        self._check_region_name(region_name)
+        self._check_region_name_format(region_name)
 
         # Chech age_groups have correct format
         self._check_age_groups_format(age_groups)
@@ -181,12 +181,12 @@ class RegionMatrix(ContactMatrix):
         self._data = np.asarray(data_matrix)
         self.region_matrix = self._create_region_matrix()
 
-    def _check_region_name(self, region_name):
+    def _check_region_name_format(self, region_name):
         """
         Checks correct format of the region name.
 
         """
-        if not isinstance(region_name):
+        if not isinstance(region_name, str):
             raise TypeError(
                 'Region name associated with the matrix must be a string')
 
@@ -216,6 +216,45 @@ class RegionMatrix(ContactMatrix):
         to the age group structure of population
         """
         return(self._create_contact_matrix())
+
+    def change_region_name(self, new_region_name):
+        """
+        Modifies current region name of the region matrix.
+
+        Parameters
+        ----------
+        new_region_name
+            (string) New name of the region the region-specific
+            matrix is referring to.
+
+        """
+        # Chech new_age_groups have correct format
+        self._check_region_name_format(new_region_name)
+
+        self.region = new_region_name
+
+    def change_age_groups(self, new_age_groups):
+        """
+        Modifies current age structure of the contact matrix.
+
+        Parameters
+        ----------
+        new_age_groups
+            (list of strings) List of the new age intervals according
+            to which the population is split when cosntructing the contact
+            matrix.
+
+        """
+        # Chech new_age_groups have correct format
+        self._check_age_groups_format(new_age_groups)
+
+        if len(new_age_groups) != self.num_a_groups:
+            raise ValueError(
+                'Wrong number of age group passed for the given data.')
+
+        self.ages = new_age_groups
+        self.num_a_groups = len(new_age_groups)
+        self.region_matrix = self._create_region_matrix()
 
     def plot_heat_map(self):
         """
