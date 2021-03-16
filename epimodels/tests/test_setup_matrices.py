@@ -215,7 +215,7 @@ class TestUniNextGenMatrixClass(unittest.TestCase):
         self.assertEqual(next_gen.infection_period, 4)
 
         pdt.assert_frame_equal(
-            next_gen.next_gen_matrrix,
+            next_gen.next_gen_matrix,
             pd.DataFrame(
                 data=np.array([[360, 449.28], [0, 144]]),
                 index=['0-10', '10-25'],
@@ -241,6 +241,9 @@ class TestUniNextGenMatrixClass(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             em.UniNextGenMatrix([[1], [2]], contacts, regional, dI)
+
+        with self.assertRaises(ValueError):
+            em.UniNextGenMatrix([0, 1, 1], contacts, regional, dI)
 
         with self.assertRaises(ValueError):
             em.UniNextGenMatrix([0, -1], contacts, regional, dI)

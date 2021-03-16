@@ -331,13 +331,16 @@ class UniNextGenMatrix(object):
             raise ValueError(
                 'Susceptible population sizes storage format must be \
                     1-dimensional.')
-        for _ in np.asarray(pop_size):
+        if np.asarray(pop_size).shape[0] != len(contact_matrix.ages):
+            raise ValueError('Number of age groups for susceptible \
+                population does not match matrices format.')
+        for _ in pop_size:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Number of susceptibles must be integer \
+                    or float.')
             if _ < 0:
                 raise ValueError('All susceptible population sizes must be \
                     >= 0.')
-            if not isinstance(_, (np.integer, np.floating)):
-                raise TypeError('Number of susceptibles must be integer \
-                    or float.')
 
         self.region = region_matrix.region
         self.ages = region_matrix.ages
@@ -345,7 +348,7 @@ class UniNextGenMatrix(object):
         self.contacts = contact_matrix.contact_matrix.to_numpy()
         self.regional_suscep = region_matrix.region_matrix.to_numpy()
         self.infection_period = dI
-        self.next_gen_matrrix = self._compute_next_gen_matrix()
+        self.next_gen_matrix = self._compute_next_gen_matrix()
 
     def _compute_next_gen_matrix(self):
         """
