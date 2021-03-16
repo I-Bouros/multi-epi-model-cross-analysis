@@ -331,11 +331,11 @@ class UniNextGenMatrix(object):
             raise ValueError(
                 'Susceptible population sizes storage format must be \
                     1-dimensional.')
-        for _ in pop_size:
+        for _ in np.asarray(pop_size):
             if _ < 0:
                 raise ValueError('All susceptible population sizes must be \
                     >= 0.')
-            if not isinstance(_, (int, float)):
+            if not isinstance(_, (np.integer, np.floating)):
                 raise TypeError('Number of susceptibles must be integer \
                     or float.')
 
