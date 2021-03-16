@@ -16,7 +16,7 @@ import pandas.testing as pdt
 import epimodels as em
 
 
-class TestContactMatrixlass(unittest.TestCase):
+class TestContactMatrixClass(unittest.TestCase):
     """
     Test the 'ContactMatrix' class.
     """
@@ -25,7 +25,7 @@ class TestContactMatrixlass(unittest.TestCase):
         data_matrix = np.array([[10, 5.2], [0, 3]])
         c = em.ContactMatrix(age_groups, data_matrix)
 
-        self.assertEqual(c.num_a_groups, 2)
+        self.assertEqual(c._num_a_groups, 2)
         npt.assert_array_equal(c.ages, np.asarray(['0-10', '10-25']))
         pdt.assert_frame_equal(
             c.contact_matrix,
@@ -72,7 +72,7 @@ class TestContactMatrixlass(unittest.TestCase):
         new_age_groups = ['0-15', '15-25']
         c.change_age_groups(new_age_groups)
 
-        self.assertEqual(c.num_a_groups, 2)
+        self.assertEqual(c._num_a_groups, 2)
         npt.assert_array_equal(c.ages, np.asarray(['0-15', '15-25']))
         pdt.assert_frame_equal(
             c.contact_matrix,
@@ -96,7 +96,7 @@ class TestContactMatrixlass(unittest.TestCase):
         assert show_patch.called
 
 
-class TestRegionMatrixlass(unittest.TestCase):
+class TestRegionMatrixClass(unittest.TestCase):
     """
     Test the 'RegionMatrix' class.
     """
@@ -189,3 +189,78 @@ class TestRegionMatrixlass(unittest.TestCase):
 
         # Assert show_figure is called once
         assert show_patch.called
+
+
+class TestUniNextGenMatrixClass(unittest.TestCase):
+    """
+    Test the 'UniNextGenMatrix' class.
+    """
+    def test__init__(self):
+        region_name = 'London'
+        age_groups = ['0-10', '10-25']
+        contact_data_matrix = np.array([[10, 5.2], [0, 3]])
+        region_data_matrix = np.array([[0.5, 1.2], [0.29, 6]])
+        pop_size = [18, 2]
+        dI = 4
+
+        contacts = em.ContactMatrix(age_groups, contact_data_matrix)
+        regional = em.RegionMatrix(region_name, age_groups, region_data_matrix)
+        next_gen = em.UniNextGenMatrix(pop_size, contacts, regional, dI)
+
+        self.assertEqual(next_gen.region, 'London')
+        npt.assert_array_equal(next_gen.ages, np.asarray(['0-10', '10-25']))
+        npt.assert_array_equal(next_gen.susceptibles, np.array([18, 2]))
+        npt.assert_array_equal(next_gen.contacts, contact_data_matrix)
+        npt.assert_array_equal(next_gen.regional_suscep, region_data_matrix)
+        self.assertEqual(next_gen.infection_period, 4)
+
+        pdt.assert_frame_equal(
+            next_gen.next_gen_matrix,
+            pd.DataFrame(
+                data=np.array([[360, 449.28], [0, 144]]),
+                index=['0-10', '10-25'],
+                columns=['0-10', '10-25']))
+
+        with self.assertRaises(TypeError):
+            em.UniNextGenMatrix(pop_size, 0, regional, dI)
+
+        with self.assertRaises(TypeError):
+            em.UniNextGenMatrix(pop_size, contacts, 0, dI)
+
+        with self.assertRaises(ValueError):
+            new_age_groups = ['0-15', '15-25']
+            regional1 = em.RegionMatrix(
+                region_name, new_age_groups, region_data_matrix)
+            em.UniNextGenMatrix(pop_size, contacts, regional1, dI)
+
+        with self.assertRaises(TypeError):
+            em.UniNextGenMatrix(pop_size, contacts, regional, '4')
+
+        with self.assertRaises(ValueError):
+            em.UniNextGenMatrix(pop_size, contacts, regional, 0)
+
+        with self.assertRaises(ValueError):
+            em.UniNextGenMatrix([[1], [2]], contacts, regional, dI)
+
+        with self.assertRaises(ValueError):
+            em.UniNextGenMatrix([0, 1, 1], contacts, regional, dI)
+
+        with self.assertRaises(ValueError):
+            em.UniNextGenMatrix([0, -1], contacts, regional, dI)
+
+        with self.assertRaises(TypeError):
+            em.UniNextGenMatrix([0, '1'], contacts, regional, dI)
+
+    def test_compute_dom_eigenvalue(self):
+        region_name = 'London'
+        age_groups = ['0-10', '10-25']
+        contact_data_matrix = np.array([[10, 0], [0, 3]])
+        region_data_matrix = np.array([[0.5, 0], [0, 6]])
+        pop_size = [1, 2]
+        dI = 4
+
+        contacts = em.ContactMatrix(age_groups, contact_data_matrix)
+        regional = em.RegionMatrix(region_name, age_groups, region_data_matrix)
+        next_gen = em.UniNextGenMatrix(pop_size, contacts, regional, dI)
+
+        self.assertEqual(next_gen.compute_dom_eigenvalue(), 144)
