@@ -42,7 +42,7 @@ class ContactMatrix():
         self._check_data_matrix_format(data_matrix, age_groups)
 
         self.ages = age_groups
-        self.num_a_groups = len(age_groups)
+        self._num_a_groups = len(age_groups)
         self._data = np.asarray(data_matrix)
         self.contact_matrix = self._create_contact_matrix()
 
@@ -72,7 +72,7 @@ class ContactMatrix():
 
         """
         return('Polpulation is split into {} age groups: {}.'.format(
-            self.num_a_groups, self.ages))
+            self._num_a_groups, self.ages))
 
     def _check_age_groups_format(self, age_groups):
         """
@@ -103,12 +103,12 @@ class ContactMatrix():
         # Chech new_age_groups have correct format
         self._check_age_groups_format(new_age_groups)
 
-        if len(new_age_groups) != self.num_a_groups:
+        if len(new_age_groups) != self._num_a_groups:
             raise ValueError(
                 'Wrong number of age group passed for the given data.')
 
         self.ages = new_age_groups
-        self.num_a_groups = len(new_age_groups)
+        self._num_a_groups = len(new_age_groups)
         self.contact_matrix = self._create_contact_matrix()
 
     def _create_contact_matrix(self):
@@ -275,12 +275,12 @@ class RegionMatrix(ContactMatrix):
         self.figure.show()
 
 #
-# UniNextGenMatrixClass Class
+# UniNextGenMatrix Class
 #
 
 
-class UniNextGenMatrixClass(object):
-    r"""UniNextGenMatrixClass
+class UniNextGenMatrix(object):
+    r"""UniNextGenMatrix
     Class for generator matrices which are then used to determine
     the evolution of number of infectives as time goes on according
     to the following formulae - at fixed time .. math:: `t_k` and
@@ -329,40 +329,35 @@ class UniNextGenMatrixClass(object):
         # Check correct format of susceptible compartments size
         if np.asarray(pop_size).ndim != 1:
             raise ValueError(
-                'Serial interval values storage format must be 1-dimensional')
-        if np.sum(pop_size) <= 0:
-            raise ValueError('Sum of serial interval values must be > 0.')
-        if not isinstance(pop_size, (int, float)):
-            raise TypeError('Value of R must be integer or float.')
+                'Susceptible population sizes storage format must be \
+                    1-dimensional.')
+        for _ in pop_size:
+            if _ < 0:
+                raise ValueError('All susceptible population sizes must be \
+                    >= 0.')
+            if not isinstance(_, (int, float)):
+                raise TypeError('Number of susceptibles must be integer \
+                    or float.')
 
+        self.region = region_matrix.region
+        self.ages = region_matrix.ages
         self.susceptibles = np.asarray(pop_size)
-        self.contacts = contact_matrix
-        self.regional_suscep = region_matrix
+        self.contacts = contact_matrix.contact_matrix.to_numpy()
+        self.regional_suscep = region_matrix.region_matrix.to_numpy()
         self.infection_period = dI
+        self.next_gen_matrrix = self._compute_next_gen_matrix()
 
-    def _compute_new_infectious(self, contact_matrix, region_matrix):
+    def _compute_next_gen_matrix(self):
         """
         Computes next genearation matrix. Element (i, j) refers the expected
         number of new infections in age group j caused by infectious in age
         group j.
 
         """
-        C_tilde = np.zeros_like(contact_matrix)
-        for i, row in enumerate(contact_matrix):
-            for j, _ in enumerate(row):
-                C_tilde[i, j] = contact_matrix[i, j] * region_matrix[i, j]
-
-        return C_tilde
-
-    def compute_next_gen_matrix(self):
-        """
-        Computes next genearation matrix. Element (i, j) refers the expected
-        number of new infections in age group j caused by infectious in age
-        group j.
-
-        """
-        C_tilde = self._compute_new_infectious(
-            self.contacts, self.regional_suscep)
+        # Computes next genearation matrix. Element (i, j) refers the expected
+        # number of new infections in age group j caused by infectious in age
+        # group j.
+        C_tilde = np.multiply(self.contacts, self.regional_suscep)
         self.generator = np.zeros_like(self.contacts)
 
         for i, row in enumerate(self.generator):
@@ -370,7 +365,8 @@ class UniNextGenMatrixClass(object):
                 self.generator[i, j] = self.susceptibles[i] * (
                     C_tilde[i, j] * self.infection_period)
 
-        return self.generator
+        return pd.DataFrame(
+            data=self.generator, index=self.ages, columns=self.ages)
 
     def compute_dom_eigenvalue(self):
         """
