@@ -378,3 +378,15 @@ class UniNextGenMatrix(object):
 
         """
         return max(np.linalg.eigvals(self.generator).tolist())
+
+#
+# UniInfectivityMatrix Class
+#
+
+
+class UniInfectivityMatrix(object):
+    r"""
+    """
+    def __init__(initial_r, temp_var_vec, initial_pop,
+                 contact_matrix, region_matrix):
+        pass
