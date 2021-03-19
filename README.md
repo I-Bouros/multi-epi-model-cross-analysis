@@ -1,4 +1,12 @@
 # multi-epi-model-cross-analysis
+
+[![Multiple python versions](https://github.com/I-Bouros/multi-epi-model-cross-analysis/actions/workflows/python-version-unittests.yml/badge.svg)](https://github.com/I-Bouros/multi-epi-model-cross-analysis/actions/workflows/python-version-unittests.yml)
+[![Multiple OS](https://github.com/I-Bouros/multi-epi-model-cross-analysis/actions/workflows/os-unittests.yml/badge.svg)](https://github.com/I-Bouros/multi-epi-model-cross-analysis/actions/workflows/os-unittests.yml)
+[![Copyright License](https://github.com/I-Bouros/multi-epi-model-cross-analysis/actions/workflows/check-copyright.yml/badge.svg)](https://github.com/I-Bouros/multi-epi-model-cross-analysis/actions/workflows/check-copyright.yml)
+[![Documentation Status](https://readthedocs.org/projects/multi-epi-model-cross-analysis/badge/?version=latest)](https://multi-epi-model-cross-analysis.readthedocs.io/en/latest/?badge=latest)
+[![codecov](https://codecov.io/gh/I-Bouros/multi-epi-model-cross-analysis/branch/main/graph/badge.svg?token=SNHCUJIS3B)](https://codecov.io/gh/I-Bouros/multi-epi-model-cross-analysis)
+[![Style (flake8)](https://github.com/I-Bouros/multi-epi-model-cross-analysis/actions/workflows/flake8-style-test.yml/badge.svg)](https://github.com/I-Bouros/multi-epi-model-cross-analysis/actions/workflows/flake8-style-test.yml)
+
 A collection of multiple epidemiological models used in the modelling of cases observed during the COVID-19 pandemic. Amongst the models curated
 in this collection are:
 - *PHE & Cambridge*: official model used by the UK government for policy making.
