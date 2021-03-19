@@ -283,13 +283,18 @@ class UniNextGenMatrix(object):
     r"""UniNextGenMatrix
     Class for generator matrices which are then used to determine
     the evolution of number of infectives as time goes on according
-    to the following formulae - at fixed time .. math:: `t_k` and
+    to the following formulae - at fixed time .. math::`t_k` and
     in specific region r:
 
     .. math::
-        \Lambda_{k, r} = \Lambda_{k, r, ij}
-        \widetilde{C}_{r, ij}^{t_k} = C_{ij}^{t_k} M_{r, ij}^{t_k}
-        \Lambda_{k, r, ij} = S_{r, t_k, i} \widetilde{C}_{r, ij}^{t_k} d_{I}
+       :nowrap:
+
+        \begin{eqnarray}
+            \Lambda_{k, r} & = & (\Lambda_{k, r, ij}) \\
+            \widetilde{C}_{r, ij}^{t_k} & = & C_{ij}^{t_k} M_{r, ij}^{t_k} \\
+            \Lambda_{k, r, ij} & = & S_{r, t_k, i} \widetilde{C}_{r, ij}^{t_k}
+                 d_{I}
+        \end{eqnarray}
 
     Parameters
     ----------
@@ -349,24 +354,34 @@ class UniNextGenMatrix(object):
         self.regional_suscep = region_matrix.region_matrix.to_numpy()
         self.infection_period = dI
         self.next_gen_matrix = self._compute_next_gen_matrix()
+        self.unnorm_next_gen = self._compute_unnormalised_next_gen_matrix()
+
+    def _compute_unnormalised_next_gen_matrix(self):
+        """
+        Computes unnormalised next genearation matrix. Element (i, j) refers
+        the expected number of new infections in age group i caused by an
+        infectious in age group j.
+
+        """
+        return np.multiply(self.contacts, self.regional_suscep)
 
     def _compute_next_gen_matrix(self):
         """
         Computes next genearation matrix. Element (i, j) refers the expected
-        number of new infections in age group j caused by infectious in age
+        number of new infections in age group i caused by infectious in age
         group j.
 
         """
         # Computes next genearation matrix. Element (i, j) refers the expected
         # number of new infections in age group j caused by infectious in age
         # group j.
-        C_tilde = np.multiply(self.contacts, self.regional_suscep)
+        self.C_tilde = self._compute_unnormalised_next_gen_matrix()
         self.generator = np.zeros_like(self.contacts)
 
         for i, row in enumerate(self.generator):
             for j, _ in enumerate(row):
                 self.generator[i, j] = self.susceptibles[i] * (
-                    C_tilde[i, j] * self.infection_period)
+                    self.C_tilde[i, j] * self.infection_period)
 
         return pd.DataFrame(
             data=self.generator, index=self.ages, columns=self.ages)
@@ -378,3 +393,121 @@ class UniNextGenMatrix(object):
 
         """
         return max(np.linalg.eigvals(self.generator).tolist())
+
+#
+# UniInfectivityMatrix Class
+#
+
+
+class UniInfectivityMatrix(object):
+    r"""UniInfectivityMatrix Class:
+    Base class to compute probability of susceptible individuals in
+    a given region and specified time point of getting infected as well
+    as reproduction number for subsequent time points.
+
+    Both quanities are computed using .. math::`\beta_{t_k, r}` is the further
+    temporal correction term, linked to fluctuations in transmission,
+    .. math::`R_{0, r}` is the initial reproduction number in region r and
+    .. math::`R^{\star}_{0, r}` is the dominant eigenvalue of the initial next
+    generation matrix for region r.
+
+    Parameters
+    ----------
+    initial_r
+        (float) Initial value of the reproduction number in the specified
+        region.
+    temp_variation
+        (float) Further temporal correction term, linked to fluctuations
+        in transmission.
+    initial_nextgen_matrix
+        (UniNextGenMatrix) Next generation matrix at time of beginning of
+        the epidemic.
+
+    """
+    def __init__(
+            self, initial_r, temp_variation, initial_nextgen_matrix):
+        # Check correct format of inputs
+        if not isinstance(initial_r, (int, float)):
+            raise TypeError(
+                'Initial regional R must be integer or float.')
+        if not isinstance(temp_variation, (int, float)):
+            raise TypeError(
+                'Regional temporal correction term must be integer or float.')
+        if not isinstance(initial_nextgen_matrix, UniNextGenMatrix):
+            raise TypeError(
+                'Initial next generation matrix must be a UniNextGenMatrix.')
+
+        self.fluctuation = temp_variation
+        self.r0 = initial_r
+        self.r0_star = initial_nextgen_matrix.compute_dom_eigenvalue()
+        self._constant = self.fluctuation * self.r0 / self.r0_star
+
+    def compute_prob_infectivity_matrix(self, later_nextgen_matrix):
+        r"""
+        Computes probability of susceptible individuals in
+        a given region and specified time point of getting infected. The
+        (i, j) element of the matrix refer to the probabiity of people in
+        age group i to be infected by those in age group j.
+
+        The matrix is computed using this formula:
+
+        .. math::
+            \b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
+                \widetilde{C}_{r, ij}^{t_k}}{R^{\star}_{0, r}}
+
+        where .. math::`\beta_{t_k, r}` is the further temporal correction
+        term, linked to fluctuations in transmission, .. math::`R_{0, r}` is
+        the initial reproduction number in region r and
+        .. math::`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
+        next generation matrix for region r.
+
+        Parameters
+        ----------
+        later_nextgen_matrix
+            (UniNextGenMatrix) Next generation matrix at given time during the
+            the epidemic.
+
+        """
+        if not isinstance(later_nextgen_matrix, UniNextGenMatrix):
+            raise TypeError(
+                'Current next generation matrix must be a UniNextGenMatrix.')
+
+        return later_nextgen_matrix.unnorm_next_gen * self._constant
+
+    def compute_reproduction_number(self, later_nextgen_matrix):
+        r"""
+        Computes probability of susceptible individuals in
+        a given region and specified time point of getting infected. The
+        (i, j) element of the matrix refer to the probabiity of people in
+        age group i to be infected by those in age group j.
+
+        The matrix is computed using this formula:
+
+        .. math::
+            \b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
+                R^{\star}_{t_k, r}}{R^{\star}_{0, r}}
+
+        where .. math::`\beta_{t_k, r}` is the further temporal correction
+        term, linked to fluctuations in transmission, .. math::`R_{0, r}` is
+        the initial reproduction number in region r and
+        .. math::`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
+        next generation matrix for region r.
+
+        The .. math::`R^{\star}_{t_k, r}` is the dominant eigenvalue of the
+        current time next generation matrix for region r:
+
+        .. math::
+            \Lambda_{k, r, ij} = S_{r, t_k, i} \widetilde{C}_{r, ij}^{t_k}
+                 d_{I}
+
+        Parameters
+        ----------
+        later_nextgen_matrix
+            (UniNextGenMatrix) Next generation matrix at given time during the
+            the epidemic.
+
+        """
+        if not isinstance(later_nextgen_matrix, UniNextGenMatrix):
+            raise TypeError(
+                'Current next generation matrix must be a UniNextGenMatrix.')
+        return later_nextgen_matrix.compute_dom_eigenvalue() * self._constant

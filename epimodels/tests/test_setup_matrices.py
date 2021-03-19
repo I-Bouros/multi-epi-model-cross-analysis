@@ -26,7 +26,7 @@ class TestContactMatrixClass(unittest.TestCase):
         c = em.ContactMatrix(age_groups, data_matrix)
 
         self.assertEqual(c._num_a_groups, 2)
-        npt.assert_array_equal(c.ages, np.asarray(['0-10', '10-25']))
+        npt.assert_array_equal(c.ages, np.array(['0-10', '10-25']))
         pdt.assert_frame_equal(
             c.contact_matrix,
             pd.DataFrame(
@@ -73,7 +73,7 @@ class TestContactMatrixClass(unittest.TestCase):
         c.change_age_groups(new_age_groups)
 
         self.assertEqual(c._num_a_groups, 2)
-        npt.assert_array_equal(c.ages, np.asarray(['0-15', '15-25']))
+        npt.assert_array_equal(c.ages, np.array(['0-15', '15-25']))
         pdt.assert_frame_equal(
             c.contact_matrix,
             pd.DataFrame(
@@ -108,7 +108,7 @@ class TestRegionMatrixClass(unittest.TestCase):
 
         self.assertEqual(r.region, 'London')
         self.assertEqual(r.num_a_groups, 2)
-        npt.assert_array_equal(r.ages, np.asarray(['0-10', '10-25']))
+        npt.assert_array_equal(r.ages, np.array(['0-10', '10-25']))
         pdt.assert_frame_equal(
             r.region_matrix,
             pd.DataFrame(
@@ -208,7 +208,7 @@ class TestUniNextGenMatrixClass(unittest.TestCase):
         next_gen = em.UniNextGenMatrix(pop_size, contacts, regional, dI)
 
         self.assertEqual(next_gen.region, 'London')
-        npt.assert_array_equal(next_gen.ages, np.asarray(['0-10', '10-25']))
+        npt.assert_array_equal(next_gen.ages, np.array(['0-10', '10-25']))
         npt.assert_array_equal(next_gen.susceptibles, np.array([18, 2]))
         npt.assert_array_equal(next_gen.contacts, contact_data_matrix)
         npt.assert_array_equal(next_gen.regional_suscep, region_data_matrix)
@@ -264,3 +264,134 @@ class TestUniNextGenMatrixClass(unittest.TestCase):
         next_gen = em.UniNextGenMatrix(pop_size, contacts, regional, dI)
 
         self.assertEqual(next_gen.compute_dom_eigenvalue(), 144)
+
+
+class TestUniInfectivityMatrixClass(unittest.TestCase):
+    """
+    Test the 'UniInfectivityMatrix' class.
+    """
+    def test__init__(self):
+        region_name = 'London'
+        age_groups = ['0-10', '10-25']
+
+        # Initial state of the system
+        contact_data_matrix_0 = np.array([[10, 0], [0, 3]])
+        region_data_matrix_0 = np.array([[0.5, 0], [0, 6]])
+        init_pop_size = [1, 2]
+        dI = 4
+
+        contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
+        regional_0 = em.RegionMatrix(
+            region_name, age_groups, region_data_matrix_0)
+        next_gen_0 = em.UniNextGenMatrix(
+            init_pop_size, contacts_0, regional_0, dI)
+
+        initial_r = 0.5
+        temp_variation = 1
+        infect = em.UniInfectivityMatrix(
+            initial_r,
+            temp_variation,
+            initial_nextgen_matrix=next_gen_0)
+
+        self.assertEqual(infect.fluctuation, 1)
+        self.assertEqual(infect.r0, 0.5)
+        self.assertEqual(infect.r0_star, 144)
+
+        with self.assertRaises(TypeError):
+            em.UniInfectivityMatrix(
+                '0',
+                temp_variation,
+                initial_nextgen_matrix=next_gen_0)
+
+        with self.assertRaises(TypeError):
+            em.UniInfectivityMatrix(
+                initial_r,
+                '0',
+                initial_nextgen_matrix=next_gen_0)
+
+        with self.assertRaises(TypeError):
+            em.UniInfectivityMatrix(
+                initial_r,
+                temp_variation,
+                initial_nextgen_matrix=0)
+
+    def test_compute_prob_infectivity_matrix(self):
+        region_name = 'London'
+        age_groups = ['0-10', '10-25']
+
+        # Initial state of the system
+        contact_data_matrix_0 = np.array([[10, 0], [0, 3]])
+        region_data_matrix_0 = np.array([[0.5, 0], [0, 6]])
+        init_pop_size = [1, 2]
+        dI = 4
+
+        contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
+        regional_0 = em.RegionMatrix(
+            region_name, age_groups, region_data_matrix_0)
+        next_gen_0 = em.UniNextGenMatrix(
+            init_pop_size, contacts_0, regional_0, dI)
+
+        # Later time state of the system
+        contact_data_matrix_1 = np.array([[10, 5.2], [0, 3]])
+        region_data_matrix_1 = np.array([[0.5, 1.2], [0.29, 6]])
+        current_pop_size = [18, 2]
+
+        contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
+        regional_1 = em.RegionMatrix(
+            region_name, age_groups, region_data_matrix_1)
+        next_gen_1 = em.UniNextGenMatrix(
+            current_pop_size, contacts_1, regional_1, dI)
+
+        initial_r = 0.5
+        temp_variation = 1
+        infect = em.UniInfectivityMatrix(
+            initial_r,
+            temp_variation,
+            initial_nextgen_matrix=next_gen_0)
+
+        npt.assert_array_equal(
+            infect.compute_prob_infectivity_matrix(next_gen_1),
+            np.array([[5/288, 13/600], [0, 1/16]]))
+
+        with self.assertRaises(TypeError):
+            infect.compute_prob_infectivity_matrix(0)
+
+    def test_compute_reproduction_number(self):
+        region_name = 'London'
+        age_groups = ['0-10', '10-25']
+
+        # Initial state of the system
+        contact_data_matrix_0 = np.array([[10, 0], [0, 3]])
+        region_data_matrix_0 = np.array([[0.5, 0], [0, 6]])
+        init_pop_size = [1, 2]
+        dI = 4
+
+        contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
+        regional_0 = em.RegionMatrix(
+            region_name, age_groups, region_data_matrix_0)
+        next_gen_0 = em.UniNextGenMatrix(
+            init_pop_size, contacts_0, regional_0, dI)
+
+        # Later time state of the system
+        contact_data_matrix_1 = np.array([[10, 5.2], [0, 3]])
+        region_data_matrix_1 = np.array([[0.5, 1.2], [0.29, 6]])
+        current_pop_size = [18, 2]
+
+        contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
+        regional_1 = em.RegionMatrix(
+            region_name, age_groups, region_data_matrix_1)
+        next_gen_1 = em.UniNextGenMatrix(
+            current_pop_size, contacts_1, regional_1, dI)
+
+        initial_r = 0.5
+        temp_variation = 1
+        infect = em.UniInfectivityMatrix(
+            initial_r,
+            temp_variation,
+            initial_nextgen_matrix=next_gen_0)
+
+        self.assertEqual(
+            infect.compute_reproduction_number(next_gen_1), 5/4)
+
+        with self.assertRaises(TypeError):
+            infect.compute_reproduction_number(0)

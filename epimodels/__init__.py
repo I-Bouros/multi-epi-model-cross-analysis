@@ -17,4 +17,4 @@ during an outbreak of the SARS-Cov-2 virus.
 from .version_info import VERSION_INT, VERSION  # noqa
 
 # Import main classes
-from ._setup_matrices import ContactMatrix, RegionMatrix, UniNextGenMatrix  # noqa
+from ._setup_matrices import ContactMatrix, RegionMatrix, UniNextGenMatrix, UniInfectivityMatrix  # noqa
