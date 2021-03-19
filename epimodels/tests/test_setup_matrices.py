@@ -353,6 +353,9 @@ class TestUniInfectivityMatrixClass(unittest.TestCase):
             infect.compute_prob_infectivity_matrix(next_gen_1),
             np.array([[5/288, 13/600], [0, 1/16]]))
 
+        with self.assertRaises(TypeError):
+            infect.compute_prob_infectivity_matrix(0)
+
     def test_compute_reproduction_number(self):
         region_name = 'London'
         age_groups = ['0-10', '10-25']
@@ -389,3 +392,6 @@ class TestUniInfectivityMatrixClass(unittest.TestCase):
 
         self.assertEqual(
             infect.compute_reproduction_number(next_gen_1), 5/4)
+
+        with self.assertRaises(TypeError):
+            infect.compute_prob_infectivity_matrix(0)
