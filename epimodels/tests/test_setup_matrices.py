@@ -394,4 +394,4 @@ class TestUniInfectivityMatrixClass(unittest.TestCase):
             infect.compute_reproduction_number(next_gen_1), 5/4)
 
         with self.assertRaises(TypeError):
-            infect.compute_prob_infectivity_matrix(0)
+            infect.compute_reproduction_number(0)
