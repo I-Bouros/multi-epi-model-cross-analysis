@@ -1,5 +1,8 @@
 # multi-epi-model-cross-analysis
-A collection of multiple epidemiological models used in the modelling of cases observed during the COVID-19 pandemic.
+A collection of multiple epidemiological models used in the modelling of cases observed during the COVID-19 pandemic. Amongst the models curated
+in this collection are:
+- *PHE & Cambridge*: official model used by the UK government for policy making.
+- *Roche*.
 
 All features of our software are described in detail in our
 [full API documentation](https://multi-epi-model-cross-analysis.readthedocs.io/en/latest/).
