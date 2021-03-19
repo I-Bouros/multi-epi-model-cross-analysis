@@ -425,8 +425,7 @@ class UniInfectivityMatrix(object):
 
     """
     def __init__(
-            self, initial_r, temp_variation, initial_nextgen_matrix,
-            later_nextgen_matrix):
+            self, initial_r, temp_variation, initial_nextgen_matrix):
         # Check correct format of inputs
         if not isinstance(initial_r, (int, float)):
             raise TypeError(
@@ -437,9 +436,6 @@ class UniInfectivityMatrix(object):
         if not isinstance(initial_nextgen_matrix, UniNextGenMatrix):
             raise TypeError(
                 'Initial next generation matrix must be a UniNextGenMatrix.')
-        if not isinstance(later_nextgen_matrix, UniNextGenMatrix):
-            raise TypeError(
-                'Current next generation matrix must be a UniNextGenMatrix.')
 
         self.fluctuation = temp_variation
         self.r0 = initial_r
@@ -472,6 +468,10 @@ class UniInfectivityMatrix(object):
             the epidemic.
 
         """
+        if not isinstance(later_nextgen_matrix, UniNextGenMatrix):
+            raise TypeError(
+                'Current next generation matrix must be a UniNextGenMatrix.')
+
         return later_nextgen_matrix.unnorm_next_gen * self._constant
 
     def compute_reproduction_number(self, later_nextgen_matrix):
@@ -507,4 +507,7 @@ class UniInfectivityMatrix(object):
             the epidemic.
 
         """
+        if not isinstance(later_nextgen_matrix, UniNextGenMatrix):
+            raise TypeError(
+                'Current next generation matrix must be a UniNextGenMatrix.')
         return later_nextgen_matrix.compute_dom_eigenvalue() * self._constant
