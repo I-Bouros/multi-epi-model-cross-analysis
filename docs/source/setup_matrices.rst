@@ -10,6 +10,7 @@ Overview:
 - :class:`RegionMatrix`
 - :class:`UniNextGenMatrix`
 - :class:`UniInfectivityMatrix`
+- :class:`MultiTimesInfectivity`
 
 Contact Population Matrix
 *************************
@@ -33,4 +34,10 @@ Mono Time&Region-specific Infectivity Matrix and Reproduction Numer Computer
 ****************************************************************************
 
 .. autoclass:: UniInfectivityMatrix
+  :members:
+
+Multi Time&Region-specific Infectivity Matrix and Reproduction Numer Computer
+****************************************************************************
+
+.. autoclass:: MultiTimesInfectivity
   :members:
