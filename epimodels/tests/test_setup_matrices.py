@@ -287,32 +287,21 @@ class TestUniInfectivityMatrixClass(unittest.TestCase):
             init_pop_size, contacts_0, regional_0, dI)
 
         initial_r = 0.5
-        temp_variation = 1
         infect = em.UniInfectivityMatrix(
             initial_r,
-            temp_variation,
             initial_nextgen_matrix=next_gen_0)
 
-        self.assertEqual(infect.fluctuation, 1)
         self.assertEqual(infect.r0, 0.5)
         self.assertEqual(infect.r0_star, 144)
 
         with self.assertRaises(TypeError):
             em.UniInfectivityMatrix(
                 '0',
-                temp_variation,
                 initial_nextgen_matrix=next_gen_0)
 
         with self.assertRaises(TypeError):
             em.UniInfectivityMatrix(
                 initial_r,
-                '0',
-                initial_nextgen_matrix=next_gen_0)
-
-        with self.assertRaises(TypeError):
-            em.UniInfectivityMatrix(
-                initial_r,
-                temp_variation,
                 initial_nextgen_matrix=0)
 
     def test_compute_prob_infectivity_matrix(self):
@@ -346,15 +335,17 @@ class TestUniInfectivityMatrixClass(unittest.TestCase):
         temp_variation = 1
         infect = em.UniInfectivityMatrix(
             initial_r,
-            temp_variation,
             initial_nextgen_matrix=next_gen_0)
 
         npt.assert_array_equal(
-            infect.compute_prob_infectivity_matrix(next_gen_1),
+            infect.compute_prob_infectivity_matrix(temp_variation, next_gen_1),
             np.array([[5/288, 13/600], [0, 1/16]]))
 
         with self.assertRaises(TypeError):
-            infect.compute_prob_infectivity_matrix(0)
+            infect.compute_prob_infectivity_matrix('1', next_gen_1)
+
+        with self.assertRaises(TypeError):
+            infect.compute_prob_infectivity_matrix(temp_variation, 0)
 
     def test_compute_reproduction_number(self):
         region_name = 'London'
@@ -387,11 +378,14 @@ class TestUniInfectivityMatrixClass(unittest.TestCase):
         temp_variation = 1
         infect = em.UniInfectivityMatrix(
             initial_r,
-            temp_variation,
             initial_nextgen_matrix=next_gen_0)
 
         self.assertEqual(
-            infect.compute_reproduction_number(next_gen_1), 5/4)
+            infect.compute_reproduction_number(
+                temp_variation, next_gen_1), 5/4)
 
         with self.assertRaises(TypeError):
-            infect.compute_reproduction_number(0)
+            infect.compute_reproduction_number('1', next_gen_1)
+
+        with self.assertRaises(TypeError):
+            infect.compute_reproduction_number(temp_variation, 0)
