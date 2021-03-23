@@ -30,14 +30,14 @@ Mono Time&Region-specific New Infections Matrix
 .. autoclass:: UniNextGenMatrix
   :members:
 
-Mono Time&Region-specific Infectivity Matrix and Reproduction Numer Computer
-****************************************************************************
+Mono Time&Region-specific Infectivity Matrix and Reproduction Number Computer
+*****************************************************************************
 
 .. autoclass:: UniInfectivityMatrix
   :members:
 
-Multi Time&Region-specific Infectivity Matrix and Reproduction Numer Computer
-****************************************************************************
+Multi Time&Region-specific Infectivity Matrix and Reproduction Number Computer
+******************************************************************************
 
 .. autoclass:: MultiTimesInfectivity
   :members:
