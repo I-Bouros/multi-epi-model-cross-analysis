@@ -396,38 +396,332 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
     Test the 'MultiTimesInfectivity' class.
     """
     def test__init__(self):
-        region_name = 'London'
+        regions = ['London', 'Cornwall']
         age_groups = ['0-10', '10-25']
 
         # Initial state of the system
         contact_data_matrix_0 = np.array([[10, 0], [0, 3]])
-        region_data_matrix_0 = np.array([[0.5, 0], [0, 6]])
-        init_pop_size = [1, 2]
+        contact_data_matrix_1 = np.array([[10, 5.2], [0, 3]])
+
+        region_data_matrix_0_0 = np.array([[0.5, 0], [0, 6]])
+        region_data_matrix_0_1 = np.array([[1, 10], [1, 0]])
+        region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
+        region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
+
+        susceptibles = [[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[0, 2], [1, 1]]]
         dI = 4
 
         contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
-        regional_0 = em.RegionMatrix(
-            region_name, age_groups, region_data_matrix_0)
-        next_gen_0 = em.UniNextGenMatrix(
-            init_pop_size, contacts_0, regional_0, dI)
+        contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
+        regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_0_0)
+        regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_0_1)
+        regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_1_0)
+        regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_1_1)
 
-        initial_r = 0.5
-        infect = em.UniInfectivityMatrix(
+        # Matrices contact
+        matrices_contact = [contacts_0, contacts_1]
+        time_changes_contact = [1, 3]
+        matrices_region = [
+            [regional_0_0, regional_0_1],
+            [regional_1_0, regional_1_1]]
+        time_changes_region = [1, 2]
+
+        initial_r = [0.5, 1]
+
+        m = em.MultiTimesInfectivity(
+            matrices_contact,
+            time_changes_contact,
+            regions,
+            matrices_region,
+            time_changes_region,
             initial_r,
-            initial_nextgen_matrix=next_gen_0)
+            dI,
+            susceptibles)
 
-        self.assertEqual(infect.r0, 0.5)
-        self.assertEqual(infect.r0_star, 144)
+        npt.assert_array_equal(m.initial_r, np.array([0.5, 1]))
+        self.assertEqual(m.dI, 4)
+        npt.assert_array_equal(
+            m.susceptibles,
+            np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[0, 2], [1, 1]]]))
+        npt.assert_array_equal(m.times_contact, np.array([1, 3]))
+        npt.assert_array_equal(m.times_region, np.array([1, 2]))
+        self.assertCountEqual(m.contact_matrices, matrices_contact)
+        self.assertCountEqual(m.region_matrices, matrices_region)
+        self.assertEqual(len(m.initial_infec_matrices), 2)
 
-        with self.assertRaises(TypeError):
-            em.UniInfectivityMatrix(
-                '0',
-                initial_nextgen_matrix=next_gen_0)
-
-        with self.assertRaises(TypeError):
-            em.UniInfectivityMatrix(
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                0,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
                 initial_r,
-                initial_nextgen_matrix=0)
+                dI,
+                susceptibles)
+
+        with self.assertRaises(TypeError):
+            em.MultiTimesInfectivity(
+                [contacts_0, 0],
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                1,
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                [1],
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(TypeError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                [1, 1.5],
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                [0, 1],
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                'London',
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(TypeError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                [0, 'London'],
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                [regional_1_0, regional_1_1],
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            matrices_region_1 = [[regional_0_0], [regional_1_0]]
+
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region_1,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(TypeError):
+            matrices_region_1 = [
+                [regional_0_0, 1],
+                [regional_1_0, regional_1_1]
+            ]
+
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region_1,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            matrices_region_1 = [
+                [regional_0_0, regional_0_1],
+                [
+                    regional_1_0,
+                    em.RegionMatrix(
+                        regions[0],
+                        age_groups,
+                        region_data_matrix_1_1)]
+            ]
+
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region_1,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                1,
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                [1, 2, 3],
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(TypeError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                [1, '2'],
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                [0, 2],
+                initial_r,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                0.5,
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                [0.5],
+                dI,
+                susceptibles)
+
+        with self.assertRaises(TypeError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                [0.5, '1'],
+                dI,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                [0.5, 0],
+                dI,
+                susceptibles)
+
+        with self.assertRaises(TypeError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                '4',
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                0,
+                susceptibles)
+
+        with self.assertRaises(ValueError):
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                [1])
 
     def test_compute_prob_infectivity_matrix(self):
         region_name = 'London'
