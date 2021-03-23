@@ -716,35 +716,11 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         self.region_matrices = matrices_region
         self.initial_infec_matrices = initial_infec_matrices
 
-    def compute_prob_infectivity_matrix(self, r, t_k, temp_variation):
-        r"""
-        Computes probability of susceptible individuals in
-        a given region and specified time point of getting infected. The
-        (i, j) element of the matrix refer to the probabiity of people in
-        age group i to be infected by those in age group j.
+    def _check_later_input(self, r, t_k, temp_variation):
+        """
+        Checks the correct format for the input of the two main methods
+        for the class.
 
-        The matrix is computed using this formula:
-
-        .. math::
-            \b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
-                \widetilde{C}_{r, ij}^{t_k}}{R^{\star}_{0, r}}
-
-        where .. math::`\beta_{t_k, r}` is the further temporal correction
-        term, linked to fluctuations in transmission, .. math::`R_{0, r}` is
-        the initial reproduction number in region r and
-        .. math::`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
-        next generation matrix for region r.
-
-        Parameters
-        ----------
-        r
-            (integer) Index of the region oat which the next generation matrix
-            is evaluated.
-        t_k
-            (int) Time at which the next generation matrix is evaluated.
-        temp_variation
-            (float) Further temporal correction term, linked to fluctuations
-            in transmission.
         """
         if not isinstance(r, int):
             raise TypeError(
@@ -776,27 +752,58 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
             raise TypeError(
                 'Regional temporal correction term must be integer or float.')
 
+    def compute_prob_infectivity_matrix(self, r, t_k, temp_variation=1):
+        r"""
+        Computes probability of susceptible individuals in
+        a given region and specified time point of getting infected. The
+        (i, j) element of the matrix refer to the probabiity of people in
+        age group i to be infected by those in age group j.
+
+        The matrix is computed using this formula:
+
+        .. math::
+            \b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
+                \widetilde{C}_{r, ij}^{t_k}}{R^{\star}_{0, r}}
+
+        where .. math::`\beta_{t_k, r}` is the further temporal correction
+        term, linked to fluctuations in transmission, .. math::`R_{0, r}` is
+        the initial reproduction number in region r and
+        .. math::`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
+        next generation matrix for region r.
+
+        Parameters
+        ----------
+        r
+            (integer) Index of the region at which the next generation matrix
+            is evaluated.
+        t_k
+            (int) Time at which the next generation matrix is evaluated.
+        temp_variation
+            (float) Further temporal correction term, linked to fluctuations
+            in transmission.
+        """
+        # Do the checks on the input
+        self._check_later_input(r, t_k, temp_variation)
+
         # Identify current contact matrix
         pos = np.where(self.times_contact <= t_k)
-        current_contacts = self.contact_matrices[pos[-1]]
+        current_contacts = self.contact_matrices[pos[-1][1]]
 
         # Identify current regional relative susceptibility matrix
         pos = np.where(self.times_region <= t_k)
-        current_rel_susc = self.region_matrices[pos[-1], r-1]
+        current_rel_susc = self.region_matrices[pos[-1][1]][r-1]
 
         current_nextgen_matrix = UniNextGenMatrix(
-                pop_size=self.susceptibles[t_k, r-1, :],
+                pop_size=self.susceptibles[t_k-1, r-1, :].tolist(),
                 contact_matrix=current_contacts,
                 region_matrix=current_rel_susc,
                 dI=self.dI)
 
-        current_infectivity_matrix = UniInfectivityMatrix(
-                self.initial_r[r], current_nextgen_matrix)
+        return self.initial_infec_matrices[
+            r-1].compute_prob_infectivity_matrix(
+                temp_variation, current_nextgen_matrix)
 
-        return current_infectivity_matrix.compute_prob_infectivity_matrix(
-            temp_variation, current_nextgen_matrix)
-
-    def compute_reproduction_number(self, r, t_k, temp_variation):
+    def compute_reproduction_number(self, r, t_k, temp_variation=1):
         r"""
         Computes probability of susceptible individuals in
         a given region and specified time point of getting infected. The
@@ -825,7 +832,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         Parameters
         ----------
         r
-            (integer) Index of the region oat which the next generation matrix
+            (integer) Index of the region at which the next generation matrix
             is evaluated.
         t_k
             (int) Time at which the next generation matrix is evaluated.
@@ -833,52 +840,22 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
             (float) Further temporal correction term, linked to fluctuations
             in transmission.
         """
-        if not isinstance(r, int):
-            raise TypeError(
-                'Index of the region must be integer.'
-                )
-        if r > len(self.region_matrices):
-            raise ValueError(
-                'Index of the region out of bounds.'
-            )
-        if r <= 0:
-            raise ValueError(
-                'Index of the region must be >= 1.'
-            )
-
-        if not isinstance(t_k, int):
-            raise TypeError(
-                'Time of evaluation of next generation matrix must be integer.'
-                )
-        if t_k > self.susceptibles.shape[0]:
-            raise ValueError(
-                'Time of evaluation of next generation matrix out of bounds.'
-            )
-        if t_k <= 0:
-            raise ValueError(
-                'Time of evaluation of next generation matrix must be >= 1.'
-            )
-
-        if not isinstance(temp_variation, (int, float)):
-            raise TypeError(
-                'Regional temporal correction term must be integer or float.')
+        # Do the checks on the input
+        self._check_later_input(r, t_k, temp_variation)
 
         # Identify current contact matrix
         pos = np.where(self.times_contact <= t_k)
-        current_contacts = self.contact_matrices[pos[-1]]
+        current_contacts = self.contact_matrices[pos[-1][1]]
 
         # Identify current regional relative susceptibility matrix
         pos = np.where(self.times_region <= t_k)
-        current_rel_susc = self.region_matrices[pos[-1], r-1]
+        current_rel_susc = self.region_matrices[pos[-1][1]][r-1]
 
         current_nextgen_matrix = UniNextGenMatrix(
-                pop_size=self.susceptibles[t_k, r-1, :],
+                pop_size=self.susceptibles[t_k-1, r-1, :].tolist(),
                 contact_matrix=current_contacts,
                 region_matrix=current_rel_susc,
                 dI=self.dI)
 
-        current_infectivity_matrix = UniInfectivityMatrix(
-                self.initial_r[r], current_nextgen_matrix)
-
-        return current_infectivity_matrix.compute_reproduction_number(
+        return self.initial_infec_matrices[r-1].compute_reproduction_number(
             temp_variation, current_nextgen_matrix)

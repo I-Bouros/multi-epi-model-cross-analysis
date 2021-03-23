@@ -723,88 +723,197 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 dI,
                 [1])
 
+        with self.assertRaises(ValueError):
+            susceptibles_1 = [[[1, 2], [3, 4]]]
+
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles_1)
+
+        with self.assertRaises(ValueError):
+            susceptibles_1 = [[[1], [3]], [[5], [7]], [[0], [1]]]
+
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles_1)
+
+        with self.assertRaises(ValueError):
+            susceptibles_1 = [[[1, 2]], [[5, 6]], [[0, 2]]]
+
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles_1)
+
+        with self.assertRaises(TypeError):
+            susceptibles_1 = [
+                [[1, 2], [3, 4]], [[5, '6'], [7, 8]], [[0, 2], [1, 1]]]
+
+            em.MultiTimesInfectivity(
+                matrices_contact,
+                time_changes_contact,
+                regions,
+                matrices_region,
+                time_changes_region,
+                initial_r,
+                dI,
+                susceptibles_1)
+
     def test_compute_prob_infectivity_matrix(self):
-        region_name = 'London'
+        regions = ['London', 'Cornwall']
         age_groups = ['0-10', '10-25']
 
         # Initial state of the system
         contact_data_matrix_0 = np.array([[10, 0], [0, 3]])
-        region_data_matrix_0 = np.array([[0.5, 0], [0, 6]])
-        init_pop_size = [1, 2]
+        contact_data_matrix_1 = np.array([[10, 5.2], [0, 3]])
+
+        region_data_matrix_0_0 = np.array([[0.5, 0], [0, 6]])
+        region_data_matrix_0_1 = np.array([[1, 10], [1, 0]])
+        region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
+        region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
+
+        susceptibles = [[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[0, 2], [1, 1]]]
         dI = 4
 
         contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
-        regional_0 = em.RegionMatrix(
-            region_name, age_groups, region_data_matrix_0)
-        next_gen_0 = em.UniNextGenMatrix(
-            init_pop_size, contacts_0, regional_0, dI)
-
-        # Later time state of the system
-        contact_data_matrix_1 = np.array([[10, 5.2], [0, 3]])
-        region_data_matrix_1 = np.array([[0.5, 1.2], [0.29, 6]])
-        current_pop_size = [18, 2]
-
         contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
-        regional_1 = em.RegionMatrix(
-            region_name, age_groups, region_data_matrix_1)
-        next_gen_1 = em.UniNextGenMatrix(
-            current_pop_size, contacts_1, regional_1, dI)
+        regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_0_0)
+        regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_0_1)
+        regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_1_0)
+        regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_1_1)
 
-        initial_r = 0.5
-        temp_variation = 1
-        infect = em.UniInfectivityMatrix(
+        # Matrices contact
+        matrices_contact = [contacts_0, contacts_1]
+        time_changes_contact = [1, 3]
+        matrices_region = [
+            [regional_0_0, regional_0_1],
+            [regional_1_0, regional_1_1]]
+        time_changes_region = [1, 2]
+
+        initial_r = [0.5, 1]
+
+        m = em.MultiTimesInfectivity(
+            matrices_contact,
+            time_changes_contact,
+            regions,
+            matrices_region,
+            time_changes_region,
             initial_r,
-            initial_nextgen_matrix=next_gen_0)
+            dI,
+            susceptibles)
 
         npt.assert_array_equal(
-            infect.compute_prob_infectivity_matrix(temp_variation, next_gen_1),
+            m.compute_prob_infectivity_matrix(1, 3, 1),
             np.array([[5/288, 13/600], [0, 1/16]]))
 
         with self.assertRaises(TypeError):
-            infect.compute_prob_infectivity_matrix('1', next_gen_1)
+            m.compute_prob_infectivity_matrix('1', 3, 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_prob_infectivity_matrix(3, 3, 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_prob_infectivity_matrix(0, 3, 1)
 
         with self.assertRaises(TypeError):
-            infect.compute_prob_infectivity_matrix(temp_variation, 0)
+            m.compute_prob_infectivity_matrix(1, '3', 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_prob_infectivity_matrix(1, 5, 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_prob_infectivity_matrix(1, 0, 1)
+
+        with self.assertRaises(TypeError):
+            m.compute_prob_infectivity_matrix(1, 3, '1')
 
     def test_compute_reproduction_number(self):
-        region_name = 'London'
+        regions = ['London', 'Cornwall']
         age_groups = ['0-10', '10-25']
 
         # Initial state of the system
         contact_data_matrix_0 = np.array([[10, 0], [0, 3]])
-        region_data_matrix_0 = np.array([[0.5, 0], [0, 6]])
-        init_pop_size = [1, 2]
+        contact_data_matrix_1 = np.array([[10, 5.2], [0, 3]])
+
+        region_data_matrix_0_0 = np.array([[0.5, 0], [0, 6]])
+        region_data_matrix_0_1 = np.array([[1, 10], [1, 0]])
+        region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
+        region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
+
+        susceptibles = [[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[0, 2], [1, 1]]]
         dI = 4
 
         contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
-        regional_0 = em.RegionMatrix(
-            region_name, age_groups, region_data_matrix_0)
-        next_gen_0 = em.UniNextGenMatrix(
-            init_pop_size, contacts_0, regional_0, dI)
-
-        # Later time state of the system
-        contact_data_matrix_1 = np.array([[10, 5.2], [0, 3]])
-        region_data_matrix_1 = np.array([[0.5, 1.2], [0.29, 6]])
-        current_pop_size = [18, 2]
-
         contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
-        regional_1 = em.RegionMatrix(
-            region_name, age_groups, region_data_matrix_1)
-        next_gen_1 = em.UniNextGenMatrix(
-            current_pop_size, contacts_1, regional_1, dI)
+        regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_0_0)
+        regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_0_1)
+        regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_1_0)
+        regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_1_1)
 
-        initial_r = 0.5
-        temp_variation = 1
-        infect = em.UniInfectivityMatrix(
+        # Matrices contact
+        matrices_contact = [contacts_0, contacts_1]
+        time_changes_contact = [1, 3]
+        matrices_region = [
+            [regional_0_0, regional_0_1],
+            [regional_1_0, regional_1_1]]
+        time_changes_region = [1, 2]
+
+        initial_r = [0.5, 1]
+
+        m = em.MultiTimesInfectivity(
+            matrices_contact,
+            time_changes_contact,
+            regions,
+            matrices_region,
+            time_changes_region,
             initial_r,
-            initial_nextgen_matrix=next_gen_0)
+            dI,
+            susceptibles)
 
-        self.assertEqual(
-            infect.compute_reproduction_number(
-                temp_variation, next_gen_1), 5/4)
-
-        with self.assertRaises(TypeError):
-            infect.compute_reproduction_number('1', next_gen_1)
+        self.assertEqual(m.compute_reproduction_number(1, 3, 1), 0.5)
 
         with self.assertRaises(TypeError):
-            infect.compute_reproduction_number(temp_variation, 0)
+            m.compute_reproduction_number('1', 3, 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_reproduction_number(3, 3, 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_reproduction_number(0, 3, 1)
+
+        with self.assertRaises(TypeError):
+            m.compute_reproduction_number(1, '3', 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_reproduction_number(1, 5, 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_reproduction_number(1, 0, 1)
+
+        with self.assertRaises(TypeError):
+            m.compute_reproduction_number(1, 3, '1')
