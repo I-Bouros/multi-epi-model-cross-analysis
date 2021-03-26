@@ -561,6 +561,9 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         (list) List of initial values of the reproduction number by region.
     dI
         (float) Average duration of infection.
+    susceptibles
+        (numpy.array) Array of initial number of susceptibles by region and
+        age-group.
     """
     def __init__(
             self, matrices_contact, time_changes_contact, regions,
@@ -668,32 +671,8 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
             raise ValueError('Duration of infection must be positive.')
 
         # Check correct format of susceptibles
-        if np.asarray(susceptibles).ndim != 3:
-            raise ValueError(
-                'Storage format for the numbers of susceptibles by region \
-                    must be 3-dimensional.')
-
-        if np.asarray(susceptibles).shape[1] != len(regions):
-            raise ValueError(
-                'Number of compartments of susceptibles by region does not match \
-                    that of regions.')
-        if np.asarray(susceptibles).shape[0] < max(
-                time_changes_contact[-1], time_changes_region[-1]):
-            raise ValueError(
-                'The compartments of susceptibles by region do not cover all time \
-                    points for which contact and regional relative \
-                        suceptibility matrices are known.')
-        if np.asarray(susceptibles).shape[2] != len(matrices_contact[0].ages):
-            raise ValueError(
-                'Number of compartments of susceptibles by region does not match \
-                    that of age groups.')
-
-        for t in np.asarray(susceptibles):
-            for r in t:
-                for _ in r:
-                    if not isinstance(_, (np.integer, np.floating)):
-                        raise TypeError(
-                            'Number of susceptibles must be integer or float.')
+        self._check_susceptible_input(
+            susceptibles, regions, matrices_contact[0])
 
         initial_infec_matrices = []
 
@@ -701,22 +680,47 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
             initial_infec_matrices.append(UniInfectivityMatrix(
                 initial_r=initial_r[r],
                 initial_nextgen_matrix=UniNextGenMatrix(
-                    pop_size=susceptibles[0][r],
+                    pop_size=susceptibles[r],
                     contact_matrix=matrices_contact[0],
                     region_matrix=matrices_region[0][r],
                     dI=dI)
                 ))
 
+        self._regions = regions
         self.initial_r = np.asarray(initial_r)
         self.dI = dI
-        self.susceptibles = np.asarray(susceptibles)
         self.times_contact = np.asarray(time_changes_contact)
         self.times_region = np.asarray(time_changes_region)
         self.contact_matrices = matrices_contact
         self.region_matrices = matrices_region
         self.initial_infec_matrices = initial_infec_matrices
 
-    def _check_later_input(self, r, t_k, temp_variation):
+    def _check_susceptible_input(
+            self, susceptibles, regions, contact_matrix):
+        """
+        """
+        if np.asarray(susceptibles).ndim != 2:
+            raise ValueError(
+                'Storage format for the numbers of susceptibles by region \
+                    must be 3-dimensional.')
+
+        if np.asarray(susceptibles).shape[0] != len(regions):
+            raise ValueError(
+                'Number of compartments of susceptibles by region does not match \
+                    that of regions.')
+
+        if np.asarray(susceptibles).shape[1] != len(contact_matrix.ages):
+            raise ValueError(
+                'Number of compartments of susceptibles by region does not match \
+                    that of age groups.')
+
+        for r in np.asarray(susceptibles):
+            for _ in r:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'Number of susceptibles must be integer or float.')
+
+    def _check_later_input(self, r, t_k, temp_variation, susceptibles):
         """
         Checks the correct format for the input of the two main methods
         for the class.
@@ -739,10 +743,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
             raise TypeError(
                 'Time of evaluation of next generation matrix must be integer.'
                 )
-        if t_k > self.susceptibles.shape[0]:
-            raise ValueError(
-                'Time of evaluation of next generation matrix out of bounds.'
-            )
+
         if t_k <= 0:
             raise ValueError(
                 'Time of evaluation of next generation matrix must be >= 1.'
@@ -752,7 +753,8 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
             raise TypeError(
                 'Regional temporal correction term must be integer or float.')
 
-    def compute_prob_infectivity_matrix(self, r, t_k, temp_variation=1):
+    def compute_prob_infectivity_matrix(
+            self, r, t_k, susceptibles, temp_variation=1):
         r"""
         Computes probability of susceptible individuals in
         a given region and specified time point of getting infected. The
@@ -781,9 +783,14 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         temp_variation
             (float) Further temporal correction term, linked to fluctuations
             in transmission.
+        susceptibles
+            (numpy.array) Array of current number of susceptibles by region and
+            age-group.
         """
         # Do the checks on the input
-        self._check_later_input(r, t_k, temp_variation)
+        self._check_susceptible_input(
+            susceptibles, self._regions, self.contact_matrices[0])
+        self._check_later_input(r, t_k, temp_variation, susceptibles)
 
         # Identify current contact matrix
         pos = np.where(self.times_contact <= t_k)
@@ -794,7 +801,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         current_rel_susc = self.region_matrices[pos[-1][1]][r-1]
 
         current_nextgen_matrix = UniNextGenMatrix(
-                pop_size=self.susceptibles[t_k-1, r-1, :].tolist(),
+                pop_size=np.asarray(susceptibles)[r-1, :].tolist(),
                 contact_matrix=current_contacts,
                 region_matrix=current_rel_susc,
                 dI=self.dI)
@@ -803,7 +810,8 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
             r-1].compute_prob_infectivity_matrix(
                 temp_variation, current_nextgen_matrix)
 
-    def compute_reproduction_number(self, r, t_k, temp_variation=1):
+    def compute_reproduction_number(
+            self, r, t_k, susceptibles, temp_variation=1):
         r"""
         Computes probability of susceptible individuals in
         a given region and specified time point of getting infected. The
@@ -839,9 +847,14 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         temp_variation
             (float) Further temporal correction term, linked to fluctuations
             in transmission.
+        susceptibles
+            (numpy.array) Array of current number of susceptibles by region and
+            age-group.
         """
         # Do the checks on the input
-        self._check_later_input(r, t_k, temp_variation)
+        self._check_susceptible_input(
+            susceptibles, self._regions, self.contact_matrices[0])
+        self._check_later_input(r, t_k, temp_variation, susceptibles)
 
         # Identify current contact matrix
         pos = np.where(self.times_contact <= t_k)
@@ -852,7 +865,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         current_rel_susc = self.region_matrices[pos[-1][1]][r-1]
 
         current_nextgen_matrix = UniNextGenMatrix(
-                pop_size=self.susceptibles[t_k-1, r-1, :].tolist(),
+                pop_size=np.asarray(susceptibles)[r-1, :].tolist(),
                 contact_matrix=current_contacts,
                 region_matrix=current_rel_susc,
                 dI=self.dI)
