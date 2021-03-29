@@ -809,26 +809,26 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
             susceptibles[0])
 
         npt.assert_array_equal(
-            m.compute_prob_infectivity_matrix(1, 3, susceptibles[2], 1),
+            m.compute_prob_infectivity_matrix(1, 3, susceptibles[2][0], 1),
             np.array([[5/288, 13/600], [0, 1/16]]))
 
         with self.assertRaises(TypeError):
-            m.compute_prob_infectivity_matrix('1', 3, susceptibles[2], 1)
+            m.compute_prob_infectivity_matrix('1', 3, susceptibles[2][0], 1)
 
         with self.assertRaises(ValueError):
-            m.compute_prob_infectivity_matrix(3, 3, susceptibles[2], 1)
+            m.compute_prob_infectivity_matrix(3, 3, susceptibles[2][0], 1)
 
         with self.assertRaises(ValueError):
-            m.compute_prob_infectivity_matrix(0, 3, susceptibles[2], 1)
+            m.compute_prob_infectivity_matrix(0, 3, susceptibles[2][0], 1)
 
         with self.assertRaises(TypeError):
-            m.compute_prob_infectivity_matrix(1, '3', susceptibles[2], 1)
+            m.compute_prob_infectivity_matrix(1, '3', susceptibles[2][0], 1)
 
         with self.assertRaises(ValueError):
-            m.compute_prob_infectivity_matrix(1, 0, susceptibles[2], 1)
+            m.compute_prob_infectivity_matrix(1, 0, susceptibles[2][0], 1)
 
         with self.assertRaises(TypeError):
-            m.compute_prob_infectivity_matrix(1, 3, susceptibles[2], '1')
+            m.compute_prob_infectivity_matrix(1, 3, susceptibles[2][0], '1')
 
     def test_compute_reproduction_number(self):
         regions = ['London', 'Cornwall']
@@ -878,22 +878,22 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
             susceptibles[0])
 
         self.assertEqual(m.compute_reproduction_number(
-            1, 3, susceptibles[2]), 0.5)
+            1, 3, susceptibles[2][0]), 0.5)
 
         with self.assertRaises(TypeError):
-            m.compute_reproduction_number('1', 3, susceptibles[2], 1)
+            m.compute_reproduction_number('1', 3, susceptibles[2][0], 1)
 
         with self.assertRaises(ValueError):
-            m.compute_reproduction_number(3, 3, susceptibles[2], 1)
+            m.compute_reproduction_number(3, 3, susceptibles[2][0], 1)
 
         with self.assertRaises(ValueError):
-            m.compute_reproduction_number(0, 3, susceptibles[2], 1)
+            m.compute_reproduction_number(0, 3, susceptibles[2][0], 1)
 
         with self.assertRaises(TypeError):
-            m.compute_reproduction_number(1, '3', susceptibles[2], 1)
+            m.compute_reproduction_number(1, '3', susceptibles[2][0], 1)
 
         with self.assertRaises(ValueError):
-            m.compute_reproduction_number(1, 0, susceptibles[2], 1)
+            m.compute_reproduction_number(1, 0, susceptibles[2][0], 1)
 
         with self.assertRaises(TypeError):
-            m.compute_reproduction_number(1, 3, susceptibles[2], '1')
+            m.compute_reproduction_number(1, 3, susceptibles[2][0], '1')
