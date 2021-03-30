@@ -43,7 +43,7 @@ pip install -i https://test.pypi.org/simple/ epimodels==0.0.1
 import epimodels
 
 # create a contact matrix using mobility data e.g. from a POLYMOD matrix
-epimodels.OneDimSampler(age_groups, polymod_matrix)
+epimodels.ContactMatrix(age_groups, polymod_matrix)
 ```
 
 ## Contributing

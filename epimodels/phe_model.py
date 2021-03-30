@@ -7,6 +7,13 @@
 # notice and full license details.
 #
 """
+This script contains code for modelling the extended SEIR model created by
+Public Health England and Univerity of Cambridge and which is the official
+model used by the UK government for policy making.
+
+It uses an extended version of an SEIR model and contact and region specific
+matrices.
+
 """
 
 from itertools import chain
@@ -18,23 +25,51 @@ import epimodels as em
 
 
 class PheSEIRModel(object):
-    r"""
-    ODE model: deterministic SEIR
-    The SEIR Model has four compartments:
-    susceptible individuals (:math:`S`),
-    exposed but not yet infectious (:math:`E`),
-    infectious (:math:`I`) and recovered (:math:`R`):
+    r"""PheSEIRModel Class:
+    Base class for constructing the ODE model: deterministic SEIR used by the
+    Public Health England to model the Covid-19 epidemic in UK based on region.
+
+    The population is structured according to their age-group (:math:`i`) and
+    region (:math:`r`) and every individual will belong to one of the
+    compartments of the SEIR model.
+
+    The general SEIR Model has four compartments:
+     * susceptible individuals (:math:`S`),
+     * exposed but not yet infectious (:math:`E`),
+     * infectious (:math:`I`) and
+     * recovered (:math:`R`).
+
+    In the PHE model framework, the exposed and infectious compartments
     .. math::
-        \frac{dS(t)}{dt} = -\beta S(t)I(t),
+        \frac{dS(r, t, i)}{dt} = -\lambda_{r, t, i} S(r, t, i),
     .. math::
-        \frac{dE(t)}{dt} = \beta S(t)I(t) - \kappa E(t),
+        \frac{dE_1(r, t, i)}{dt} = \lambda_{r, t, i} S(r, t, i) -
+         \kappa E_1(r, t, i),
     .. math::
-        \frac{dI(t)}{dt} = \kappa E(t) - \gamma I(t),
+        \frac{dE_2(r, t, i)}{dt} = \kappa E_1(r, t, i) - \kappa E_2(r, t, i),
     .. math::
-        \frac{dR(t)}{dt} = \gamma I(t),
+        \frac{dI_1(r, t, i)}{dt} = \kappa E_2(r, t, i) - \gamma I_1(r, t, i),
+    .. math::
+        \frac{dI_2(r, t, i)}{dt} = \gamma I_1(r, t, i) - \gamma I_2(r, t, i),
+    .. math::
+        \frac{dR(r, t, i)}{dt} = \gamma I_2(r, t, i),,
     where :math:`S(0) = S_0, E(0) = E_0, I(O) = I_0, R(0) = R_0`
-    are also parameters of the model.
-    Extends :class:`ForwardModel`.
+    are also parameters of the model (evaluation at 0 refers to the
+    compartments' structure at intial time.
+
+    The parameter :math:`\lambda_{r, t, i}` is the time, age and region-varying
+    rate with which susceptible individuals become infected, which in the
+    context of the PHE model depends on contact and region-specific relative
+    susceptibility matrices. The other two parameters, :math:`\kappa` and
+    :math:`\gamma` are virsus specific and so do not depend with region, age or
+    time:
+    .. math::
+        \kappa = \frac{2}{d_L}
+    .. math::
+        \gamma = \frac{2}{d_I}
+    where :math:`d_L` refers to mean latent period until disease onset and
+    :math:`d_I` to mean period of infection.
+
     """
 
     def __init__(self):
@@ -43,7 +78,7 @@ class PheSEIRModel(object):
         # Assign default values
         self._output_names = ['S', 'E1', 'E2', 'I1', 'I2', 'R', 'Incidence']
         self._parameter_names = [
-            'S0', 'E10', 'E20', 'I10', 'I20', 'R0', 'alpha', 'beta', 'gamma'
+            'S0', 'E10', 'E20', 'I10', 'I20', 'R0', 'beta', 'kappa', 'gamma'
         ]
         # The default number of outputs is 7,
         # i.e. S, E1, E2, I1, I2, R and Incidence
@@ -57,7 +92,7 @@ class PheSEIRModel(object):
 
     def n_outputs(self):
         """
-        Returns the number of output.
+        Returns the number of outputs.
 
         """
         return self._n_outputs
@@ -104,30 +139,60 @@ class PheSEIRModel(object):
         self._n_outputs = len(outputs)
 
     def _right_hand_side(self, t, r, y, c, num_a_groups):
-        """
-        Constructs the derivative functions of the system of ODEs for given one
-        region and one .
+        r"""
+        Constructs the RHS of the equations of the system of ODEs for given a
+        region and time point. The :math:`\lambda` parameter that accompanies
+        the susceptible numbers is dependent on the current number of
+        infectives and is computed using the updated multi-step infectivity
+        matrix of the system accorfing to the following formula:
 
-        Assuming y = [S, E1, E2, I1, I2, R] (the dependent variables in the
-        model)
-        Assuming the parameters are ordered like
-        parameters = [S0, E10, E20, I10, I20, R0, beta, kappa, gamma]
-        Let c = [beta, kappa, gamma]
-          = [parameters[0], parameters[1], parameters[2]],
-        then beta = c[0], kappa = c[1], gamma = c[2].
+        .. math::
+            \lambda_{r, t, i} = 1 - \prod_{j=1}^{n_A}[
+                (1-b_{r,ij}^{t})^{I1(r,t,j)+I2(r,t,j)}]
+
+        Parameters
+        ----------
+        t
+            (float) Time point at which we compute the evaluation.
+        r
+            (int) The index of the region to which the current instance of the
+            ODEs system refers.
+        y
+            (array) Array of all the compartments of the ODE system, segregated
+            by age-group. It assumes y = [S, E1, E2, I1, I2, R] where each
+            letter actually refers to all compartment of that type. (e.g. S
+            refers to the compartments of all ages of susceptibles).
+        c
+            (list) List values used to compute the parameters of the ODEs
+            system. It assumes c = [beta, kappa, gamma], where :math:`beta` -
+            encaplsulates temporal fluctuations in transmition for all ages.
+        num_a_groups
+            (int) Number of age groups in which the population is split. It
+            refers to the number of compartments of each type.
 
         """
+        # Read in the number of age-groups
         a = num_a_groups
+
+        # Split compartments into their types
         s, e1, e2, i1, i2, _ = (
             y[:a], y[a:(2*a)], y[(2*a):(3*a)],
             y[(3*a):(4*a)], y[(4*a):(5*a)], y[(5*a):])
 
-        # print(s, e1, e2, i1, i2, _)
+        # Read parameters of the system
         beta, dL, dI = c
         kappa = 2/dL
         gamma = 2/dI
+
+        # And identify the appropriate MultiTimesInfectivity matrix for the
+        # ODE system
+        pos = np.where(self._times <= t)
+        ind = pos[-1][-1]
         b = self.infectivity_timeline.compute_prob_infectivity_matrix(
-            r, t, s, beta)
+            r, t, s, beta[self._region-1][ind])
+
+        # Compute the current time, age and region-varying
+        # rate with which susceptible individuals become infected
         lam = np.empty_like(s)
         for i, l in enumerate(lam):
             prod = 0
@@ -135,6 +200,7 @@ class PheSEIRModel(object):
                 prod *= (1-b[i, j])**(i1[j]+i2[j])
             lam[i] = 1-prod
 
+        # Write actual RHS
         lam_times_s = np.multiply(lam, np.asarray(s))
         dydt = np.concatenate((
             -lam_times_s, lam_times_s - kappa * np.asarray(e1),
@@ -147,13 +213,24 @@ class PheSEIRModel(object):
 
     def _my_solver(self, times, num_a_groups):
         """
+        Computes the values in each compartment of the PHE ODEs system using
+        a 'homemade' solver in the context of the discretised time step version
+        of the model, as suggested in the paper in which it is referenced.
+
         Parameters
         ----------
         times
-            (list) List of time points at which
-        """
+            (list) List of time points at which we wish to evaluate the ODEs
+            system.
+        num_a_groups
+            (int) Number of age groups in which the population is split. It
+            refers to the number of compartments of each type.
 
+        """
+        # Split compartments into their types
         s, e1, e2, i1, i2, _ = np.asarray(self._y_init)[:, self._region-1]
+
+        # Read parameters of the system
         beta, dL, dI = self._c
         delta_t = self._delta_t
         kappa = delta_t * 2/dL
@@ -162,9 +239,16 @@ class PheSEIRModel(object):
         solution = np.ones((len(times), num_a_groups*6))
 
         for ind, t in enumerate(times):
-            b = self.infectivity_timeline.compute_prob_infectivity_matrix(
-                self._region, t, s, beta)
+            # Add present vlaues of the compartments to the solutions
+            solution[ind, :] = tuple(chain(s, e1, e2, i1, i2, _))
 
+            # And identify the appropriate MultiTimesInfectivity matrix for the
+            # ODE system
+            b = self.infectivity_timeline.compute_prob_infectivity_matrix(
+                self._region, t, s, beta[self._region-1][ind])
+
+            # Compute the current time, age and region-varying
+            # rate with which susceptible individuals become infected
             lam = np.empty_like(s)
             for i, l in enumerate(lam):
                 prod = 0
@@ -172,6 +256,7 @@ class PheSEIRModel(object):
                     prod *= (1-b[i, j])**(i1[j]+i2[j])
                 lam[i] = 1-prod
 
+            # Write down ODE system and compute new values for all compartments
             s_ = np.multiply(
                 np.asarray(s), (np.ones_like(lam) - delta_t * lam))
             e1_ = (1 - kappa) * np.asarray(e1) + np.multiply(
@@ -185,17 +270,25 @@ class PheSEIRModel(object):
                 s_.tolist(), e1_.tolist(), e2_.tolist(),
                 i1_.tolist(), i2_.tolist(), r_.tolist())
 
-            solution[ind, :] = tuple(chain(s, e1, e2, i1, i2, _))
-
         return({'y': np.transpose(solution)})
 
-    def _RK45_solver(self, times, num_a_groups, method):
+    def _scipy_solver(self, times, num_a_groups, method):
         """
+        Computes the values in each compartment of the PHE ODEs system using
+        the 'off-the-shelf' solver of the IVP from :module:`scipy`.
 
         Parameters
         ----------
         times
-            (list) List of time points at which
+            (list) List of time points at which we wish to evaluate the ODEs
+            system.
+        num_a_groups
+            (int) Number of age groups in which the population is split. It
+            refers to the number of compartments of each type.
+        method
+            (string) The type of solver implemented by the
+            :meth:`scipy.solve_ivp`.
+
         """
         # Initial conditions
         si, e1i, e2i, i1i, i2i, _i = np.asarray(
@@ -216,7 +309,44 @@ class PheSEIRModel(object):
             self, parameters, times, matrices_contact, time_changes_contact,
             regions, initial_r, matrices_region, time_changes_region,
             method):
-        """
+        r"""
+        Computes the number of individuals in each compartment at the given
+        time points and specified region.
+
+        Parameters
+        ----------
+        parameters
+            (list) List of quantities that characterise the PHE SEIR model in
+            this order: index of region for which we wish to simulate,
+            initial conditions matrices classifed by age (column name) and
+            region (row name) for each type of compartment (s, e1, e2, i1, i2,
+            r), temporal regional fluctuation matrix :math:`\beta`,
+            mean latent period :math:`d_L`, mean infection period :math:`d_I`
+            and time step for the 'homemade' solver.
+        times
+            (list) List of time points at which we wish to evaluate the ODEs
+            system.
+        matrices_contact
+            (list of ContactMatrix) Time-dependent contact matrices used for
+            the modelling.
+        time_changes_contact
+            (list) Times at which the next contact matrix recorded starts to be
+            used. In increasing order.
+        regions
+            (list) List of region names for the region-specific relative
+            susceptibility matrices.
+        matrices_region
+            (list of lists of RegionMatrix)) Time-dependent and region-specific
+            relative susceptibility matrices used for the modelling.
+        time_changes_region
+            (list) Times at which the next instances of region-specific
+            relative susceptibility matrices recorded start to be used. In
+            increasing order.
+        initial_r
+            (list) List of initial values of the reproduction number by region.
+        method
+            (string) The type of solver implemented by the simulator.
+
         """
         self._region = parameters[0]
         self._y_init = parameters[1:7]
@@ -233,11 +363,12 @@ class PheSEIRModel(object):
             self._y_init[0])
 
         self._num_ages = matrices_contact[0]._num_a_groups
+        self._times = np.asarray(times)
 
         if method == 'my-solver':
             sol = self._my_solver(times, self._num_ages)
         else:
-            sol = self._RK45_solver(times, self._num_ages, method)
+            sol = self._scipy_solver(times, self._num_ages, method)
 
         output = sol['y']
 
@@ -302,7 +433,7 @@ initial_r = [0.5, 1]
 
 parameters = [
     1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-    [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]], 1, 4, 4,
+    [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[1]*5, [1]*5], 4, 4,
     0.5]
 
 times = [1, 1.5, 2, 2.5, 3]
