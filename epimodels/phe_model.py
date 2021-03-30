@@ -320,7 +320,7 @@ class PheSEIRModel(object):
             this order: index of region for which we wish to simulate,
             initial conditions matrices classifed by age (column name) and
             region (row name) for each type of compartment (s, e1, e2, i1, i2,
-            r), temporal regional fluctuation matrix :math:`\beta`,
+            r), temporal and regional fluctuation matrix :math:`\beta`,
             mean latent period :math:`d_L`, mean infection period :math:`d_I`
             and time step for the 'homemade' solver.
         times
@@ -348,6 +348,66 @@ class PheSEIRModel(object):
             (string) The type of solver implemented by the simulator.
 
         """
+        # Check correct format of output
+        if not isinstance(times, list):
+            raise TypeError('Time points of evaluation must be given in a list \
+                format.')
+        for _ in times:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of evaluation must be integer or \
+                    float.')
+            if _ <= 0:
+                raise ValueError('Time points of evaluation must be > 0.')
+        if not isinstance(parameters, list):
+            raise TypeError('Parametrs must be given in a list format.')
+        if len(parameters) != 11:
+            raise ValueError('List of parameters needs to be of length 11.')
+        if not isinstance(parameters[0], int):
+            raise TypeError('Index of region to evaluate must be integer.')
+        if parameters[0] <= 0:
+            raise ValueError('Index of region to evaluate must be >= 1.')
+        if parameters[0] > len(regions):
+            raise ValueError('Index of region to evaluate is out of bounds.')
+        for _ in range(1, 7):
+            if np.asarray(parameters[_]).ndim != 2:
+                raise ValueError(
+                    'Storage format for the numbers in each type of compartment\
+                        must be 2-dimensional.')
+            if np.asarray(parameters[_]).shape[0] != len(regions):
+                raise ValueError(
+                    'Number of age-split compartments of each type does not match \
+                        that of the regions.')
+            if np.asarray(parameters[_]).shape[1] != len(
+                    matrices_contact[0].ages):
+                raise ValueError(
+                    'Number of age compartments of each type for given region does not match \
+                        that of age groups.')
+        if np.asarray(parameters[7]).ndim != 2:
+            raise ValueError(
+                'Storage format for the temporal and regional fluctuations in transmition\
+                    must be 2-dimensional.')
+        if np.asarray(parameters[7]).shape[0] != len(regions):
+            raise ValueError(
+                'Number of temporal and regional fluctuations in transmition does not match \
+                    that of the regions.')
+        if np.asarray(parameters[7]).shape[1] != len(times):
+            raise ValueError(
+                'Number of temporal and regional fluctuations in transmition does not match \
+                    that of time points.')
+        if not isinstance(parameters[8], float):
+            raise TypeError('Mean latent period must be float.')
+        if parameters[8] <= 0:
+            raise ValueError('Mean latent period must be > 0.')
+        if not isinstance(parameters[9], float):
+            raise TypeError('Mean infection period must be float.')
+        if parameters[9] <= 0:
+            raise ValueError('Mean infection period must be > 0.')
+        if not isinstance(parameters[10], float):
+            raise TypeError('Time step for ODE solver must be float.')
+        if parameters[10] <= 0:
+            raise ValueError('Time step for ODE solver must be > 0.')
+
+        # Split parameters into the features of the model
         self._region = parameters[0]
         self._y_init = parameters[1:7]
         self._c = parameters[7:10]
@@ -365,6 +425,7 @@ class PheSEIRModel(object):
         self._num_ages = matrices_contact[0]._num_a_groups
         self._times = np.asarray(times)
 
+        # Select method of simulation
         if method == 'my-solver':
             sol = self._my_solver(times, self._num_ages)
         else:
