@@ -394,12 +394,12 @@ class PheSEIRModel(object):
             raise ValueError(
                 'Number of temporal and regional fluctuations in transmition does not match \
                     that of time points.')
-        if not isinstance(parameters[8], float):
-            raise TypeError('Mean latent period must be float.')
+        if not isinstance(parameters[8], (float, int)):
+            raise TypeError('Mean latent period must be float or integer.')
         if parameters[8] <= 0:
             raise ValueError('Mean latent period must be > 0.')
-        if not isinstance(parameters[9], float):
-            raise TypeError('Mean infection period must be float.')
+        if not isinstance(parameters[9], (float, int)):
+            raise TypeError('Mean infection period must be float or integer.')
         if parameters[9] <= 0:
             raise ValueError('Mean infection period must be > 0.')
         if not isinstance(parameters[10], float):
