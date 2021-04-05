@@ -84,7 +84,7 @@ class PheSEIRModel(object):
         # i.e. S, E1, E2, I1, I2, R and Incidence
         self._n_outputs = len(self._output_names)
         # The default number of outputs is 7,
-        # i.e. 4 initial conditions and 3 parameters
+        # i.e. 6 initial conditions and 3 parameters
         self._n_parameters = len(self._parameter_names)
 
     def n_outputs(self):
