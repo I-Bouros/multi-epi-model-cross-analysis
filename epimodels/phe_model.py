@@ -236,16 +236,28 @@ class PheSEIRModel(object):
         kappa = delta_t * 2/dL
         gamma = delta_t * 2/dI
 
-        solution = np.ones((len(times), num_a_groups*6))
+        eval_times = np.around(np.arange(
+            times[0], times[-1]+delta_t, delta_t, dtype=np.float64), 5)
+        eval_indices = np.where(
+            np.array([(t in times) for t in eval_times]))[0].tolist()
 
-        for ind, t in enumerate(times):
+        ind_in_times = []
+        j = 0
+        for i, t in enumerate(eval_times):
+            if i >= eval_indices[j+1]:
+                j += 1
+            ind_in_times.append(j)
+
+        solution = np.ones((len(eval_times), num_a_groups*6))
+
+        for ind, t in enumerate(eval_times):
             # Add present vlaues of the compartments to the solutions
             solution[ind, :] = tuple(chain(s, e1, e2, i1, i2, _))
 
             # And identify the appropriate MultiTimesInfectivity matrix for the
             # ODE system
             b = self.infectivity_timeline.compute_prob_infectivity_matrix(
-                self._region, t, s, beta[self._region-1][ind])
+                self._region, t, s, beta[self._region-1][ind_in_times[ind]])
 
             # Compute the current time, age and region-varying
             # rate with which susceptible individuals become infected
@@ -269,6 +281,8 @@ class PheSEIRModel(object):
             s, e1, e2, i1, i2, _ = (
                 s_.tolist(), e1_.tolist(), e2_.tolist(),
                 i1_.tolist(), i2_.tolist(), r_.tolist())
+
+        solution = solution[tuple(eval_indices), :]
 
         return({'y': np.transpose(solution)})
 
@@ -495,7 +509,7 @@ initial_r = [0.5, 1]
 parameters = [
     1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
     [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[1]*5, [1]*5], 4, 4,
-    0.5]
+    0.005]
 
 times = [1, 1.5, 2, 2.5, 3]
 
