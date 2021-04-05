@@ -146,7 +146,7 @@ class RegionMatrix(ContactMatrix):
     modelling of epidemics. These matrices indicate the region-specific
     relative susceptibility of someone in a given age group (i) will get
     infected from somebody else in a different age group (j) at a given
-    time point (.. math:: `t_k`), assuming contact.
+    time point (:math: `t_k`), assuming contact.
 
     .. math::
         M_{r}^{t_k} = \{M_{r, ij}^{t_k}\}
