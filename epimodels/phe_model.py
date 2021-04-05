@@ -41,8 +41,8 @@ class PheSEIRModel(object):
     .. math::
         \frac{dS(r, t, i)}{dt} = -\lambda_{r, t, i} S(r, t, i),
     .. math::
-        \frac{dE_1(r, t, i)}{dt} = \lambda_{r, t, i} S(r, t, i) -
-         \kappa E_1(r, t, i),
+        \frac{dE_1(r, t, i)}{dt} = \lambda_{r, t, i} S(
+            r, t, i) - \kappa E_1(r, t, i),
     .. math::
         \frac{dE_2(r, t, i)}{dt} = \kappa E_1(r, t, i) - \kappa E_2(r, t, i),
     .. math::
