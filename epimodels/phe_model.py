@@ -87,9 +87,6 @@ class PheSEIRModel(object):
         # i.e. 4 initial conditions and 3 parameters
         self._n_parameters = len(self._parameter_names)
 
-        self._contacts = matrices_contact
-        self._region = matrices_region
-
     def n_outputs(self):
         """
         Returns the number of outputs.
