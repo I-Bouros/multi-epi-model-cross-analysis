@@ -50,7 +50,7 @@ class PheSEIRModel(object):
     .. math::
         \frac{dI_2(r, t, i)}{dt} = \gamma I_1(r, t, i) - \gamma I_2(r, t, i),
     .. math::
-        \frac{dR(r, t, i)}{dt} = \gamma I_2(r, t, i),,
+        \frac{dR(r, t, i)}{dt} = \gamma I_2(r, t, i),
     where :math:`S(0) = S_0, E(0) = E_0, I(O) = I_0, R(0) = R_0`
     are also parameters of the model (evaluation at 0 refers to the
     compartments' structure at intial time.
