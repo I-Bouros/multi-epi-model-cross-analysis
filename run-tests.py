@@ -143,7 +143,8 @@ def doctest_rst_and_public_interface():
     # this list.
     epimodels_submodules = [
         'epimodels.version_info',
-        'epimodels._contact_matrix'
+        'epimodels._setup_matrices',
+        'epimodels.phe_model'
         ]
 
     doc_symbols = get_all_documented_symbols()
