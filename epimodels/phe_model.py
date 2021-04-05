@@ -415,8 +415,9 @@ class PheSEIRModel(object):
             raise TypeError('Mean infection period must be float or integer.')
         if parameters[9] <= 0:
             raise ValueError('Mean infection period must be > 0.')
-        if not isinstance(parameters[10], float):
-            raise TypeError('Time step for ODE solver must be float.')
+        if not isinstance(parameters[10], (float, int)):
+            raise TypeError(
+                'Time step for ODE solver must be float or integer.')
         if parameters[10] <= 0:
             raise ValueError('Time step for ODE solver must be > 0.')
 
@@ -467,52 +468,3 @@ class PheSEIRModel(object):
         output = output[self._output_indices, :]
 
         return output.transpose()
-
-
-regions = ['London', 'Cornwall']
-age_groups = ['0-10', '10-25']
-
-# Initial state of the system
-contact_data_matrix_0 = np.array([[1, 0], [0, 3]])
-contact_data_matrix_1 = np.array([[10, 5.2], [0, 3]])
-
-region_data_matrix_0_0 = np.array([[0.5, 0], [0, 6]])
-region_data_matrix_0_1 = np.array([[1, 10], [1, 0]])
-region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
-region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
-
-susceptibles = [[5, 6], [7, 8]]
-dI = 4
-
-contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
-contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
-regional_0_0 = em.RegionMatrix(
-    regions[0], age_groups, region_data_matrix_0_0)
-regional_0_1 = em.RegionMatrix(
-    regions[1], age_groups, region_data_matrix_0_1)
-regional_1_0 = em.RegionMatrix(
-    regions[0], age_groups, region_data_matrix_1_0)
-regional_1_1 = em.RegionMatrix(
-    regions[1], age_groups, region_data_matrix_1_1)
-
-# Matrices contact
-matrices_contact = [contacts_0, contacts_1]
-time_changes_contact = [1, 3]
-matrices_region = [
-    [regional_0_0, regional_0_1],
-    [regional_1_0, regional_1_1]]
-time_changes_region = [1, 2]
-
-initial_r = [0.5, 1]
-
-parameters = [
-    1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-    [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[1]*5, [1]*5], 4, 4,
-    0.005]
-
-times = [1, 1.5, 2, 2.5, 3]
-
-print(PheSEIRModel().simulate(
-    parameters, times, matrices_contact, time_changes_contact,
-    regions, initial_r, matrices_region, time_changes_region,
-    method='my-solver'))
