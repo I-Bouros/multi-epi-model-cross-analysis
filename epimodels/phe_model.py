@@ -33,16 +33,18 @@ class PheSEIRModel(object):
     region (:math:`r`) and every individual will belong to one of the
     compartments of the SEIR model.
 
-    The general SEIR Model has four compartments: susceptible individuals
-    (:math:`S`), exposed but not yet infectious (:math:`E`), infectious
-    (:math:`I`) and recovered (:math:`R`).
+    The general SEIR Model has four compartments:
+     * susceptible individuals (:math:`S`),
+     * exposed but not yet infectious (:math:`E`),
+     * infectious (:math:`I`) and
+     * recovered (:math:`R`).
 
     In the PHE model framework, the exposed and infectious compartments
     .. math::
         \frac{dS(r, t, i)}{dt} = -\lambda_{r, t, i} S(r, t, i),
     .. math::
-        \frac{dE_1(r, t, i)}{dt} = \lambda_{r, t, i} S(
-            r, t, i) - \kappa E_1(r, t, i),
+        \frac{dE_1(r, t, i)}{dt} =
+            \lambda_{r, t, i} S(r, t, i) - \kappa E_1(r, t, i),
     .. math::
         \frac{dE_2(r, t, i)}{dt} = \kappa E_1(r, t, i) - \kappa E_2(r, t, i),
     .. math::
