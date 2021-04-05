@@ -54,6 +54,10 @@ class TestPheSEIRModel(unittest.TestCase):
         outputs = ['S', 'I1', 'I2', 'Incidence']
         model.set_outputs(outputs)
 
+        with self.assertRaises(ValueError):
+            outputs1 = ['S', 'E', 'I1', 'I2', 'Incidence']
+            model.set_outputs(outputs1)
+
     def test_simulate(self):
         model = em.PheSEIRModel()
 
