@@ -87,6 +87,8 @@ class PheSEIRModel(object):
         # i.e. 6 initial conditions and 3 parameters
         self._n_parameters = len(self._parameter_names)
 
+        self._output_indices = np.arange(self._n_outputs)
+
     def n_outputs(self):
         """
         Returns the number of outputs.
