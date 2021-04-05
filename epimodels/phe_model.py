@@ -142,11 +142,10 @@ class PheSEIRModel(object):
         region and time point. The :math:`\lambda` parameter that accompanies
         the susceptible numbers is dependent on the current number of
         infectives and is computed using the updated multi-step infectivity
-        matrix of the system accorfing to the following formula:
+        matrix of the system according to the following formula:
 
         .. math::
-            \lambda_{r, t, i} = 1 - \prod_{j=1}^{n_A}[
-                (1-b_{r,ij}^{t})^{I1(r,t,j)+I2(r,t,j)}]
+            \lambda_{r, t, i} = 1 - \prod_{j=1}^{n_A}[(1-b_{r,ij}^{t})^{I1(r,t,j)+I2(r,t,j)}]  # noqa
 
         Parameters
         ----------
