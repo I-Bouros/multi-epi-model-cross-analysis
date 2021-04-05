@@ -830,6 +830,18 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
         with self.assertRaises(TypeError):
             m.compute_prob_infectivity_matrix(1, 3, susceptibles[2][0], '1')
 
+        with self.assertRaises(ValueError):
+            m.compute_prob_infectivity_matrix(1, 3, [[5, 6], [7, 8]], 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_prob_infectivity_matrix(1, 3, [5, 6, 0], 1)
+
+        with self.assertRaises(TypeError):
+            m.compute_prob_infectivity_matrix(1, 3, [5, '6'], 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_prob_infectivity_matrix(1, 3, [5, -6], 1)
+
     def test_compute_reproduction_number(self):
         regions = ['London', 'Cornwall']
         age_groups = ['0-10', '10-25']

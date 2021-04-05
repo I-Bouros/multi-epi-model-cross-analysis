@@ -731,6 +731,9 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
             if not isinstance(_, (np.integer, np.floating)):
                 raise TypeError(
                     'Number of susceptibles must be integer or float.')
+            if _ < 0:
+                raise ValueError(
+                    'Number of susceptibles must be non-negative.')
 
     def _check_later_input(self, r, t_k, temp_variation, susceptibles):
         """
