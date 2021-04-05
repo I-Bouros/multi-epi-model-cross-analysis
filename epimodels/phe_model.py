@@ -34,10 +34,10 @@ class PheSEIRModel(object):
     compartments of the SEIR model.
 
     The general SEIR Model has four compartments:
-     * susceptible individuals (:math:`S`),
-     * exposed but not yet infectious (:math:`E`),
-     * infectious (:math:`I`) and
-     * recovered (:math:`R`).
+        * susceptible individuals (:math:`S`),
+        * exposed but not yet infectious (:math:`E`),
+        * infectious (:math:`I`) and
+        * recovered (:math:`R`).
 
     In the PHE model framework, the exposed and infectious compartments
     .. math::
