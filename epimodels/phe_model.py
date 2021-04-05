@@ -37,20 +37,22 @@ class PheSEIRModel(object):
     (:math:`S`), exposed but not yet infectious (:math:`E`), infectious
     (:math:`I`) and recovered (:math:`R`).
 
-    In the PHE model framework, the exposed and infectious compartments
+    In the PHE model framework, the exposed and infectious compartments:
     .. math::
-        \frac{dS(r, t, i)}{dt} = -\lambda_{r, t, i} S(r, t, i),
-    .. math::
-        \frac{dE_1(r, t, i)}{dt} = \lambda_{r, t, i} S(
-            r, t, i) - \kappa E_1(r, t, i),
-    .. math::
-        \frac{dE_2(r, t, i)}{dt} = \kappa E_1(r, t, i) - \kappa E_2(r, t, i),
-    .. math::
-        \frac{dI_1(r, t, i)}{dt} = \kappa E_2(r, t, i) - \gamma I_1(r, t, i),
-    .. math::
-        \frac{dI_2(r, t, i)}{dt} = \gamma I_1(r, t, i) - \gamma I_2(r, t, i),
-    .. math::
-        \frac{dR(r, t, i)}{dt} = \gamma I_2(r, t, i),
+       :nowrap:
+
+        \begin{eqnarray}
+            \frac{dS(r, t, i)}{dt} = -\lambda_{r, t, i} S(r, t, i) \\
+            \frac{dE_1(r, t, i)}{dt} = \lambda_{r, t, i} S(
+                r, t, i) - \kappa E_1(r, t, i) \\
+            \frac{dE_2(r, t, i)}{dt} = \kappa E_1(r, t, i) - \kappa E_2(
+                r, t, i) \\
+            \frac{dI_1(r, t, i)}{dt} = \kappa E_2(r, t, i) - \gamma I_1(
+                r, t, i) \\
+            \frac{dI_2(r, t, i)}{dt} = \gamma I_1(r, t, i) - \gamma I_2(
+                r, t, i) \\
+            \frac{dR(r, t, i)}{dt} = \gamma I_2(r, t, i)
+        \end{eqnarray}
 
     where :math:`S(0) = S_0, E(0) = E_0, I(O) = I_0, R(0) = R_0`
     are also parameters of the model (evaluation at 0 refers to the

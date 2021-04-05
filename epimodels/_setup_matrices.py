@@ -486,7 +486,7 @@ class UniInfectivityMatrix(object):
         The matrix is computed using this formula:
 
         .. math::
-            \b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
+            b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
                 R^{\star}_{t_k, r}}{R^{\star}_{0, r}}
 
         where .. math::`\beta_{t_k, r}` is the further temporal correction
