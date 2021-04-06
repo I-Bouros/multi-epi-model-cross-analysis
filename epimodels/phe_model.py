@@ -6,15 +6,6 @@
 # released under the MIT license. See accompanying LICENSE for copyright
 # notice and full license details.
 #
-"""
-This script contains code for modelling the extended SEIR model created by
-Public Health England and Univerity of Cambridge and which is the official
-model used by the UK government for policy making.
-
-It uses an extended version of an SEIR model and contact and region specific
-matrices.
-
-"""
 
 from itertools import chain
 
