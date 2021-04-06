@@ -66,10 +66,12 @@ class PheSEIRModel(object):
     time:
 
     .. math::
-        \kappa = \frac{2}{d_L}
+        :nowrap:
 
-    .. math::
-        \gamma = \frac{2}{d_I}
+        \begin{eqnarray}
+            \kappa = \frac{2}{d_L}
+            \gamma = \frac{2}{d_I}
+        \end{eqnarray}
 
     where :math:`d_L` refers to mean latent period until disease onset and
     :math:`d_I` to mean period of infection.
