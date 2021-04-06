@@ -29,6 +29,17 @@ class PheSEIRModel(object):
     Base class for constructing the ODE model: deterministic SEIR used by the
     Public Health England to model the Covid-19 epidemic in UK based on region.
 
+    The population is structured according to their age-group (:math:`i`) and
+    region (:math:`r`) and every individual will belong to one of the
+    compartments of the SEIR model.
+
+    The general SEIR Model has four compartments - susceptible individuals
+    (:math:`S`), exposed but not yet infectious (:math:`E`), infectious
+    (:math:`I`) and recovered (:math:`R`).
+
+    In the PHE model framework, the exposed and infectious compartments are
+    split in two:
+
     .. math::
        :nowrap:
 
