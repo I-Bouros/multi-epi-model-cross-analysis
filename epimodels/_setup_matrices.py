@@ -283,7 +283,7 @@ class UniNextGenMatrix(object):
     r"""UniNextGenMatrix
     Class for generator matrices which are then used to determine
     the evolution of number of infectives as time goes on according
-    to the following formulae - at fixed time .. math::`t_k` and
+    to the following formulae - at fixed time :math:`t_k` and
     in specific region r:
 
     .. math::
@@ -405,10 +405,10 @@ class UniInfectivityMatrix(object):
     a given region and specified time point of getting infected as well
     as reproduction number for subsequent time points.
 
-    Both quanities are computed using .. math::`\beta_{t_k, r}` is the further
+    Both quanities are computed using :math:`\beta_{t_k, r}` is the further
     temporal correction term, linked to fluctuations in transmission,
-    .. math::`R_{0, r}` is the initial reproduction number in region r and
-    .. math::`R^{\star}_{0, r}` is the dominant eigenvalue of the initial next
+    :math:`R_{0, r}` is the initial reproduction number in region r and
+    :math:`R^{\star}_{0, r}` is the dominant eigenvalue of the initial next
     generation matrix for region r.
 
     Parameters
@@ -449,10 +449,10 @@ class UniInfectivityMatrix(object):
             \b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
                 \widetilde{C}_{r, ij}^{t_k}}{R^{\star}_{0, r}}
 
-        where .. math::`\beta_{t_k, r}` is the further temporal correction
-        term, linked to fluctuations in transmission, .. math::`R_{0, r}` is
+        where :math:`\beta_{t_k, r}` is the further temporal correction
+        term, linked to fluctuations in transmission, :math:`R_{0, r}` is
         the initial reproduction number in region r and
-        .. math::`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
+        :math:`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
         next generation matrix for region r.
 
         Parameters
@@ -489,13 +489,13 @@ class UniInfectivityMatrix(object):
             b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
                 R^{\star}_{t_k, r}}{R^{\star}_{0, r}}
 
-        where .. math::`\beta_{t_k, r}` is the further temporal correction
-        term, linked to fluctuations in transmission, .. math::`R_{0, r}` is
+        where :math:`\beta_{t_k, r}` is the further temporal correction
+        term, linked to fluctuations in transmission, :math:`R_{0, r}` is
         the initial reproduction number in region r and
-        .. math::`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
+        :math:`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
         next generation matrix for region r.
 
-        The .. math::`R^{\star}_{t_k, r}` is the dominant eigenvalue of the
+        The :math:`R^{\star}_{t_k, r}` is the dominant eigenvalue of the
         current time next generation matrix for region r:
 
         .. math::
@@ -783,10 +783,10 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
             \b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
                 \widetilde{C}_{r, ij}^{t_k}}{R^{\star}_{0, r}}
 
-        where .. math::`\beta_{t_k, r}` is the further temporal correction
-        term, linked to fluctuations in transmission, .. math::`R_{0, r}` is
+        where :math:`\beta_{t_k, r}` is the further temporal correction
+        term, linked to fluctuations in transmission, :math:`R_{0, r}` is
         the initial reproduction number in region r and
-        .. math::`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
+        :math:`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
         next generation matrix for region r.
 
         Parameters
@@ -840,13 +840,13 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
             \b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
                 R^{\star}_{t_k, r}}{R^{\star}_{0, r}}
 
-        where .. math::`\beta_{t_k, r}` is the further temporal correction
-        term, linked to fluctuations in transmission, .. math::`R_{0, r}` is
+        where :math:`\beta_{t_k, r}` is the further temporal correction
+        term, linked to fluctuations in transmission, :math:`R_{0, r}` is
         the initial reproduction number in region r and
-        .. math::`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
+        :math:`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
         next generation matrix for region r.
 
-        The .. math::`R^{\star}_{t_k, r}` is the dominant eigenvalue of the
+        The :math:`R^{\star}_{t_k, r}` is the dominant eigenvalue of the
         current time next generation matrix for region r:
 
         .. math::
