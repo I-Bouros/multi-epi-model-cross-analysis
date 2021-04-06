@@ -67,6 +67,7 @@ class PheSEIRModel(object):
 
     .. math::
         \kappa = \frac{2}{d_L}
+
     .. math::
         \gamma = \frac{2}{d_I}
 
