@@ -34,7 +34,7 @@ cd ../path/to/the/file
 A different method to install this is using `pip`:
 
 ```bash
-pip install -i https://test.pypi.org/simple/ epimodels==0.0.1
+pip install -e .
 ```
 
 ## Usage
