@@ -40,7 +40,6 @@ class PheSEIRModel(object):
     In the PHE model framework, the exposed and infectious compartments:
     .. math::
        :nowrap:
-
         \begin{eqnarray}
             \frac{dS(r, t, i)}{dt} = -\lambda_{r, t, i} S(r, t, i) \\
             \frac{dE_1(r, t, i)}{dt} = \lambda_{r, t, i} S(
