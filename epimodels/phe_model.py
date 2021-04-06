@@ -467,8 +467,4 @@ class PheSEIRModel(object):
         # Output is a matrix with rows being S, E1, I1, R1 and Incidence
         output = np.concatenate((output, n_incidence), axis=0)
 
-        # Get the selected outputs
-        self._output_indices = np.arange(self._n_outputs * self._num_ages)
-        output = output[self._output_indices, :]
-
         return output.transpose()
