@@ -6,6 +6,15 @@
 # released under the MIT license. See accompanying LICENSE for copyright
 # notice and full license details.
 #
+"""
+This script contains code for modelling the extended SEIR model created by
+Public Health England and Univerity of Cambridge and which is the official
+model used by the UK government for policy making.
+
+It uses an extended version of an SEIR model and contact and region specific
+matrices.
+
+"""
 
 from itertools import chain
 
@@ -20,13 +29,13 @@ class PheSEIRModel(object):
     Base class for constructing the ODE model: deterministic SEIR used by the
     Public Health England to model the Covid-19 epidemic in UK based on region.
 
-    The population is structured according to their age-group (:math:`i`) and
-    region (:math:`r`) and every individual will belong to one of the
+    The population is structured according to their age-group (i) and
+    region (r) and every individual will belong to one of the
     compartments of the SEIR model.
 
     The general SEIR Model has four compartments: susceptible individuals
-    (:math:`S`), exposed but not yet infectious (:math:`E`), infectious
-    (:math:`I`) and recovered (:math:`R`).
+    (S), exposed but not yet infectious (E), infectious
+    (I) and recovered (R).
 
     In the PHE model framework, the exposed and infectious compartments:
     .. math::
@@ -45,15 +54,15 @@ class PheSEIRModel(object):
             \frac{dR(r, t, i)}{dt} = \gamma I_2(r, t, i)
         \end{eqnarray}
 
-    where :math:`S(0) = S_0, E(0) = E_0, I(O) = I_0, R(0) = R_0`
+    where S(0) = S_0, E(0) = E_0, I(O) = I_0, R(0) = R_0
     are also parameters of the model (evaluation at 0 refers to the
     compartments' structure at intial time.
 
-    The parameter :math:`\lambda_{r, t, i}` is the time, age and region-varying
+    The parameter lambda_{r, t, i} is the time, age and region-varying
     rate with which susceptible individuals become infected, which in the
     context of the PHE model depends on contact and region-specific relative
-    susceptibility matrices. The other two parameters, :math:`\kappa` and
-    :math:`\gamma` are virsus specific and so do not depend with region, age or
+    susceptibility matrices. The other two parameters, kappa and
+    gamma are virsus specific and so do not depend with region, age or
     time
 
     .. math::
@@ -61,8 +70,8 @@ class PheSEIRModel(object):
     .. math::
         \gamma = \frac{2}{d_I}
 
-    where :math:`d_L` refers to mean latent period until disease onset and
-    :math:`d_I` to mean period of infection.
+    where d_L refers to mean latent period until disease onset and
+    d_I to mean period of infection.
 
     """
 
@@ -134,7 +143,7 @@ class PheSEIRModel(object):
     def _right_hand_side(self, t, r, y, c, num_a_groups):
         r"""
         Constructs the RHS of the equations of the system of ODEs for given a
-        region and time point. The :math:`\lambda` parameter that accompanies
+        region and time point. The lambda parameter that accompanies
         the susceptible numbers is dependent on the current number of
         infectives and is computed using the updated multi-step infectivity
         matrix of the system according to the following formula
@@ -327,9 +336,9 @@ class PheSEIRModel(object):
             this order: index of region for which we wish to simulate,
             initial conditions matrices classifed by age (column name) and
             region (row name) for each type of compartment (s, e1, e2, i1, i2,
-            r), temporal and regional fluctuation matrix :math:`\beta`,
-            mean latent period :math:`d_L`, mean infection period :math:`d_I`
-            and time step for the 'homemade' solver.
+            r), temporal and regional fluctuation matrix beta, mean latent
+            period d_L, mean infection period d_I and time step for the
+            'homemade' solver.
         times
             (list) List of time points at which we wish to evaluate the ODEs
             system.
