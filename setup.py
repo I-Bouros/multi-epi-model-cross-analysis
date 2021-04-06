@@ -70,6 +70,7 @@ setup(
         'numpy>=1.8',
         'pandas',
         'scipy',
+        'pints @ git+git://github.com/pints-team/pints.git#egg=pints-latest',
         'plotly'
     ],
     extras_require={

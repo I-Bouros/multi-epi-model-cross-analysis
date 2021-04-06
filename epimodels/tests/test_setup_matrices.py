@@ -440,13 +440,11 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
             time_changes_region,
             initial_r,
             dI,
-            susceptibles)
+            susceptibles[0])
 
+        self.assertEqual(m._regions, ['London', 'Cornwall'])
         npt.assert_array_equal(m.initial_r, np.array([0.5, 1]))
         self.assertEqual(m.dI, 4)
-        npt.assert_array_equal(
-            m.susceptibles,
-            np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[0, 2], [1, 1]]]))
         npt.assert_array_equal(m.times_contact, np.array([1, 3]))
         npt.assert_array_equal(m.times_region, np.array([1, 2]))
         self.assertCountEqual(m.contact_matrices, matrices_contact)
@@ -462,7 +460,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(TypeError):
             em.MultiTimesInfectivity(
@@ -473,7 +471,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -484,7 +482,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -495,7 +493,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(TypeError):
             em.MultiTimesInfectivity(
@@ -506,7 +504,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -517,7 +515,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -528,7 +526,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(TypeError):
             em.MultiTimesInfectivity(
@@ -539,7 +537,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -550,7 +548,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             matrices_region_1 = [[regional_0_0], [regional_1_0]]
@@ -563,7 +561,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(TypeError):
             matrices_region_1 = [
@@ -579,7 +577,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             matrices_region_1 = [
@@ -600,7 +598,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -611,7 +609,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 1,
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -622,7 +620,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 [1, 2, 3],
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(TypeError):
             em.MultiTimesInfectivity(
@@ -633,7 +631,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 [1, '2'],
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -644,7 +642,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 [0, 2],
                 initial_r,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -655,7 +653,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 0.5,
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -666,7 +664,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 [0.5],
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(TypeError):
             em.MultiTimesInfectivity(
@@ -677,7 +675,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 [0.5, '1'],
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -688,7 +686,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 [0.5, 0],
                 dI,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(TypeError):
             em.MultiTimesInfectivity(
@@ -699,7 +697,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 '4',
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -710,7 +708,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 0,
-                susceptibles)
+                susceptibles[0])
 
         with self.assertRaises(ValueError):
             em.MultiTimesInfectivity(
@@ -724,19 +722,6 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 [1])
 
         with self.assertRaises(ValueError):
-            susceptibles_1 = [[[1, 2], [3, 4]]]
-
-            em.MultiTimesInfectivity(
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                matrices_region,
-                time_changes_region,
-                initial_r,
-                dI,
-                susceptibles_1)
-
-        with self.assertRaises(ValueError):
             susceptibles_1 = [[[1], [3]], [[5], [7]], [[0], [1]]]
 
             em.MultiTimesInfectivity(
@@ -747,7 +732,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles_1)
+                susceptibles_1[0])
 
         with self.assertRaises(ValueError):
             susceptibles_1 = [[[1, 2]], [[5, 6]], [[0, 2]]]
@@ -760,11 +745,11 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles_1)
+                susceptibles_1[0])
 
         with self.assertRaises(TypeError):
             susceptibles_1 = [
-                [[1, 2], [3, 4]], [[5, '6'], [7, 8]], [[0, 2], [1, 1]]]
+                [[1, '2'], [3, 4]], [[5, 6], [7, 8]], [[0, 2], [1, 1]]]
 
             em.MultiTimesInfectivity(
                 matrices_contact,
@@ -774,7 +759,7 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
                 time_changes_region,
                 initial_r,
                 dI,
-                susceptibles_1)
+                susceptibles_1[0])
 
     def test_compute_prob_infectivity_matrix(self):
         regions = ['London', 'Cornwall']
@@ -821,32 +806,41 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
             time_changes_region,
             initial_r,
             dI,
-            susceptibles)
+            susceptibles[0])
 
         npt.assert_array_equal(
-            m.compute_prob_infectivity_matrix(1, 3, 1),
+            m.compute_prob_infectivity_matrix(1, 3, susceptibles[2][0], 1),
             np.array([[5/288, 13/600], [0, 1/16]]))
 
         with self.assertRaises(TypeError):
-            m.compute_prob_infectivity_matrix('1', 3, 1)
+            m.compute_prob_infectivity_matrix('1', 3, susceptibles[2][0], 1)
 
         with self.assertRaises(ValueError):
-            m.compute_prob_infectivity_matrix(3, 3, 1)
+            m.compute_prob_infectivity_matrix(3, 3, susceptibles[2][0], 1)
 
         with self.assertRaises(ValueError):
-            m.compute_prob_infectivity_matrix(0, 3, 1)
+            m.compute_prob_infectivity_matrix(0, 3, susceptibles[2][0], 1)
 
         with self.assertRaises(TypeError):
-            m.compute_prob_infectivity_matrix(1, '3', 1)
+            m.compute_prob_infectivity_matrix(1, '3', susceptibles[2][0], 1)
 
         with self.assertRaises(ValueError):
-            m.compute_prob_infectivity_matrix(1, 5, 1)
-
-        with self.assertRaises(ValueError):
-            m.compute_prob_infectivity_matrix(1, 0, 1)
+            m.compute_prob_infectivity_matrix(1, 0, susceptibles[2][0], 1)
 
         with self.assertRaises(TypeError):
-            m.compute_prob_infectivity_matrix(1, 3, '1')
+            m.compute_prob_infectivity_matrix(1, 3, susceptibles[2][0], '1')
+
+        with self.assertRaises(ValueError):
+            m.compute_prob_infectivity_matrix(1, 3, [[5, 6], [7, 8]], 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_prob_infectivity_matrix(1, 3, [5, 6, 0], 1)
+
+        with self.assertRaises(TypeError):
+            m.compute_prob_infectivity_matrix(1, 3, [5, '6'], 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_prob_infectivity_matrix(1, 3, [5, -6], 1)
 
     def test_compute_reproduction_number(self):
         regions = ['London', 'Cornwall']
@@ -893,27 +887,25 @@ class TestMultiTimesInfectivityClass(unittest.TestCase):
             time_changes_region,
             initial_r,
             dI,
-            susceptibles)
+            susceptibles[0])
 
-        self.assertEqual(m.compute_reproduction_number(1, 3, 1), 0.5)
-
-        with self.assertRaises(TypeError):
-            m.compute_reproduction_number('1', 3, 1)
-
-        with self.assertRaises(ValueError):
-            m.compute_reproduction_number(3, 3, 1)
-
-        with self.assertRaises(ValueError):
-            m.compute_reproduction_number(0, 3, 1)
+        self.assertEqual(m.compute_reproduction_number(
+            1, 3, susceptibles[2][0]), 0.5)
 
         with self.assertRaises(TypeError):
-            m.compute_reproduction_number(1, '3', 1)
+            m.compute_reproduction_number('1', 3, susceptibles[2][0], 1)
 
         with self.assertRaises(ValueError):
-            m.compute_reproduction_number(1, 5, 1)
+            m.compute_reproduction_number(3, 3, susceptibles[2][0], 1)
 
         with self.assertRaises(ValueError):
-            m.compute_reproduction_number(1, 0, 1)
+            m.compute_reproduction_number(0, 3, susceptibles[2][0], 1)
 
         with self.assertRaises(TypeError):
-            m.compute_reproduction_number(1, 3, '1')
+            m.compute_reproduction_number(1, '3', susceptibles[2][0], 1)
+
+        with self.assertRaises(ValueError):
+            m.compute_reproduction_number(1, 0, susceptibles[2][0], 1)
+
+        with self.assertRaises(TypeError):
+            m.compute_reproduction_number(1, 3, susceptibles[2][0], '1')
