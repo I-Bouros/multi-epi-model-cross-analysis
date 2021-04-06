@@ -25,57 +25,6 @@ import epimodels as em
 
 
 class PheSEIRModel(object):
-    r"""PheSEIRModel Class:
-    Base class for constructing the ODE model: deterministic SEIR used by the
-    Public Health England to model the Covid-19 epidemic in UK based on region.
-
-    The population is structured according to their age-group (:math:`i`) and
-    region (:math:`r`) and every individual will belong to one of the
-    compartments of the SEIR model.
-
-    The general SEIR Model has four compartments: susceptible individuals
-    (:math:`S`), exposed but not yet infectious (:math:`E`), infectious
-    (:math:`I`) and recovered (:math:`R`).
-
-    In the PHE model framework, the exposed and infectious compartments:
-    .. math::
-       :nowrap:
-
-        \begin{eqnarray}
-            \frac{dS(r, t, i)}{dt} = -\lambda_{r, t, i} S(r, t, i) \\
-            \frac{dE_1(r, t, i)}{dt} = \lambda_{r, t, i} S(
-                r, t, i) - \kappa E_1(r, t, i) \\
-            \frac{dE_2(r, t, i)}{dt} = \kappa E_1(r, t, i) - \kappa E_2(
-                r, t, i) \\
-            \frac{dI_1(r, t, i)}{dt} = \kappa E_2(r, t, i) - \gamma I_1(
-                r, t, i) \\
-            \frac{dI_2(r, t, i)}{dt} = \gamma I_1(r, t, i) - \gamma I_2(
-                r, t, i) \\
-            \frac{dR(r, t, i)}{dt} = \gamma I_2(r, t, i)
-        \end{eqnarray}
-
-    where :math:`S(0) = S_0, E(0) = E_0, I(O) = I_0, R(0) = R_0`
-    are also parameters of the model (evaluation at 0 refers to the
-    compartments' structure at intial time.
-
-    The parameter :math:`\lambda_{r, t, i}` is the time, age and region-varying
-    rate with which susceptible individuals become infected, which in the
-    context of the PHE model depends on contact and region-specific relative
-    susceptibility matrices. The other two parameters, :math:`\kappa` and
-    :math:`\gamma` are virsus specific and so do not depend with region, age or
-    time
-
-    .. math::
-        \kappa = \frac{2}{d_L}
-
-    .. math::
-        \gamma = \frac{2}{d_I}
-
-    where :math:`d_L` refers to mean latent period until disease onset and
-    :math:`d_I` to mean period of infection.
-
-    """
-
     def __init__(self):
         super(PheSEIRModel, self).__init__()
 
