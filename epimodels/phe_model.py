@@ -71,7 +71,7 @@ class PheSEIRModel(object):
         :nowrap:
 
         \begin{eqnarray}
-            \kappa = \frac{2}{d_L}
+            \kappa = \frac{2}{d_L} \\
             \gamma = \frac{2}{d_I}
         \end{eqnarray}
 
