@@ -16,8 +16,9 @@ class ContactMatrix():
     r"""ContactMatrix Class:
     Base class for constructing a contact matrix to be used in the
     modelling of epidemics. These matrices indicate the number
-    of people a person in a given age group (i) will interact on average
-    with people in a different age group (j) at a given time point (t_k).
+    of people a person in a given age group (:math:`i`) will interact on
+    average with people in a different age group (:math:`j`) at a given
+    time point (:math:`t_k`).
 
     .. math::
         C^{t_k} = \{C_{ij}^{t_k}\}
@@ -144,9 +145,9 @@ class RegionMatrix(ContactMatrix):
     r"""RegionMatrix Class:
     Base class for constructing a region matrix to be used in the
     modelling of epidemics. These matrices indicate the region-specific
-    relative susceptibility of someone in a given age group (i) will get
-    infected from somebody else in a different age group (j) at a given
-    time point (:math: `t_k`), assuming contact.
+    relative susceptibility of someone in a given age group (:math:`i`) will
+    get infected from somebody else in a different age group (:math:`j`) at a
+    given time point (:math:`t_k`), assuming contact.
 
     .. math::
         M_{r}^{t_k} = \{M_{r, ij}^{t_k}\}
@@ -284,7 +285,7 @@ class UniNextGenMatrix(object):
     Class for generator matrices which are then used to determine
     the evolution of number of infectives as time goes on according
     to the following formulae - at fixed time :math:`t_k` and
-    in specific region r:
+    in specific region :math:`r`:
 
     .. math::
        :nowrap:
@@ -358,18 +359,18 @@ class UniNextGenMatrix(object):
 
     def _compute_unnormalised_next_gen_matrix(self):
         """
-        Computes unnormalised next genearation matrix. Element (i, j) refers
-        the expected number of new infections in age group i caused by an
-        infectious in age group j.
+        Computes unnormalised next genearation matrix. Element :math:`(i, j)`
+        refers the expected number of new infections in age group :math:`i`
+        caused by an infectious in age group :math:`j`.
 
         """
         return np.multiply(self.contacts, self.regional_suscep)
 
     def _compute_next_gen_matrix(self):
         """
-        Computes next genearation matrix. Element (i, j) refers the expected
-        number of new infections in age group i caused by infectious in age
-        group j.
+        Computes next genearation matrix. Element :math:`(i, j)` refers the
+        expected number of new infections in age group :math:`i` caused by
+        infectious in age group :math:`j`.
 
         """
         # Computes next genearation matrix. Element (i, j) refers the expected
@@ -407,9 +408,9 @@ class UniInfectivityMatrix(object):
 
     Both quanities are computed using :math:`\beta_{t_k, r}` is the further
     temporal correction term, linked to fluctuations in transmission,
-    :math:`R_{0, r}` is the initial reproduction number in region r and
+    :math:`R_{0, r}` is the initial reproduction number in region :math:`r` and
     :math:`R^{\star}_{0, r}` is the dominant eigenvalue of the initial next
-    generation matrix for region r.
+    generation matrix for region :math:`r`.
 
     Parameters
     ----------
@@ -440,8 +441,8 @@ class UniInfectivityMatrix(object):
         r"""
         Computes probability of susceptible individuals in
         a given region and specified time point of getting infected. The
-        (i, j) element of the matrix refer to the probabiity of people in
-        age group i to be infected by those in age group j.
+        :math:`(i, j)` element of the matrix refer to the probabiity of people
+        in age group :math:`i` to be infected by those in age group :math:`j`.
 
         The matrix is computed using this formula:
 
@@ -451,9 +452,9 @@ class UniInfectivityMatrix(object):
 
         where :math:`\beta_{t_k, r}` is the further temporal correction
         term, linked to fluctuations in transmission, :math:`R_{0, r}` is
-        the initial reproduction number in region r and
+        the initial reproduction number in region :math:`r` and
         :math:`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
-        next generation matrix for region r.
+        next generation matrix for region :math:`r`.
 
         Parameters
         ----------
@@ -480,9 +481,8 @@ class UniInfectivityMatrix(object):
         r"""
         Computes probability of susceptible individuals in
         a given region and specified time point of getting infected. The
-        (i, j) element of the matrix refer to the probabiity of people in
-        age group i to be infected by those in age group j.
-
+        :math:`(i, j)` element of the matrix refer to the probabiity of people
+        in age group :math:`i` to be infected by those in age group :math:`j`.
         The matrix is computed using this formula:
 
         .. math::
@@ -491,12 +491,12 @@ class UniInfectivityMatrix(object):
 
         where :math:`\beta_{t_k, r}` is the further temporal correction
         term, linked to fluctuations in transmission, :math:`R_{0, r}` is
-        the initial reproduction number in region r and
+        the initial reproduction number in region :math:`r` and
         :math:`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
-        next generation matrix for region r.
+        next generation matrix for region :math:`r`.
 
         The :math:`R^{\star}_{t_k, r}` is the dominant eigenvalue of the
-        current time next generation matrix for region r:
+        current time next generation matrix for region :math:`r`:
 
         .. math::
             \Lambda_{k, r, ij} = S_{r, t_k, i} \widetilde{C}_{r, ij}^{t_k}
@@ -716,6 +716,9 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
     def _check_susceptible_input(
             self, susceptibles, contact_matrix):
         """
+        Checks the correct format for the susceptible input of the two main
+        methods for the class.
+
         """
         if np.asarray(susceptibles).ndim != 1:
             raise ValueError(
@@ -735,7 +738,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
                 raise ValueError(
                     'Number of susceptibles must be non-negative.')
 
-    def _check_later_input(self, r, t_k, temp_variation, susceptibles):
+    def _check_later_input(self, r, t_k, temp_variation):
         """
         Checks the correct format for the input of the two main methods
         for the class.
@@ -774,8 +777,8 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         r"""
         Computes probability of susceptible individuals in
         a given region and specified time point of getting infected. The
-        (i, j) element of the matrix refer to the probabiity of people in
-        age group i to be infected by those in age group j.
+        :math:`(i, j)` element of the matrix refer to the probabiity of people
+        in age group :math:`i` to be infected by those in age group :math:`j`.
 
         The matrix is computed using this formula:
 
@@ -785,9 +788,9 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
 
         where :math:`\beta_{t_k, r}` is the further temporal correction
         term, linked to fluctuations in transmission, :math:`R_{0, r}` is
-        the initial reproduction number in region r and
+        the initial reproduction number in region :math:`r` and
         :math:`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
-        next generation matrix for region r.
+        next generation matrix for region :math:`r`.
 
         Parameters
         ----------
@@ -806,7 +809,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         # Do the checks on the input
         self._check_susceptible_input(
             susceptibles, self.contact_matrices[0])
-        self._check_later_input(r, t_k, temp_variation, susceptibles)
+        self._check_later_input(r, t_k, temp_variation)
 
         # Identify current contact matrix
         pos = np.where(self.times_contact <= t_k)
@@ -831,8 +834,8 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         r"""
         Computes probability of susceptible individuals in
         a given region and specified time point of getting infected. The
-        (i, j) element of the matrix refer to the probabiity of people in
-        age group i to be infected by those in age group j.
+        :math:`(i, j)` element of the matrix refer to the probabiity of people
+        in age group :math:`i` to be infected by those in age group :math:`j`.
 
         The matrix is computed using this formula:
 
@@ -842,12 +845,12 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
 
         where :math:`\beta_{t_k, r}` is the further temporal correction
         term, linked to fluctuations in transmission, :math:`R_{0, r}` is
-        the initial reproduction number in region r and
+        the initial reproduction number in region :math:`r` and
         :math:`R^{\star}_{0, r}` is the dominant eigenvalue of the initial
-        next generation matrix for region r.
+        next generation matrix for region :math:`r`.
 
         The :math:`R^{\star}_{t_k, r}` is the dominant eigenvalue of the
-        current time next generation matrix for region r:
+        current time next generation matrix for region :math:`r`:
 
         .. math::
             \Lambda_{k, r, ij} = S_{r, t_k, i} \widetilde{C}_{r, ij}^{t_k}
@@ -870,7 +873,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         # Do the checks on the input
         self._check_susceptible_input(
             susceptibles, self.contact_matrices[0])
-        self._check_later_input(r, t_k, temp_variation, susceptibles)
+        self._check_later_input(r, t_k, temp_variation)
 
         # Identify current contact matrix
         pos = np.where(self.times_contact <= t_k)
