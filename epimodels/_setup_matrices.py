@@ -31,8 +31,8 @@ class ContactMatrix():
         matrix.
     data_matrix
         (numpy.array) Data array which will populate the contact matrix.
-        Element (i, j) reprsents the average number of people in age group j
-        a person in age group i interact with.
+        Element :math:`(i, j)` reprsents the average number of people in age
+        group :math:`j` a person in age group :math:`i` interact with.
 
     """
     def __init__(self, age_groups, data_matrix):
@@ -162,9 +162,9 @@ class RegionMatrix(ContactMatrix):
         matrix.
     data_matrix
         (numpy.array) Data array which will populate the region matrix.
-        Element (i, j) reprsents the relative susceptibility of someone
-        in age group j to be infected by a person in age group i, if they
-        come into contact.
+        Element :math:`(i, j)` reprsents the relative susceptibility of
+        someone in age group :math:`j` to be infected by a person in age
+        group :math:`i`, if they come into contact.
 
     """
     def __init__(self, region_name, age_groups, data_matrix):
@@ -447,7 +447,7 @@ class UniInfectivityMatrix(object):
         The matrix is computed using this formula:
 
         .. math::
-            \b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
+            b^{t_k}_{r, ij} = \beta_{t_k, r} R_{0, r} \frac{
                 \widetilde{C}_{r, ij}^{t_k}}{R^{\star}_{0, r}}
 
         where :math:`\beta_{t_k, r}` is the further temporal correction
