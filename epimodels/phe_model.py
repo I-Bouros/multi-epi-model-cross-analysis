@@ -144,6 +144,44 @@ class PheSEIRModel(object):
         self._output_indices = output_indices
         self._n_outputs = len(outputs)
 
+    def _compute_lambda(self, s, i1, i2, b):
+        """
+        Computes the current time, age and region-varying rate with which
+        susceptible individuals become infected.
+
+        """
+        lam = np.empty_like(s)
+        for i, l in enumerate(lam):
+            prod = 1
+            for j, _ in enumerate(lam):
+                prod *= (1-b[i, j])**(i1[j]+i2[j])
+            lam[i] = 1-prod
+
+        return lam
+
+    def _compute_evaluation_moments(self, times):
+        """
+        Returns the points at which we keep the evaluations of the ODE system.
+
+        """
+        eval_times = np.around(
+            np.arange(
+                times[0], times[-1]+self._delta_t, self._delta_t,
+                dtype=np.float64),
+            5)
+
+        eval_indices = np.where(
+            np.array([(t in times) for t in eval_times]))[0].tolist()
+
+        ind_in_times = []
+        j = 0
+        for i, t in enumerate(eval_times):
+            if i >= eval_indices[j+1]:
+                j += 1
+            ind_in_times.append(j)
+
+        return eval_times, eval_indices, ind_in_times
+
     def _right_hand_side(self, t, r, y, c, num_a_groups):
         r"""
         Constructs the RHS of the equations of the system of ODEs for given a
@@ -199,12 +237,7 @@ class PheSEIRModel(object):
 
         # Compute the current time, age and region-varying
         # rate with which susceptible individuals become infected
-        lam = np.empty_like(s)
-        for i, l in enumerate(lam):
-            prod = 1
-            for j, _ in enumerate(lam):
-                prod *= (1-b[i, j])**(i1[j]+i2[j])
-            lam[i] = 1-prod
+        lam = self._compute_lambda(s, i1, i2, b)
 
         # Write actual RHS
         lam_times_s = np.multiply(lam, np.asarray(s))
@@ -234,31 +267,21 @@ class PheSEIRModel(object):
 
         """
         # Split compartments into their types
-        s, e1, e2, i1, i2, _ = np.asarray(self._y_init)[:, self._region-1]
+        s, e1, e2, i1, i2, r = np.asarray(self._y_init)[:, self._region-1]
 
         # Read parameters of the system
         beta, dL, dI = self._c
-        delta_t = self._delta_t
-        kappa = delta_t * 2/dL
-        gamma = delta_t * 2/dI
+        kappa = self._delta_t * 2/dL
+        gamma = self._delta_t * 2/dI
 
-        eval_times = np.around(np.arange(
-            times[0], times[-1]+delta_t, delta_t, dtype=np.float64), 5)
-        eval_indices = np.where(
-            np.array([(t in times) for t in eval_times]))[0].tolist()
-
-        ind_in_times = []
-        j = 0
-        for i, t in enumerate(eval_times):
-            if i >= eval_indices[j+1]:
-                j += 1
-            ind_in_times.append(j)
+        eval_times, eval_indices, ind_in_times = \
+            self._compute_evaluation_moments(times)
 
         solution = np.ones((len(eval_times), num_a_groups*6))
 
         for ind, t in enumerate(eval_times):
             # Add present vlaues of the compartments to the solutions
-            solution[ind, :] = tuple(chain(s, e1, e2, i1, i2, _))
+            solution[ind, :] = tuple(chain(s, e1, e2, i1, i2, r))
 
             # And identify the appropriate MultiTimesInfectivity matrix for the
             # ODE system
@@ -267,24 +290,19 @@ class PheSEIRModel(object):
 
             # Compute the current time, age and region-varying
             # rate with which susceptible individuals become infected
-            lam = np.empty_like(s)
-            for i, l in enumerate(lam):
-                prod = 1
-                for j, _ in enumerate(lam):
-                    prod *= (1-b[i, j])**(i1[j]+i2[j])
-                lam[i] = 1-prod
+            lam = self._compute_lambda(s, i1, i2, b)
 
             # Write down ODE system and compute new values for all compartments
             s_ = np.multiply(
-                np.asarray(s), (np.ones_like(lam) - delta_t * lam))
+                np.asarray(s), (np.ones_like(lam) - self._delta_t * lam))
             e1_ = (1 - kappa) * np.asarray(e1) + np.multiply(
-                np.asarray(s), delta_t * lam)
+                np.asarray(s), self._delta_t * lam)
             e2_ = (1 - kappa) * np.asarray(e2) + kappa * np.asarray(e1)
             i1_ = (1 - gamma) * np.asarray(i1) + kappa * np.asarray(e2)
             i2_ = (1 - gamma) * np.asarray(i2) + gamma * np.asarray(i1)
-            r_ = gamma * np.asarray(i2) + _
+            r_ = gamma * np.asarray(i2) + r
 
-            s, e1, e2, i1, i2, _ = (
+            s, e1, e2, i1, i2, r = (
                 s_.tolist(), e1_.tolist(), e2_.tolist(),
                 i1_.tolist(), i2_.tolist(), r_.tolist())
 
