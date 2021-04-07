@@ -149,6 +149,17 @@ class PheSEIRModel(object):
         Computes the current time, age and region-varying rate with which
         susceptible individuals become infected.
 
+        Parameters
+        ----------
+        s
+            vector of susceptibles by age group.
+        i1
+            vector of 1st infective by age group.
+        i2
+            vector of 2nd infective by age group.
+        b
+            probability matrix of infectivity.
+
         """
         lam = np.empty_like(s)
         for i, l in enumerate(lam):
