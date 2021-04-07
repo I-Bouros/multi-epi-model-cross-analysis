@@ -201,7 +201,7 @@ class PheSEIRModel(object):
         # rate with which susceptible individuals become infected
         lam = np.empty_like(s)
         for i, l in enumerate(lam):
-            prod = 0
+            prod = 1
             for j, _ in enumerate(lam):
                 prod *= (1-b[i, j])**(i1[j]+i2[j])
             lam[i] = 1-prod
@@ -269,7 +269,7 @@ class PheSEIRModel(object):
             # rate with which susceptible individuals become infected
             lam = np.empty_like(s)
             for i, l in enumerate(lam):
-                prod = 0
+                prod = 1
                 for j, _ in enumerate(lam):
                     prod *= (1-b[i, j])**(i1[j]+i2[j])
                 lam[i] = 1-prod
