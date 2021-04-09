@@ -191,7 +191,7 @@ class PheSEIRModel(object):
                 j += 1
             ind_in_times.append(j)
 
-        return eval_times, eval_indices, ind_in_times
+        return eval_times, ind_in_times
 
     def _right_hand_side(self, t, r, y, c, num_a_groups):
         r"""
@@ -285,14 +285,16 @@ class PheSEIRModel(object):
         kappa = self._delta_t * 2/dL
         gamma = self._delta_t * 2/dI
 
-        eval_times, eval_indices, ind_in_times = \
+        eval_times, ind_in_times = \
             self._compute_evaluation_moments(times)
 
-        solution = np.ones((len(eval_times), num_a_groups*6))
+        solution = np.ones((len(times), num_a_groups*6))
 
         for ind, t in enumerate(eval_times):
             # Add present vlaues of the compartments to the solutions
-            solution[ind, :] = tuple(chain(s, e1, e2, i1, i2, r))
+            if t in times:
+                solution[ind_in_times[ind]] = tuple(
+                    chain(s, e1, e2, i1, i2, r))
 
             # And identify the appropriate MultiTimesInfectivity matrix for the
             # ODE system
@@ -316,8 +318,6 @@ class PheSEIRModel(object):
             s, e1, e2, i1, i2, r = (
                 s_.tolist(), e1_.tolist(), e2_.tolist(),
                 i1_.tolist(), i2_.tolist(), r_.tolist())
-
-        solution = solution[tuple(eval_indices), :]
 
         return({'y': np.transpose(solution)})
 
