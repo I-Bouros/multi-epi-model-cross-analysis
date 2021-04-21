@@ -595,6 +595,11 @@ class TestPheSEIRModel(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.loglik_deaths(
                 obs_death, output, fatality_ratio,
+                time_to_death, -2, 1)
+
+        with self.assertRaises(ValueError):
+            model.loglik_deaths(
+                obs_death, output, fatality_ratio,
                 time_to_death, 0.5, -1)
 
         with self.assertRaises(TypeError):
