@@ -586,6 +586,7 @@ class PheSEIRModel(object):
 
         The number of deaths is assumed to be distributed according to
         a negative binomial distribution with mean
+
         .. math::
             \mu_{r,t_k,i} = p_i \sum_{l=0}^{k} f_{k-l} \delta_{r,t_l,i}^{infec}
 
@@ -705,6 +706,7 @@ class PheSEIRModel(object):
 
         The number of positive tests is assumed to be distributed according to
         a binomial distribution with parameters :math:`n = n_{r,t_k,i}` and
+
         .. math::
             p = k_{sens} (1-\frac{S_{r,t_k,i}}{N_{r,i}}) + (
                 1-k_{spec}) \frac{S_{r,t_k,i}}{N_{r,i}}
