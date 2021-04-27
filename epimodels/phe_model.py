@@ -19,7 +19,7 @@ matrices.
 from itertools import chain
 
 import numpy as np
-from scipy.stats import nbinom, binom, gamma, beta
+from scipy.stats import nbinom, binom, gamma, beta, norm
 from scipy.integrate import solve_ivp
 
 import epimodels as em
@@ -824,27 +824,32 @@ class PheSEIRModel(object):
 
     def set_prior(
             self, prior_dispersion, prior_dI, prior_contact_mult,
-            prior_exp_growth, prior_I0, prior_fatality_ratio,
-            prior_sens, prior_spec, prior_week_var, prior_dL,
-            prior_incubation, prior_time_to_death):
+            prior_exp_growth, prior_I0, prior_fatality_ratio, prior_sens,
+            prior_spec, prior_week_var, prior_dL, prior_time_to_death):
         """
-        Sets the priors for the parameters used by the PheSEIRModel.
+        Sets the parametrs for the priors of the different measures used by
+        the PheSEIRModel.
+
+        If a distribution parametrs format, it used for methods from
+        :module:`scipy.stats`. If a fixed parameter, then the parameters
+        fed act as the fixed value.
+
         """
         # Prior function of dispersion (e.g. uniformative)
-        a, scale = prior_dispersion
-        self.dispersion_prior = gamma(a, scale=scale)
+        a, rate = prior_dispersion
+        self.dispersion_prior = gamma(a, scale=1/rate)
 
         # Prior function of mean infectious period dI (e.g. Li et al., 2020)
-        a, loc, scale = prior_dI
-        self.dI_prior = gamma(a, loc=loc, scale=scale)
+        a, loc, rate = prior_dI
+        self.dI_prior = gamma(a, loc=loc, scale=1/rate)
 
         # Prior function od all contact matrix multipliers (e.g. uniformative)
-        a, scale = prior_contact_mult
-        self.contact_mult_prior = gamma(a, scale=scale)
+        a, rate = prior_contact_mult
+        self.contact_mult_prior = gamma(a, scale=1/rate)
 
         # Prior function of exponential growth - used for computing R0
-        a, scale = prior_exp_growth
-        self.growth_prior = gamma(a, scale=scale)
+        a, rate = prior_exp_growth
+        self.growth_prior = gamma(a, scale=1/rate)
 
         #  Prior function of I0
         # 'to be described'
@@ -866,7 +871,19 @@ class PheSEIRModel(object):
         a, scale = prior_week_var
         self.week_var_prior = gamma(a, scale=scale)
 
-        # Fixed mean latent period
-        self.dL = prior_dL
+        # Fixed latent period period
+        loc, scale = prior_dL
+        self.dL_prior = norm(loc, scale)
 
-        # Fixed incubation period
+        # Fixed time to death
+        loc, scale = prior_time_to_death
+        self.time_to_death_prior = norm(loc, scale)
+
+    def posterior_distributions(self, obs_death, obs_pos, output):
+        """
+        Computes the posterior distributions for the
+        parameters of the PheSEIR model for the observed data.
+
+        These distributions are used then to find
+        """
+        # Posterior of the dispersion factor
