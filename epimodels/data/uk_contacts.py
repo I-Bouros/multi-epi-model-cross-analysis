@@ -4,7 +4,21 @@
 # released under the MIT license. See accompanying LICENSE for copyright
 # notice and full license details.
 #
-"""
+"""Processing script for contact matrices and Google mobility data from [1]_
+and [2]_.
+
+It computes region-specific contact matrices which are then stored in separate
+csv files.
+
+References
+----------
+.. [1] Prem K, Cook AR, Jit M (2017) Projecting social contact matrices in 152
+       countries using contact surveys and demographic data. PLOS Computational
+       Biology 13(9): e1005697.
+       https://doi.org/10.1371/journal.pcbi.1005697
+
+.. [2] COVID-19 Community Mobility Reports
+       https://www.google.com/covid19/mobility/
 """
 
 import time
@@ -18,13 +32,17 @@ import numpy as np
 def read_contact_matrices(
         file_index=2,
         state='United Kingdom of Great Britain'):
-    """Write a new csv file for 60-day-long serial intervals
-    to be used for the analysis of the Australian data.
+    """Read the baseline contact matices for different activities
+    for given state from the appropriate excel file.
 
     Parameters
     ----------
-    name
-        Name given to the serial intervals file.
+    file_index
+        Number of the file containg the baseline contact matrices
+        used in the model.
+    state
+        Name of the country for which the contact matrices used in
+        the model.
 
     """
     # Select contact matrices from the given state and activity
@@ -32,17 +50,17 @@ def read_contact_matrices(
             os.path.dirname(__file__), 'raw_contact_matrices/')
     school = pd.read_excel(
         os.path.join(path, 'MUestimates_school_{}.xlsx').format(file_index),
-        sheet_name=state).to_numpy()
+        sheet_name=state, header=None).to_numpy()
     home = pd.read_excel(
         os.path.join(path, 'MUestimates_home_{}.xlsx').format(file_index),
-        sheet_name=state).to_numpy()
+        sheet_name=state, header=None).to_numpy()
     work = pd.read_excel(
         os.path.join(path, 'MUestimates_work_{}.xlsx').format(file_index),
-        sheet_name=state).to_numpy()
+        sheet_name=state, header=None).to_numpy()
     others = pd.read_excel(
         os.path.join(path, 'MUestimates_other_locations_{}.xlsx').format(
             file_index),
-        sheet_name=state).to_numpy()
+        sheet_name=state, header=None).to_numpy()
 
     return school, home, work, others
 
@@ -53,6 +71,22 @@ def compute_contact_matrices(
         end_date='04/04/2021',
         mobility_file='2021_GB_Region_Mobility_Report.csv'):
     """
+    Computes timelines of percentages of deviation from the baseline in
+    activities using Google mobility data, for selected region and between
+    given dates.
+
+    Parameters
+    ----------
+    region
+        Region of the country for which the deviation percentages are
+        calculated.
+    start_date
+        The initial date from which the deviation percentages are calculated.
+    end_date
+        The final date from which the deviation percentages are calculated.
+    mobility_file
+        The name of the Google mobility data file used for the computation.
+
     """
     # Select data from the given state
     path = os.path.join(
@@ -111,11 +145,45 @@ def compute_contact_matrices(
 
 
 def process_dates(date):
+    """
+    Processes dates into `datetime` format.
+
+    """
     struct = time.strptime(date, '%d/%m/%Y')
     return datetime.datetime.fromtimestamp(mktime(struct))
 
 
+def change_age_groups(matrix):
+    """
+    Reprocess contact matrix so that it has the appropriate age groups.
+
+    """
+    new_matrix = np.empty((8, 8))
+
+    ind_old = [
+        np.array([0]),
+        np.array([0]),
+        np.array(range(1, 3)),
+        np.array(range(3, 5)),
+        np.array(range(5, 9)),
+        np.array(range(9, 13)),
+        np.array(range(13, 15)),
+        np.array([15])]
+
+    for i in range(8):
+        for j in range(8):
+            new_matrix[i, j] = np.mean(
+                matrix[ind_old[i][:, None], ind_old[j]][:, None])
+
+    return new_matrix
+
+
 def main():
+    """
+    Combines timelines of deviation percentages and baseline activity-specific
+    contact matrices to get weekly, region-specific contact matrices.
+
+    """
     activity = ['school', 'home', 'work', 'others']
     baseline_matrices = read_contact_matrices()
     all_regions = ['EE', 'London', 'Mid', 'NE', 'NW', 'SE', 'SW']
@@ -145,7 +213,7 @@ def main():
             path = os.path.join(
                     path_,
                     '{}_W{}.csv'.format(region, w+1))
-            np.savetxt(path, contact_matrix, delimiter=',')
+            np.savetxt(path, change_age_groups(contact_matrix), delimiter=',')
 
 
 if __name__ == '__main__':
