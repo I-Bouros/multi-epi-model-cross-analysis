@@ -67,9 +67,9 @@ def read_contact_matrices(
 
 def compute_contact_matrices(
         region,
-        start_date='01/01/2021',
+        start_date='15/02/2020',
         end_date='04/04/2021',
-        mobility_file='2021_GB_Region_Mobility_Report.csv'):
+        mobility_file='2020_2021_GB_Region_Mobility_Report.csv'):
     """
     Computes timelines of percentages of deviation from the baseline in
     activities using Google mobility data, for selected region and between
@@ -92,7 +92,7 @@ def compute_contact_matrices(
     path = os.path.join(
             os.path.dirname(__file__), 'google_mobility/')
     data = pd.read_csv(
-        os.path.join(path, '2021_GB_Region_Mobility_Report.csv'))
+        os.path.join(path, mobility_file))
 
     # Keep only data in correct region
     data = data[data['uk_region'] == region]
@@ -192,9 +192,15 @@ def main():
         multipliers = compute_contact_matrices(region)
         days = range(multipliers.shape[0])
         weeks = [days[x:x+7] for x in range(0, len(days), 7)]
+        week_mean = pd.Series(
+            np.zeros(6),
+            index=['shop', 'grocery', 'parks', 'transit', 'work', 'home'])
         for w, week in enumerate(weeks):
             contact_matrix = np.zeros_like(baseline_matrices[0])
-            week_multi = multipliers.iloc[week].mean()/100 + 1
+            to_replace = np.where(multipliers.iloc[week].mean().notna())[0]
+            for _ in to_replace:
+                week_mean[_] = multipliers.iloc[week].mean()[_]
+            week_multi = week_mean/100 + 1
             act_week_multi = pd.Series(
                 [
                     week_multi.get(key='work'),
