@@ -186,6 +186,10 @@ def main():
     """
     activity = ['school', 'home', 'work', 'others']
     baseline_matrices = read_contact_matrices()
+    baseline_contact_matrix = np.zeros_like(baseline_matrices[0])
+    for ind, a in enumerate(activity):
+        baseline_contact_matrix += baseline_matrices[ind]
+
     all_regions = ['EE', 'London', 'Mid', 'NE', 'NW', 'SE', 'SW']
 
     for region in all_regions:
@@ -213,13 +217,19 @@ def main():
             for ind, a in enumerate(activity):
                 contact_matrix += act_week_multi.get(
                     key=a) * baseline_matrices[ind]
+
             # Transform recorded matrix of serial intervals to csv file
             path_ = os.path.join(
                 os.path.dirname(__file__), 'final_contact_matrices/')
             path = os.path.join(
                     path_,
                     '{}_W{}.csv'.format(region, w+1))
+            path1 = os.path.join(path_, 'BASE.csv')
+
             np.savetxt(path, change_age_groups(contact_matrix), delimiter=',')
+            np.savetxt(
+                path1, change_age_groups(baseline_contact_matrix),
+                delimiter=',')
 
 
 if __name__ == '__main__':
