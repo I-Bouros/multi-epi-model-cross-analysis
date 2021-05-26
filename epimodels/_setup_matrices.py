@@ -748,7 +748,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
             raise TypeError(
                 'Index of the region must be integer.'
                 )
-        if r > len(self.region_matrices):
+        if r > len(self.region_matrices[0]):
             raise ValueError(
                 'Index of the region out of bounds.'
             )

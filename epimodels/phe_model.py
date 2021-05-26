@@ -647,7 +647,7 @@ class PheSEIRModel(object):
         d_infec = self.new_infections(output)
         log_lik_death = np.empty(self._num_ages)
         for _ in range(self._num_ages):
-            mean = self._mean_deaths(
+            mean = self.mean_deaths(
                 fatality_ratio, time_to_death, k, _, d_infec)
             log_lik_death[_] = nbinom.logpmf(
                 k=obs_death[_],
@@ -701,14 +701,15 @@ class PheSEIRModel(object):
                 raise ValueError('Probabilities of death of individual k days after \
                     infection must be => 0 and <=1.')
 
-    def _mean_deaths(self, fatality_ratio, time_to_death, k, _, d_infec):
+    def mean_deaths(self, fatality_ratio, time_to_death, k, a, d_infec):
         """
         Computes the mean of the negative binomial distribution used to
-        calculate number of deaths.
+        calculate number of deaths for specified age group.
 
         """
-        mean = fatality_ratio[_] * np.sum(np.multiply(
-            d_infec[:(k+1), _], np.asarray(time_to_death[:(k+1)][::-1])))
+        mean = fatality_ratio[a] * np.sum(np.multiply(
+            d_infec[:(k+1), a], np.asarray(time_to_death[:(k+1)][::-1])))
+
         return mean
 
     def samples_deaths(
@@ -766,7 +767,7 @@ class PheSEIRModel(object):
         d_infec = self.new_infections(output)
         sample_death = np.empty(self._num_ages)
         for _ in range(self._num_ages):
-            mean = self._mean_deaths(
+            mean = self.mean_deaths(
                 fatality_ratio, time_to_death, k, _, d_infec)
             sample_death[_] = nbinom.rvs(
                 n=mean/niu,
@@ -860,7 +861,7 @@ class PheSEIRModel(object):
 
         log_lik_pos = np.empty(self._num_ages)
         for _ in range(self._num_ages):
-            prob = self._mean_positives(sens, spec, _, suscep, pop)
+            prob = self.mean_positives(sens, spec, _, suscep, pop)
             log_lik_pos[_] = binom.logpmf(
                 k=obs_pos[_],
                 n=tests[_],
@@ -905,14 +906,14 @@ class PheSEIRModel(object):
             raise ValueError('Index of time of computation of the log-likelihood \
                 must be within those considered in the output.')
 
-    def _mean_positives(self, sens, spec, _, suscep, pop):
+    def mean_positives(self, sens, spec, a, suscep, pop):
         """
         Computes the mean of the binomial distribution used to
-        calculate number of positive test results.
+        calculate number of positive test results for specified age group.
 
         """
-        prob = sens * (1-suscep[_]/pop[_]) + (
-                1-spec) * suscep[_]/pop[_]
+        prob = sens * (1-suscep[a]/pop[a]) + (
+                1-spec) * suscep[a]/pop[a]
         return prob
 
     def samples_positive_tests(self, output, tests, sens, spec, k):
@@ -976,7 +977,7 @@ class PheSEIRModel(object):
 
         sample_pos = np.empty(self._num_ages)
         for _ in range(self._num_ages):
-            prob = self._mean_positives(sens, spec, _, suscep, pop)
+            prob = self.mean_positives(sens, spec, _, suscep, pop)
             sample_pos[_] = binom.rvs(
                 n=tests[_],
                 p=prob)
