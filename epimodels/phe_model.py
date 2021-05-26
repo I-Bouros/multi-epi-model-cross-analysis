@@ -627,24 +627,10 @@ class PheSEIRModel(object):
         Always run :meth:`PheSEIRModel.simulate` before running this one.
 
         """
-        # Check correct format of parameters
-        self._check_output_format(output)
+        self._check_death_format(
+            output, fatality_ratio, time_to_death, niu, k)
 
-        if not isinstance(niu, (int, float)):
-            raise TypeError('Dispersion factor must be integer or float.')
-        if niu <= 0:
-            raise ValueError('Dispersion factor must be > 0.')
-
-        if not isinstance(k, int):
-            raise TypeError('Index of time of computation of the log-likelihood \
-                must be integer.')
-        if k < 0:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be >= 0.')
-        if k >= self._times.shape[0]:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be within those considered in the output.')
-
+        # Check correct format for observed number of deaths
         if np.asarray(obs_death).ndim != 1:
             raise ValueError('Observed number of deaths by age category storage \
                 format is 1-dimensional.')
@@ -657,6 +643,39 @@ class PheSEIRModel(object):
             if _ < 0:
                 raise ValueError('Observed number of deaths must be => 0.')
 
+        # Compute mean of negative-binomial
+        d_infec = self.new_infections(output)
+        log_lik_death = np.empty(self._num_ages)
+        for _ in range(self._num_ages):
+            mean = self.mean_deaths(
+                fatality_ratio, time_to_death, k, _, d_infec)
+            log_lik_death[_] = nbinom.logpmf(
+                k=obs_death[_],
+                n=mean/niu,
+                p=niu/(1+niu))
+
+        return log_lik_death
+
+    def _check_death_format(
+            self, output, fatality_ratio, time_to_death, niu, k):
+        """
+        Checks correct format of the inputs of number of death calculation.
+
+        """
+        self._check_output_format(output)
+        if not isinstance(niu, (int, float)):
+            raise TypeError('Dispersion factor must be integer or float.')
+        if niu <= 0:
+            raise ValueError('Dispersion factor must be > 0.')
+        if not isinstance(k, int):
+            raise TypeError('Index of time of computation of the log-likelihood \
+                must be integer.')
+        if k < 0:
+            raise ValueError('Index of time of computation of the log-likelihood \
+                must be >= 0.')
+        if k >= self._times.shape[0]:
+            raise ValueError('Index of time of computation of the log-likelihood \
+                must be within those considered in the output.')
         if np.asarray(fatality_ratio).ndim != 1:
             raise ValueError('Fatality ratios by age category storage \
                 format is 1-dimensional.')
@@ -668,7 +687,6 @@ class PheSEIRModel(object):
                     float.')
             if(_ < 0) or (_ > 1):
                 raise ValueError('Fatality ratio must be => 0 and <=1.')
-
         if np.asarray(time_to_death).ndim != 1:
             raise ValueError('Probabilities of death of individual k days after \
                 infection storage format is 1-dimensional.')
@@ -683,20 +701,79 @@ class PheSEIRModel(object):
                 raise ValueError('Probabilities of death of individual k days after \
                     infection must be => 0 and <=1.')
 
+    def mean_deaths(self, fatality_ratio, time_to_death, k, a, d_infec):
+        """
+        Computes the mean of the negative binomial distribution used to
+        calculate number of deaths for specified age group.
+
+        """
+        mean = fatality_ratio[a] * np.sum(np.multiply(
+            d_infec[:(k+1), a], np.asarray(time_to_death[:(k+1)][::-1])))
+
+        return mean
+
+    def samples_deaths(
+            self, output, fatality_ratio, time_to_death, niu, k):
+        r"""
+        Computes samples for the number of deaths at time step
+        :math:`k` in specified region, given the simulated timeline of
+        susceptible number of individuals, for all age groups in the model.
+
+        The number of deaths is assumed to be distributed according to
+        a negative binomial distribution with mean
+
+        .. math::
+            \mu_{r,t_k,i} = p_i \sum_{l=0}^{k} f_{k-l} \delta_{r,t_l,i}^{infec}
+
+        and variance :math:`\mu_{r,t_k,i} (\nu + 1)`, where :math:`p_i` is the
+        age-specific fatality ratio for age group :math:`i`, :math:`f_{k-l}`
+        is the probability of demise :math:`k-l` days after infection and
+        :math:`\delta_{r,t_l,i}^{infec}` is the number of new infections
+        in specified region, for age group :math:`i` on day :math:`t_l`.
+
+        It uses an output of the simulation method for the PheSEIRModel,
+        taking all the rest of the parameters necessary for the computation
+        from the way its simulation has been fitted.
+
+        Parameters
+        ----------
+        output
+            (numpy.array) Output of the simulation method for the PheSEIRModel.
+        fatality_ratio
+            List of age-specific fatality ratios.
+        time_to_death
+            List of probabilities of death of individual k days after
+            infection.
+        niu
+            Dispesion factor for the negative binomial distribution
+        k
+            Index of day for which we intend to sample the number of deaths for
+            by age group.
+
+        Returns
+        -------
+        Array of log-likelihoods for the obsereved number of deaths for
+        each age group in specified region at time :math:`t_k`.
+
+        Notes
+        -----
+        Always run :meth:`PheSEIRModel.simulate` before running this one.
+
+        """
+        self._check_death_format(
+            output, fatality_ratio, time_to_death, niu, k)
+
         # Compute mean of negative-binomial
         d_infec = self.new_infections(output)
-        log_lik_death = np.empty(self._num_ages)
+        sample_death = np.empty(self._num_ages)
         for _ in range(self._num_ages):
-            mean = fatality_ratio[_] * np.sum(
-                np.multiply(
-                    d_infec[:(k+1), _], np.asarray(time_to_death[:(k+1)][::-1])
-                ))
-            log_lik_death[_] = nbinom.logpmf(
-                k=obs_death[_],
+            mean = self.mean_deaths(
+                fatality_ratio, time_to_death, k, _, d_infec)
+            sample_death[_] = nbinom.rvs(
                 n=mean/niu,
                 p=niu/(1+niu))
 
-        return log_lik_death
+        return sample_death
 
     def loglik_positive_tests(self, obs_pos, output, tests, sens, spec, k):
         r"""
@@ -751,9 +828,9 @@ class PheSEIRModel(object):
         Always run :meth:`PheSEIRModel.simulate` before running this one.
 
         """
-        # Check correct format of parameters
-        self._check_output_format(output)
+        self._check_positives_format(output, tests, sens, spec, k)
 
+        # Check correct format for observed number of positive results
         if np.asarray(obs_pos).ndim != 1:
             raise ValueError('Observed number of postive tests results by age category \
                 storage format is 1-dimensional.')
@@ -768,41 +845,12 @@ class PheSEIRModel(object):
                 raise ValueError('Observed number of postive tests results must \
                     be => 0.')
 
-        if np.asarray(tests).ndim != 1:
-            raise ValueError('Number of tests conducted by age category storage \
-                format is 1-dimensional.')
-        if np.asarray(tests).shape[0] != self._num_ages:
-            raise ValueError('Wrong number of age groups for observed number \
-                of tests conducted.')
+        # Check correct format for number of tests based on the observed number
+        # of positive results
         for i, _ in enumerate(tests):
-            if not isinstance(_, (int, np.integer)):
-                raise TypeError('Number of tests conducted must be integer.')
-            if _ < 0:
-                raise ValueError('Number of tests conducted ratio must \
-                    be => 0.')
             if _ < obs_pos[i]:
                 raise ValueError('Not enough performed tests for the number \
                     of observed positives.')
-
-        if not isinstance(sens, (int, float)):
-            raise TypeError('Sensitivity must be integer or float.')
-        if (sens < 0) or (sens > 1):
-            raise ValueError('Sensitivity must be >= 0 and <=1.')
-
-        if not isinstance(spec, (int, float)):
-            raise TypeError('Specificity must be integer or float.')
-        if (spec < 0) or (spec > 1):
-            raise ValueError('Specificity must be >= 0 and >=1.')
-
-        if not isinstance(k, int):
-            raise TypeError('Index of time of computation of the log-likelihood \
-                must be integer.')
-        if k < 0:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be >= 0.')
-        if k >= self._times.shape[0]:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be within those considered in the output.')
 
         a = self._num_ages
         # Compute parameters of binomial
@@ -813,11 +861,125 @@ class PheSEIRModel(object):
 
         log_lik_pos = np.empty(self._num_ages)
         for _ in range(self._num_ages):
-            prob = sens * (1-suscep[_]/pop[_]) + (
-                1-spec) * suscep[_]/pop[_]
+            prob = self.mean_positives(sens, spec, _, suscep, pop)
             log_lik_pos[_] = binom.logpmf(
                 k=obs_pos[_],
                 n=tests[_],
                 p=prob)
 
         return log_lik_pos
+
+    def _check_positives_format(self, output, tests, sens, spec, k):
+        """
+        Checks correct format of the inputs of number of positie test results
+        calculation.
+
+        """
+        self._check_output_format(output)
+        if np.asarray(tests).ndim != 1:
+            raise ValueError('Number of tests conducted by age category storage \
+                format is 1-dimensional.')
+        if np.asarray(tests).shape[0] != self._num_ages:
+            raise ValueError('Wrong number of age groups for observed number \
+                of tests conducted.')
+        for _ in tests:
+            if not isinstance(_, (int, np.integer)):
+                raise TypeError('Number of tests conducted must be integer.')
+            if _ < 0:
+                raise ValueError('Number of tests conducted ratio must \
+                    be => 0.')
+        if not isinstance(sens, (int, float)):
+            raise TypeError('Sensitivity must be integer or float.')
+        if (sens < 0) or (sens > 1):
+            raise ValueError('Sensitivity must be >= 0 and <=1.')
+        if not isinstance(spec, (int, float)):
+            raise TypeError('Specificity must be integer or float.')
+        if (spec < 0) or (spec > 1):
+            raise ValueError('Specificity must be >= 0 and >=1.')
+        if not isinstance(k, int):
+            raise TypeError('Index of time of computation of the log-likelihood \
+                must be integer.')
+        if k < 0:
+            raise ValueError('Index of time of computation of the log-likelihood \
+                must be >= 0.')
+        if k >= self._times.shape[0]:
+            raise ValueError('Index of time of computation of the log-likelihood \
+                must be within those considered in the output.')
+
+    def mean_positives(self, sens, spec, a, suscep, pop):
+        """
+        Computes the mean of the binomial distribution used to
+        calculate number of positive test results for specified age group.
+
+        """
+        prob = sens * (1-suscep[a]/pop[a]) + (
+                1-spec) * suscep[a]/pop[a]
+        return prob
+
+    def samples_positive_tests(self, output, tests, sens, spec, k):
+        r"""
+        Computes the samples for the number of positive tests at time
+        step :math:`k` in specified region, given the simulated timeline of
+        susceptible number of individuals, for all age groups in the model.
+
+        The number of positive tests is assumed to be distributed according to
+        a binomial distribution with parameters :math:`n = n_{r,t_k,i}` and
+
+        .. math::
+            p = k_{sens} (1-\frac{S_{r,t_k,i}}{N_{r,i}}) + (
+                1-k_{spec}) \frac{S_{r,t_k,i}}{N_{r,i}}
+
+        where :math:`n_{r,t_k,i}` is the number of tests conducted for
+        people in age group :math:`i` in specified region :math:`r` at time
+        atep :math:`t_k`, :math:`k_{sens}` and :math:`k_{spec}` are the
+        sensitivity and specificity respectively of a test, while
+        is the probability of demise :math:`k-l` days after infection and
+        :math:`\delta_{r,t_l,i}^{infec}` is the number of new infections
+        in specified region, for age group :math:`i` on day :math:`t_l`.
+
+        It uses an output of the simulation method for the PheSEIRModel,
+        taking all the rest of the parameters necessary for the computation
+        from the way its simulation has been fitted.
+
+        Parameters
+        ----------
+        output
+            (numpy.array) Output of the simulation method for the PheSEIRModel.
+        tests
+            List of conducted tests in specified region and at time point k
+            classifed by age groups.
+        sens
+            Sensitivity of the test (or ratio of true positives).
+        spec
+            Specificity of the test (or ratio of true negatives).
+        k
+            Index of day for which we intend to sample the number of deaths for
+            by age group.
+
+        Returns
+        -------
+        Array of log-likelihoods for the obsereved number of positive test
+        results for each age group in specified region at time :math:`t_k`.
+
+        Notes
+        -----
+        Always run :meth:`PheSEIRModel.simulate` before running this one.
+
+        """
+        self._check_positives_format(output, tests, sens, spec, k)
+
+        a = self._num_ages
+        # Compute parameters of binomial
+        suscep = output[k, :a]
+        pop = output[k, :a]
+        for i in range(6):
+            pop += output[k, (i*a):((i+1)*a)]
+
+        sample_pos = np.empty(self._num_ages)
+        for _ in range(self._num_ages):
+            prob = self.mean_positives(sens, spec, _, suscep, pop)
+            sample_pos[_] = binom.rvs(
+                n=tests[_],
+                p=prob)
+
+        return sample_pos
