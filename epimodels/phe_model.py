@@ -651,7 +651,7 @@ class PheSEIRModel(object):
                 fatality_ratio, time_to_death, k, _, d_infec)
             log_lik_death[_] = nbinom.logpmf(
                 k=obs_death[_],
-                n=mean/niu,
+                n=mean*niu,
                 p=niu/(1+niu))
 
         return log_lik_death
@@ -770,7 +770,7 @@ class PheSEIRModel(object):
             mean = self.mean_deaths(
                 fatality_ratio, time_to_death, k, _, d_infec)
             sample_death[_] = nbinom.rvs(
-                n=mean/niu,
+                n=mean*niu,
                 p=niu/(1+niu))
 
         return sample_death
