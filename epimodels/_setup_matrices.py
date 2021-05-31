@@ -393,7 +393,8 @@ class UniNextGenMatrix(object):
         generator matrix.
 
         """
-        return max(np.linalg.eigvals(self.generator).tolist())
+        return max([x for x in np.linalg.eigvals(
+            self.generator) if np.isreal(x) and x > 0])
 
 #
 # UniInfectivityMatrix Class
