@@ -193,7 +193,8 @@ def main():
     all_regions = ['EE', 'London', 'Mid', 'NE', 'NW', 'SE', 'SW']
 
     for region in all_regions:
-        multipliers = compute_contact_matrices(region)
+        multipliers = compute_contact_matrices(
+            region, start_date='15/02/2020', end_date='25/06/2021',)
         days = range(multipliers.shape[0])
         weeks = [days[x:x+7] for x in range(0, len(days), 7)]
         week_mean = pd.Series(
