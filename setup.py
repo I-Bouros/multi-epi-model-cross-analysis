@@ -71,7 +71,8 @@ setup(
         'pandas',
         'scipy',
         'pints @ git+git://github.com/pints-team/pints.git#egg=pints-latest',
-        'plotly'
+        'plotly',
+        'kaleido'
     ],
     extras_require={
         'docs': [
