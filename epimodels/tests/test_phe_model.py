@@ -49,6 +49,15 @@ class TestPheSEIRModel(unittest.TestCase):
             model.parameter_names(),
             ['S0', 'E10', 'E20', 'I10', 'I20', 'R0', 'beta', 'kappa', 'gamma'])
 
+    def test_set_regions(self):
+        model = em.PheSEIRModel()
+        regions = ['London', 'Cornwall']
+        model.set_regions(regions)
+
+        self.assertEqual(
+            model.region_names(),
+            ['London', 'Cornwall'])
+
     def test_set_outputs(self):
         model = em.PheSEIRModel()
         outputs = ['S', 'I1', 'I2', 'Incidence']

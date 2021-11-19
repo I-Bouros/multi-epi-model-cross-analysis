@@ -126,6 +126,20 @@ class PheSEIRModel(object):
         """
         return self._parameter_names
 
+    def set_regions(self, regions):
+        """
+        Sets region names.
+
+        """
+        self.regions = regions
+
+    def region_names(self):
+        """
+        Returns the regions names.
+
+        """
+        return self.regions
+
     def set_outputs(self, outputs):
         """
         Checks existence of outputs.
@@ -355,10 +369,8 @@ class PheSEIRModel(object):
             [times[0], times[-1]], init_cond, method=method, t_eval=times)
         return sol
 
-    def simulate(
-            self, parameters, times, matrices_contact, time_changes_contact,
-            regions, initial_r, matrices_region, time_changes_region,
-            method):
+    def _simulate(
+            self, parameters, times, regions, initial_r, method):
         r"""
         Computes the number of individuals in each compartment at the given
         time points and specified region.
@@ -376,22 +388,9 @@ class PheSEIRModel(object):
         times
             (list) List of time points at which we wish to evaluate the ODEs
             system.
-        matrices_contact
-            (list of ContactMatrix) Time-dependent contact matrices used for
-            the modelling.
-        time_changes_contact
-            (list) Times at which the next contact matrix recorded starts to be
-            used. In increasing order.
         regions
             (list) List of region names for the region-specific relative
             susceptibility matrices.
-        matrices_region
-            (list of lists of RegionMatrix)) Time-dependent and region-specific
-            relative susceptibility matrices used for the modelling.
-        time_changes_region
-            (list) Times at which the next instances of region-specific
-            relative susceptibility matrices recorded start to be used. In
-            increasing order.
         initial_r
             (list) List of initial values of the reproduction number by region.
         method
@@ -416,19 +415,19 @@ class PheSEIRModel(object):
             raise TypeError('Index of region to evaluate must be integer.')
         if parameters[0] <= 0:
             raise ValueError('Index of region to evaluate must be >= 1.')
-        if parameters[0] > len(regions):
+        if parameters[0] > len(self.regions):
             raise ValueError('Index of region to evaluate is out of bounds.')
         for _ in range(1, 7):
             if np.asarray(parameters[_]).ndim != 2:
                 raise ValueError(
                     'Storage format for the numbers in each type of compartment\
                         must be 2-dimensional.')
-            if np.asarray(parameters[_]).shape[0] != len(regions):
+            if np.asarray(parameters[_]).shape[0] != len(self.regions):
                 raise ValueError(
                     'Number of age-split compartments of each type does not match \
                         that of the regions.')
             if np.asarray(parameters[_]).shape[1] != len(
-                    matrices_contact[0].ages):
+                    self.matrices_contact[0].ages):
                 raise ValueError(
                     'Number of age compartments of each type for given region does not match \
                         that of age groups.')
@@ -436,7 +435,7 @@ class PheSEIRModel(object):
             raise ValueError(
                 'Storage format for the temporal and regional fluctuations in transmition\
                     must be 2-dimensional.')
-        if np.asarray(parameters[7]).shape[0] != len(regions):
+        if np.asarray(parameters[7]).shape[0] != len(self.regions):
             raise ValueError(
                 'Number of temporal and regional fluctuations in transmition does not match \
                     that of the regions.')
@@ -464,16 +463,15 @@ class PheSEIRModel(object):
         self._c = parameters[7:10]
         self._delta_t = parameters[10]
         self.infectivity_timeline = em.MultiTimesInfectivity(
-            matrices_contact,
-            time_changes_contact,
-            regions,
-            matrices_region,
-            time_changes_region,
+            self.matrices_contact,
+            self.time_changes_contact,
+            self.regions,
+            self.matrices_region,
+            self.time_changes_region,
             initial_r,
             self._c[2],
             self._y_init[0])
 
-        self._num_ages = matrices_contact[0]._num_a_groups
         self._times = np.asarray(times)
 
         # Select method of simulation
@@ -512,6 +510,117 @@ class PheSEIRModel(object):
         output = output[output_indices, :]
 
         return output.transpose()
+
+    def read_contact_data(self, matrices_contact, time_changes_contact):
+        """
+        Reads in tthe timelines of contact data used for the modelling.
+
+        Parameters
+        ----------
+        matrices_contact
+            (list of ContactMatrix) Time-dependent contact matrices used for
+            the modelling.
+        time_changes_contact
+            (list) Times at which the next contact matrix recorded starts to be
+            used. In increasing order.
+
+        """
+        self.matrices_contact = matrices_contact
+        self.time_changes_contact = time_changes_contact
+
+    def read_regional_data(self, matrices_region, time_changes_region):
+        """
+        Reads in tthe timelines of regional data used for the modelling.
+
+        Parameters
+        ----------
+        matrices_region
+            (list of lists of RegionMatrix)) Time-dependent and region-specific
+            relative susceptibility matrices used for the modelling.
+        time_changes_region
+            (list) Times at which the next instances of region-specific
+            relative susceptibility matrices recorded start to be used. In
+            increasing order.
+
+        """
+        self.matrices_region = matrices_region
+        self.time_changes_region = time_changes_region
+
+    def simulate(self, parameters, times):
+        r"""
+        PINTS-configured wrapper for the simulation method of the PHE model.
+
+        Extends the :meth:`_simulation`. Always apply methods
+        :meth:`read_contact_data` and :meth:`read_regional_data` before running
+        the :meth:`PheSEIRModel.simulate`.
+
+        Parameters
+        ----------
+        parameters
+            Long vector format of the quantities that characterise the PHE
+            SEIR model in this order:
+            (1) initial values of the reproduction number
+            by region,
+            (2) index of region for which we wish to simulate,
+            (3) initial conditions matrices classifed by age (column name) and
+            region (row name) for each type of compartment (s, e1, e2, i1, i2,
+            r),
+            (4) temporal and regional fluctuation matrix :math:`\beta`,
+            (5) mean latent period :math:`d_L`,
+            (6) mean infection period :math:`d_I` and
+            (7) time step for the 'homemade' solver.
+            Splited into the formats necessary for the :meth:`_simulate`
+            method.
+        times
+            (list) List of time points at which we wish to evaluate the ODEs
+            system.
+
+        """
+        # Number of regions and age groups
+        self._num_ages = self.matrices_contact[0]._num_a_groups
+
+        n_ages = self._num_ages
+        n_reg = len(self.regions)
+
+        initial_r = parameters[:n_reg]
+        method = parameters[-1]
+
+        # Separate list of parameters into the structures needed for the
+        # simulation
+        my_parameters = []
+
+        # Add index of region
+        my_parameters.append(parameters[n_reg])
+
+        # Add initial conditions for the s, e1, e2, i1, i2, r compartments
+        for _ in range(len(self._output_names)-1):
+            initial_cond_comp = []
+            for r in range(1, n_reg + 1):
+                initial_cond_comp.append(
+                    parameters[(r * n_ages + 1):((r + 1) * n_ages + 1)])
+            my_parameters.append(initial_cond_comp)
+
+        # Add beta parameters
+        start_index = n_reg * (1 + (len(self._output_names)-1) * n_ages) + 1
+        finish_index = start_index + n_reg * len(times)
+
+        beta_param = np.array(
+            parameters[start_index:finish_index]).reshape(n_reg, -1)
+
+        my_parameters.append(beta_param.tolist())
+
+        # Add mean latent period, mean infection period and delta_t
+        my_parameters.extend(parameters[finish_index:-1])
+
+        return self._simulate(my_parameters,
+                              times,
+                              self.matrices_contact,
+                              self.time_changes_contact,
+                              self.regions,
+                              initial_r,
+                              self.matrices_region,
+                              self.time_changes_region,
+                              method)
 
     def _check_output_format(self, output):
         """
