@@ -584,6 +584,12 @@ class PheSEIRModel(object):
         n_ages = self._num_ages
         n_reg = len(self.regions)
 
+        start_index = n_reg * (1 + (len(self._output_names)-1) * n_ages) + 1
+        finish_index = start_index + n_reg * len(times)
+
+        if len(parameters) not in (finish_index + 3, finish_index + 2):
+            raise ValueError('Parameters list has wrong length.')
+
         # Read initial reproduction numbers
         initial_r = parameters[:n_reg]
 
@@ -604,9 +610,6 @@ class PheSEIRModel(object):
             my_parameters.append(initial_cond_comp)
 
         # Add beta parameters
-        start_index = n_reg * (1 + (len(self._output_names)-1) * n_ages) + 1
-        finish_index = start_index + n_reg * len(times)
-
         beta_param = np.array(
             parameters[start_index:finish_index]).reshape(n_reg, -1)
 
