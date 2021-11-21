@@ -9,6 +9,7 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
+from iteration_utilities import deepflatten
 
 import epimodels as em
 
@@ -105,19 +106,21 @@ class TestPheSEIRModel(unittest.TestCase):
             [regional_1_0, regional_1_1]]
         time_changes_region = [1, 2]
 
+        model.set_regions(regions)
+        model.read_contact_data(matrices_contact, time_changes_contact)
+        model.read_regional_data(matrices_region, time_changes_region)
+
         initial_r = [0.5, 1]
 
         parameters = [
-            1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+            initial_r, 1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
             [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5]
+            [[1]*2, [1]*2], 4, dI, 0.5, 'RK45']
 
         times = [1, 2]
 
         output_my_solver = model.simulate(
-            parameters, times, matrices_contact, time_changes_contact,
-            regions, initial_r, matrices_region, time_changes_region,
-            method='my-solver')
+            list(deepflatten(parameters)), times)
 
         npt.assert_almost_equal(
             output_my_solver,
@@ -126,10 +129,10 @@ class TestPheSEIRModel(unittest.TestCase):
                 [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ]), decimal=3)
 
+        parameters[-1] = None
+
         output_scipy_solver = model.simulate(
-            parameters, times, matrices_contact, time_changes_contact,
-            regions, initial_r, matrices_region, time_changes_region,
-            method='RK45')
+            list(deepflatten(parameters)), times)
 
         npt.assert_almost_equal(
             output_scipy_solver,
@@ -138,322 +141,159 @@ class TestPheSEIRModel(unittest.TestCase):
                 [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ]), decimal=3)
 
-        with self.assertRaises(TypeError):
-            model.simulate(
-                parameters,
-                0,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+        parameters[-1] = 'my-solver'
 
         with self.assertRaises(TypeError):
-            model.simulate(
-                parameters,
-                ['1', 2],
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters)), 0)
+
+        with self.assertRaises(TypeError):
+            model.simulate(list(deepflatten(parameters)), ['1', 2])
 
         with self.assertRaises(ValueError):
-            model.simulate(
-                parameters,
-                [0, 1],
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters)), [0, 1])
 
         with self.assertRaises(TypeError):
-            model.simulate(
-                'parameters',
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate('parameters', times)
 
-        with self.assertRaises(ValueError):
-            model.simulate(
-                [0],
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+        with self.assertRaises(IndexError):
+            model.simulate([0], times)
 
         with self.assertRaises(TypeError):
             parameters1 = [
-                0.5, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 0.5, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.005]
+                [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
-                0, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 0, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.005]
+                [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
-                3, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 3, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.005]
+                [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             susceptibles1 = [5, 6]
 
             parameters1 = [
-                1, susceptibles1, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 1, susceptibles1,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.005]
+                [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(IndexError):
             parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]],
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.5]
+                [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(IndexError):
             parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0, 0], [0, 0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.005]
+                [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[[1]*2, [1]*2], [[1]*2, [1]*2]], 4, dI, 0.005]
+                [[[1]*2, [1]*2], [[1]*2, [1]*2]], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2, [1]*2], 4, dI, 0.005]
+                [[1]*2, [1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*4, [1]*4], 4, dI, 0.005]
+                [[1]*4, [1]*4], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
         with self.assertRaises(TypeError):
             parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], '4', dI, 0.005]
+                [[1]*2, [1]*2], '4', dI, 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], -1, dI, 0.005]
+                [[1]*2, [1]*2], -1, dI, 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
         with self.assertRaises(TypeError):
             parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, '4', 0.005]
+                [[1]*2, [1]*2], 4, '4', 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, 0, 0.005]
+                [[1]*2, [1]*2], 4, 0, 0.005, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
         with self.assertRaises(TypeError):
             parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, '0.005']
+                [[1]*2, [1]*2], 4, dI, '0.005', 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0]
+                [[1]*2, [1]*2], 4, dI, 0, 'my-solver']
 
-            model.simulate(
-                parameters1,
-                times,
-                matrices_contact,
-                time_changes_contact,
-                regions,
-                initial_r,
-                matrices_region,
-                time_changes_region,
-                method='my-solver')
+            model.simulate(list(deepflatten(parameters1)), times)
 
     def test_new_infections(self):
         model = em.PheSEIRModel()
@@ -493,19 +333,22 @@ class TestPheSEIRModel(unittest.TestCase):
             [regional_1_0, regional_1_1]]
         time_changes_region = [1, 2]
 
+        model.set_regions(regions)
+        model.read_contact_data(matrices_contact, time_changes_contact)
+        model.read_regional_data(matrices_region, time_changes_region)
+
         initial_r = [0.5, 1]
 
         parameters = [
-            1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+            initial_r, 1, susceptibles,
+            [[0, 0], [0, 0]], [[0, 0], [0, 0]],
             [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5]
+            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
 
         times = [1, 2]
 
         output = model.simulate(
-            parameters, times, matrices_contact, time_changes_contact,
-            regions, initial_r, matrices_region, time_changes_region,
-            method='my-solver')
+            list(deepflatten(parameters)), times)
 
         npt.assert_array_equal(
             model.new_infections(output),
@@ -572,19 +415,22 @@ class TestPheSEIRModel(unittest.TestCase):
             [regional_1_0, regional_1_1]]
         time_changes_region = [1, 2]
 
+        model.set_regions(regions)
+        model.read_contact_data(matrices_contact, time_changes_contact)
+        model.read_regional_data(matrices_region, time_changes_region)
+
         initial_r = [0.5, 1]
 
         parameters = [
-            1, susceptibles, [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
+            initial_r, 1, susceptibles,
+            [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
             [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5]
+            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
 
         times = [1, 2]
 
         output = model.simulate(
-            parameters, times, matrices_contact, time_changes_contact,
-            regions, initial_r, matrices_region, time_changes_region,
-            method='my-solver')
+            list(deepflatten(parameters)), times)
 
         obs_death = [10, 12]
         fatality_ratio = [0.1, 0.5]
@@ -795,19 +641,22 @@ class TestPheSEIRModel(unittest.TestCase):
             [regional_1_0, regional_1_1]]
         time_changes_region = [1, 2]
 
+        model.set_regions(regions)
+        model.read_contact_data(matrices_contact, time_changes_contact)
+        model.read_regional_data(matrices_region, time_changes_region)
+
         initial_r = [0.5, 1]
 
         parameters = [
-            1, susceptibles, [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
+            initial_r, 1, susceptibles,
+            [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
             [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5]
+            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
 
         times = [1, 2]
 
         output = model.simulate(
-            parameters, times, matrices_contact, time_changes_contact,
-            regions, initial_r, matrices_region, time_changes_region,
-            method='my-solver')
+            list(deepflatten(parameters)), times)
 
         fatality_ratio = [0.1, 0.5]
         time_to_death = [0.5, 0.5]
@@ -991,19 +840,21 @@ class TestPheSEIRModel(unittest.TestCase):
             [regional_1_0, regional_1_1]]
         time_changes_region = [1, 2]
 
+        model.set_regions(regions)
+        model.read_contact_data(matrices_contact, time_changes_contact)
+        model.read_regional_data(matrices_region, time_changes_region)
+
         initial_r = [0.5, 1]
 
         parameters = [
-            1, susceptibles, [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
+            initial_r, 1, susceptibles, [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
             [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5]
+            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
 
         times = [1, 2]
 
         output = model.simulate(
-            parameters, times, matrices_contact, time_changes_contact,
-            regions, initial_r, matrices_region, time_changes_region,
-            method='my-solver')
+            list(deepflatten(parameters)), times)
 
         obs_pos = [10, 12]
         tests = [20, 30]
@@ -1172,19 +1023,21 @@ class TestPheSEIRModel(unittest.TestCase):
             [regional_1_0, regional_1_1]]
         time_changes_region = [1, 2]
 
+        model.set_regions(regions)
+        model.read_contact_data(matrices_contact, time_changes_contact)
+        model.read_regional_data(matrices_region, time_changes_region)
+
         initial_r = [0.5, 1]
 
         parameters = [
-            1, susceptibles, [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
+            initial_r, 1, susceptibles, [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
             [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5]
+            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
 
         times = [1, 2]
 
         output = model.simulate(
-            parameters, times, matrices_contact, time_changes_contact,
-            regions, initial_r, matrices_region, time_changes_region,
-            method='my-solver')
+            list(deepflatten(parameters)), times)
 
         tests = [20, 30]
         sens = 0.9

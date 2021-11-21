@@ -235,7 +235,7 @@ class PheSEIRModel(object):
         c
             (list) List values used to compute the parameters of the ODEs
             system. It assumes c = [beta, kappa, gamma], where :math:`beta`
-            encaplsulates temporal fluctuations in transmition for all ages.
+            encaplsulates temporal fluctuations in transmission for all ages.
         num_a_groups
             (int) Number of age groups in which the population is split. It
             refers to the number of compartments of each type.
@@ -370,7 +370,7 @@ class PheSEIRModel(object):
         return sol
 
     def _simulate(
-            self, parameters, times, regions, initial_r, method):
+            self, parameters, times, initial_r, method):
         r"""
         Computes the number of individuals in each compartment at the given
         time points and specified region.
@@ -407,8 +407,6 @@ class PheSEIRModel(object):
                     float.')
             if _ <= 0:
                 raise ValueError('Time points of evaluation must be > 0.')
-        if not isinstance(parameters, list):
-            raise TypeError('Parametrs must be given in a list format.')
         if len(parameters) != 11:
             raise ValueError('List of parameters needs to be of length 11.')
         if not isinstance(parameters[0], int):
@@ -433,15 +431,15 @@ class PheSEIRModel(object):
                         that of age groups.')
         if np.asarray(parameters[7]).ndim != 2:
             raise ValueError(
-                'Storage format for the temporal and regional fluctuations in transmition\
+                'Storage format for the temporal and regional fluctuations in transmission\
                     must be 2-dimensional.')
         if np.asarray(parameters[7]).shape[0] != len(self.regions):
             raise ValueError(
-                'Number of temporal and regional fluctuations in transmition does not match \
+                'Number of temporal and regional fluctuations in transmission does not match \
                     that of the regions.')
         if np.asarray(parameters[7]).shape[1] != len(times):
             raise ValueError(
-                'Number of temporal and regional fluctuations in transmition does not match \
+                'Number of temporal and regional fluctuations in transmission does not match \
                     that of time points.')
         if not isinstance(parameters[8], (float, int)):
             raise TypeError('Mean latent period must be float or integer.')
@@ -551,8 +549,9 @@ class PheSEIRModel(object):
         PINTS-configured wrapper for the simulation method of the PHE model.
 
         Extends the :meth:`_simulation`. Always apply methods
-        :meth:`read_contact_data` and :meth:`read_regional_data` before running
-        the :meth:`PheSEIRModel.simulate`.
+        :meth:`set_regions`, :meth:`read_contact_data` and
+        :meth:`read_regional_data` before running the
+        :meth:`PheSEIRModel.simulate`.
 
         Parameters
         ----------
@@ -576,14 +575,17 @@ class PheSEIRModel(object):
             system.
 
         """
+        if not isinstance(parameters, list):
+            raise TypeError('Parameters must be given in a list format.')
+
         # Number of regions and age groups
         self._num_ages = self.matrices_contact[0]._num_a_groups
 
         n_ages = self._num_ages
         n_reg = len(self.regions)
 
+        # Read initial reproduction numbers
         initial_r = parameters[:n_reg]
-        method = parameters[-1]
 
         # Separate list of parameters into the structures needed for the
         # simulation
@@ -593,11 +595,12 @@ class PheSEIRModel(object):
         my_parameters.append(parameters[n_reg])
 
         # Add initial conditions for the s, e1, e2, i1, i2, r compartments
-        for _ in range(len(self._output_names)-1):
+        for c in range(len(self._output_names)-1):
             initial_cond_comp = []
             for r in range(1, n_reg + 1):
+                ind = r * n_ages + n_reg * c * n_ages + 1
                 initial_cond_comp.append(
-                    parameters[(r * n_ages + 1):((r + 1) * n_ages + 1)])
+                    parameters[ind:(ind + n_ages)])
             my_parameters.append(initial_cond_comp)
 
         # Add beta parameters
@@ -610,16 +613,16 @@ class PheSEIRModel(object):
         my_parameters.append(beta_param.tolist())
 
         # Add mean latent period, mean infection period and delta_t
-        my_parameters.extend(parameters[finish_index:-1])
+        my_parameters.extend(parameters[finish_index:(finish_index + 3)])
+
+        if len(parameters) == finish_index + 3:
+            method = parameters[-1]
+        else:
+            method = 'my-solver'
 
         return self._simulate(my_parameters,
                               times,
-                              self.matrices_contact,
-                              self.time_changes_contact,
-                              self.regions,
                               initial_r,
-                              self.matrices_region,
-                              self.time_changes_region,
                               method)
 
     def _check_output_format(self, output):
