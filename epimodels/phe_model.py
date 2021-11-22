@@ -19,13 +19,14 @@ matrices.
 from itertools import chain
 
 import numpy as np
+import pints
 from scipy.stats import nbinom, binom
 from scipy.integrate import solve_ivp
 
 import epimodels as em
 
 
-class PheSEIRModel(object):
+class PheSEIRModel(pints.ForwardModel):
     r"""PheSEIRModel Class:
     Base class for constructing the ODE model: deterministic SEIR used by the
     Public Health England to model the Covid-19 epidemic in UK based on region.
