@@ -113,7 +113,7 @@ class TestPheSEIRModel(unittest.TestCase):
         initial_r = [0.5, 1]
 
         parameters = [
-            initial_r, 1, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+            initial_r, 2, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
             [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
             [[1]*2, [1]*2], 4, dI, 0.5, 'RK45']
 
@@ -125,8 +125,8 @@ class TestPheSEIRModel(unittest.TestCase):
         npt.assert_almost_equal(
             output_my_solver,
             np.array([
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                [7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ]), decimal=3)
 
         parameters[-1] = 'my-solver'
@@ -137,8 +137,8 @@ class TestPheSEIRModel(unittest.TestCase):
         npt.assert_almost_equal(
             output_scipy_solver,
             np.array([
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                [7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ]), decimal=3)
 
         parameters[-1] = 'my-solver'
