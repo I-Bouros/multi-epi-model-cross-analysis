@@ -120,7 +120,7 @@ class TestPheSEIRModel(unittest.TestCase):
         times = [1, 2]
 
         output_my_solver = model.simulate(
-            list(deepflatten(parameters)), times)
+            list(deepflatten(parameters, ignore=str)), times)
 
         npt.assert_almost_equal(
             output_my_solver,
@@ -129,10 +129,10 @@ class TestPheSEIRModel(unittest.TestCase):
                 [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ]), decimal=3)
 
-        parameters[-1] = None
+        parameters[-1] = 'my-solver'
 
         output_scipy_solver = model.simulate(
-            list(deepflatten(parameters)), times)
+            list(deepflatten(parameters, ignore=str)), times)
 
         npt.assert_almost_equal(
             output_scipy_solver,
@@ -144,18 +144,18 @@ class TestPheSEIRModel(unittest.TestCase):
         parameters[-1] = 'my-solver'
 
         with self.assertRaises(TypeError):
-            model.simulate(list(deepflatten(parameters)), 0)
+            model.simulate(list(deepflatten(parameters, ignore=str)), 0)
 
         with self.assertRaises(TypeError):
-            model.simulate(list(deepflatten(parameters)), ['1', 2])
+            model.simulate(list(deepflatten(parameters, ignore=str)), ['1', 2])
 
         with self.assertRaises(ValueError):
-            model.simulate(list(deepflatten(parameters)), [0, 1])
+            model.simulate(list(deepflatten(parameters, ignore=str)), [0, 1])
 
         with self.assertRaises(TypeError):
             model.simulate('parameters', times)
 
-        with self.assertRaises(IndexError):
+        with self.assertRaises(ValueError):
             model.simulate([0], times)
 
         with self.assertRaises(TypeError):
@@ -165,7 +165,9 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(
+                list(deepflatten(parameters1, ignore=(str, float))),
+                times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
@@ -174,7 +176,7 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
@@ -183,9 +185,9 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             susceptibles1 = [5, 6]
 
             parameters1 = [
@@ -194,25 +196,25 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
-        with self.assertRaises(IndexError):
+        with self.assertRaises(ValueError):
             parameters1 = [
                 initial_r, 1, susceptibles,
                 [[0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
-        with self.assertRaises(IndexError):
+        with self.assertRaises(ValueError):
             parameters1 = [
                 initial_r, 1, susceptibles,
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0, 0], [0, 0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
@@ -221,7 +223,7 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[[1]*2, [1]*2], [[1]*2, [1]*2]], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
@@ -230,7 +232,7 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
@@ -239,7 +241,7 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*4, [1]*4], 4, dI, 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
         with self.assertRaises(TypeError):
             parameters1 = [
@@ -248,7 +250,7 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], '4', dI, 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
@@ -257,7 +259,7 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], -1, dI, 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
         with self.assertRaises(TypeError):
             parameters1 = [
@@ -266,7 +268,7 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], 4, '4', 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
@@ -275,7 +277,7 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], 4, 0, 0.005, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
         with self.assertRaises(TypeError):
             parameters1 = [
@@ -284,7 +286,7 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], 4, dI, '0.005', 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
         with self.assertRaises(ValueError):
             parameters1 = [
@@ -293,7 +295,7 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], 4, dI, 0, 'my-solver']
 
-            model.simulate(list(deepflatten(parameters1)), times)
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
     def test_new_infections(self):
         model = em.PheSEIRModel()
@@ -348,7 +350,7 @@ class TestPheSEIRModel(unittest.TestCase):
         times = [1, 2]
 
         output = model.simulate(
-            list(deepflatten(parameters)), times)
+            list(deepflatten(parameters, ignore=str)), times)
 
         npt.assert_array_equal(
             model.new_infections(output),
@@ -430,7 +432,7 @@ class TestPheSEIRModel(unittest.TestCase):
         times = [1, 2]
 
         output = model.simulate(
-            list(deepflatten(parameters)), times)
+            list(deepflatten(parameters, ignore=str)), times)
 
         obs_death = [10, 12]
         fatality_ratio = [0.1, 0.5]
@@ -656,7 +658,7 @@ class TestPheSEIRModel(unittest.TestCase):
         times = [1, 2]
 
         output = model.simulate(
-            list(deepflatten(parameters)), times)
+            list(deepflatten(parameters, ignore=str)), times)
 
         fatality_ratio = [0.1, 0.5]
         time_to_death = [0.5, 0.5]
@@ -854,7 +856,7 @@ class TestPheSEIRModel(unittest.TestCase):
         times = [1, 2]
 
         output = model.simulate(
-            list(deepflatten(parameters)), times)
+            list(deepflatten(parameters, ignore=str)), times)
 
         obs_pos = [10, 12]
         tests = [20, 30]
@@ -1037,7 +1039,7 @@ class TestPheSEIRModel(unittest.TestCase):
         times = [1, 2]
 
         output = model.simulate(
-            list(deepflatten(parameters)), times)
+            list(deepflatten(parameters, ignore=str)), times)
 
         tests = [20, 30]
         sens = 0.9

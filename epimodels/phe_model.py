@@ -397,64 +397,6 @@ class PheSEIRModel(object):
             (string) The type of solver implemented by the simulator.
 
         """
-        # Check correct format of output
-        if not isinstance(times, list):
-            raise TypeError('Time points of evaluation must be given in a list \
-                format.')
-        for _ in times:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Time points of evaluation must be integer or \
-                    float.')
-            if _ <= 0:
-                raise ValueError('Time points of evaluation must be > 0.')
-        if len(parameters) != 11:
-            raise ValueError('List of parameters needs to be of length 11.')
-        if not isinstance(parameters[0], int):
-            raise TypeError('Index of region to evaluate must be integer.')
-        if parameters[0] <= 0:
-            raise ValueError('Index of region to evaluate must be >= 1.')
-        if parameters[0] > len(self.regions):
-            raise ValueError('Index of region to evaluate is out of bounds.')
-        for _ in range(1, 7):
-            if np.asarray(parameters[_]).ndim != 2:
-                raise ValueError(
-                    'Storage format for the numbers in each type of compartment\
-                        must be 2-dimensional.')
-            if np.asarray(parameters[_]).shape[0] != len(self.regions):
-                raise ValueError(
-                    'Number of age-split compartments of each type does not match \
-                        that of the regions.')
-            if np.asarray(parameters[_]).shape[1] != len(
-                    self.matrices_contact[0].ages):
-                raise ValueError(
-                    'Number of age compartments of each type for given region does not match \
-                        that of age groups.')
-        if np.asarray(parameters[7]).ndim != 2:
-            raise ValueError(
-                'Storage format for the temporal and regional fluctuations in transmission\
-                    must be 2-dimensional.')
-        if np.asarray(parameters[7]).shape[0] != len(self.regions):
-            raise ValueError(
-                'Number of temporal and regional fluctuations in transmission does not match \
-                    that of the regions.')
-        if np.asarray(parameters[7]).shape[1] != len(times):
-            raise ValueError(
-                'Number of temporal and regional fluctuations in transmission does not match \
-                    that of time points.')
-        if not isinstance(parameters[8], (float, int)):
-            raise TypeError('Mean latent period must be float or integer.')
-        if parameters[8] <= 0:
-            raise ValueError('Mean latent period must be > 0.')
-        if not isinstance(parameters[9], (float, int)):
-            raise TypeError('Mean infection period must be float or integer.')
-        if parameters[9] <= 0:
-            raise ValueError('Mean infection period must be > 0.')
-        if not isinstance(parameters[10], (float, int)):
-            raise TypeError(
-                'Time step for ODE solver must be float or integer.')
-        if parameters[10] <= 0:
-            raise ValueError('Time step for ODE solver must be > 0.')
-
         # Split parameters into the features of the model
         self._region = parameters[0]
         self._y_init = parameters[1:7]
@@ -566,8 +508,9 @@ class PheSEIRModel(object):
             r),
             (4) temporal and regional fluctuation matrix :math:`\beta`,
             (5) mean latent period :math:`d_L`,
-            (6) mean infection period :math:`d_I` and
-            (7) time step for the 'homemade' solver.
+            (6) mean infection period :math:`d_I`,
+            (7) time step for the 'homemade' solver and
+            (8) (string) the type of solver implemented by the simulator.
             Splited into the formats necessary for the :meth:`_simulate`
             method.
         times
@@ -575,9 +518,6 @@ class PheSEIRModel(object):
             system.
 
         """
-        if not isinstance(parameters, list):
-            raise TypeError('Parameters must be given in a list format.')
-
         # Number of regions and age groups
         self._num_ages = self.matrices_contact[0]._num_a_groups
 
@@ -587,8 +527,8 @@ class PheSEIRModel(object):
         start_index = n_reg * (1 + (len(self._output_names)-1) * n_ages) + 1
         finish_index = start_index + n_reg * len(times)
 
-        if len(parameters) not in (finish_index + 3, finish_index + 2):
-            raise ValueError('Parameters list has wrong length.')
+        self._check_input_simulate(
+            parameters, times, finish_index + 4, n_reg)
 
         # Read initial reproduction numbers
         initial_r = parameters[:n_reg]
@@ -603,8 +543,8 @@ class PheSEIRModel(object):
         # Add initial conditions for the s, e1, e2, i1, i2, r compartments
         for c in range(len(self._output_names)-1):
             initial_cond_comp = []
-            for r in range(1, n_reg + 1):
-                ind = r * n_ages + n_reg * c * n_ages + 1
+            for r in range(n_reg):
+                ind = n_reg + r * n_ages + n_reg * c * n_ages + 1
                 initial_cond_comp.append(
                     parameters[ind:(ind + n_ages)])
             my_parameters.append(initial_cond_comp)
@@ -618,15 +558,59 @@ class PheSEIRModel(object):
         # Add mean latent period, mean infection period and delta_t
         my_parameters.extend(parameters[finish_index:(finish_index + 3)])
 
-        if len(parameters) == finish_index + 3:
-            method = parameters[-1]
-        else:
-            method = 'my-solver'
+        # Add method
+        method = parameters[finish_index + 3]
 
         return self._simulate(my_parameters,
                               times,
                               initial_r,
                               method)
+
+    def _check_input_simulate(
+            self, parameters, times, L, n_reg):
+        """
+        Check correct format of input of simulate method.
+
+        """
+        if not isinstance(times, list):
+            raise TypeError('Time points of evaluation must be given in a list \
+                format.')
+        for _ in times:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of evaluation must be integer or \
+                    float.')
+            if _ <= 0:
+                raise ValueError('Time points of evaluation must be > 0.')
+
+        if not isinstance(parameters, list):
+            raise TypeError('Parameters must be given in a list format.')
+        if len(parameters) != L:
+            raise ValueError('List of parameters has wrong length.')
+        if not isinstance(parameters[n_reg], int):
+            raise TypeError('Index of region to evaluate must be integer.')
+        if parameters[n_reg] <= 0:
+            raise ValueError('Index of region to evaluate must be >= 1.')
+        if parameters[n_reg] > n_reg:
+            raise ValueError('Index of region to evaluate is out of bounds.')
+        if not isinstance(parameters[-4], (float, int)):
+            raise TypeError('Mean latent period must be float or integer.')
+        if parameters[-4] <= 0:
+            raise ValueError('Mean latent period must be > 0.')
+        if not isinstance(parameters[-3], (float, int)):
+            raise TypeError('Mean infection period must be float or integer.')
+        if parameters[-3] <= 0:
+            raise ValueError('Mean infection period must be > 0.')
+        if not isinstance(parameters[-2], (float, int)):
+            raise TypeError(
+                'Time step for ODE solver must be float or integer.')
+        if parameters[-2] <= 0:
+            raise ValueError('Time step for ODE solver must be > 0.')
+        if not isinstance(parameters[-1], str):
+            raise TypeError('Simulation method must be a string.')
+        if parameters[-1] not in (
+                'my-solver', 'RK45', 'RK23', 'Radau',
+                'BDF', 'LSODA', 'DOP853'):
+            raise ValueError('Simulation method not available.')
 
     def _check_output_format(self, output):
         """
