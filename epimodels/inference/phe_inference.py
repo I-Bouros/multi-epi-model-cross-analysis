@@ -16,14 +16,45 @@ matrices.
 
 """
 
-# import pints
+import pints
 
-# import epimodels as em
+import epimodels as em
 
 
 class PheSEIRInfer(object):
-    """
+    """PheSEIRInfer Class:
+    Contoller class for the inference of parameters of the PHE model.
 
     """
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, model):
+        super(PheSEIRInfer, self).__init__()
+
+        # Assign model for inference
+        if not isinstance(model, em.PheSEIRModel):
+            raise TypeError('Wrong model type for parameters inference.')
+
+        self._model = model
+
+    def read_serology_data(self, tests_data, positives_data):
+        """
+        """
+        self._total_tests = tests_data
+        self._positive_tests = positives_data
+
+    def read_deaths_data(self, deaths_data):
+        """
+        """
+        self._deaths = deaths_data
+
+    def _log_likelihood(self):
+        """
+        """
+        pass
+
+    def _inference_problem_setup(self, times, observed_output):
+        """
+        """
+        self._infer_problem = pints.MultiOutputProblem(
+            self._model, times, observed_output)
+
+        self._score = pints.SumOfSquaresError(self._infer_problem)
