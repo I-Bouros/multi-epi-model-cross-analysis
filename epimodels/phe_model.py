@@ -80,6 +80,8 @@ class PheSEIRModel(pints.ForwardModel):
     where :math:`d_L` refers to mean latent period until disease onset and
     :math:`d_I` to mean period of infection.
 
+    Extends :class:`pints.ForwardModel`.
+
     """
     def __init__(self):
         super(PheSEIRModel, self).__init__()
