@@ -23,7 +23,7 @@ import epimodels as em
 
 class PheSEIRInfer(object):
     """PheSEIRInfer Class:
-    Contoller class for the inference of parameters of the PHE model.
+    Controller class for the inference of parameters of the PHE model.
 
     """
     def __init__(self, model):
@@ -58,3 +58,26 @@ class PheSEIRInfer(object):
             self._model, times, observed_output)
 
         self._score = pints.SumOfSquaresError(self._infer_problem)
+
+        loglikelihood = self._log_likelihood()
+
+        # Starting points
+        x0 = [
+            [0.001, 0.20, 52, 3, 3],
+            [0.05, 0.34, 34, 3, 3],
+            [0.02, 0.18, 20, 3, 3],
+        ]
+
+        # Create MCMC routine
+        mcmc = pints.MCMCController(loglikelihood, 3, x0)
+        mcmc.set_max_iterations(3000)
+        mcmc.set_log_to_screen(False)
+        chains = mcmc.run()
+
+        # Check convergence and other properties of chains
+        results = pints.MCMCSummary(
+            chains=chains, time=mcmc.time(),
+            parameter_names=[
+                'gamma', 'v', 'S_0', 'sigma infected',
+                'sigma recovery'])
+        print(results)

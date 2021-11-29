@@ -714,7 +714,7 @@ class PheSEIRModel(pints.ForwardModel):
             List of probabilities of death of individual k days after
             infection.
         niu
-            Dispesion factor for the negative binomial distribution
+            Dispersion factor for the negative binomial distribution
         k
             Index of day for which we intend to sample the number of deaths for
             by age group.
