@@ -16,6 +16,7 @@ matrices.
 
 """
 
+import numpy as np
 import pints
 
 import epimodels as em
@@ -35,31 +36,154 @@ class PheSEIRInfer(object):
 
         self._model = model
 
-    def read_serology_data(self, tests_data, positives_data):
+    def read_serology_data(self, tests_data, positives_data, sens, spec):
         """
+        Sets the serology data used for the model's parameters inference.
+
+        Paramaters
+        ----------
+        tests_data
+            (pandas Dataframe) Dataframe of the total number of tests conducted
+
+        positives_data
+
+        sens
+            Sensitivity of the test (or ratio of true positives).
+        spec
+            Specificity of the test (or ratio of true negatives).
+
         """
         self._total_tests = tests_data
         self._positive_tests = positives_data
+        self._sens = sens
+        self._spec = spec
 
-    def read_deaths_data(self, deaths_data):
+    def read_deaths_data(self, deaths_data, fatality_ratio, time_to_death):
         """
+        Sets the serology data used for the model's parameters inference.
+
+        Paramaters
+        ----------
+        deaths_data
+            (pandas Dataframe) Dataframe of the total number of tests conducted
+
+        fatality_ratio
+            (list) List of age-specific fatality ratios.
+        time_to_death
+            (list) List of probabilities of death of individual d days after
+            infection.
+
         """
         self._deaths = deaths_data
+        self._fatality_ratio = fatality_ratio
+        self._time_to_death = time_to_death
 
-    def _log_likelihood(self):
+    def _log_likelihood(self, times, var_parameters):
+        """
+        Computes the log-likelihood of the non-fixed parameters
+        using death and serology data.
+
+        Parameters
+        ----------
+        times
+            (list) List of time points at which we have data for the
+            log-likelihood computation.
+        var_parameters
+            List of values for the model paramaters to infer.
+
+        """
+        # Use prior mean for the over-dispersion parameter
+        niu = 5
+
+        # Set fixed parameters
+        # Initial Conditions
+        susceptibles = [
+            [68124, 299908, 773741, 668994, 1554740, 1632059, 660187, 578319],
+            [117840, 488164, 1140597, 1033029, 3050671, 2050173, 586472, 495043],  # noqa
+            [116401, 508081, 1321675, 1319046, 2689334, 2765974, 1106091, 943363],  # noqa
+            [85845, 374034, 978659, 1005275, 2036049, 2128261, 857595, 707190],
+            [81258, 348379, 894662, 871907, 1864807, 1905072, 750263, 624848],
+            [95825, 424854, 1141632, 1044242, 2257437, 2424929, 946459, 844757],  # noqa
+            [53565, 237359, 641486, 635602, 1304264, 1499291, 668999, 584130]]
+
+        exposed1 = np.zeros((
+            len(self._model.regions),
+            len(self._model._num_ages))).tolist()
+
+        exposed2 = np.zeros((
+            len(self._model.regions),
+            len(self._model._num_ages))).tolist()
+
+        infectives1 = [
+            [0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 2, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0]]
+
+        infectives2 = np.zeros((
+            len(self._model.regions),
+            len(self._model._num_ages))).tolist()
+
+        recovered = np.zeros((
+            len(self._model.regions),
+            len(self._model._num_ages))).tolist()
+
+        # Beta multipliers
+        betas = np.ones((len(self._model.regions), len(times))).tolist()
+
+        # Other parameters
+        dI = 4
+        dL = 4
+        delta_t = 0.5
+
+        parameters = [
+            var_parameters,
+            0,
+            susceptibles, exposed1, exposed2, infectives1, infectives2,
+            recovered,
+            betas,
+            dL,
+            dI,
+            delta_t,
+            'RK45'
+        ]
+
+        total_log_lik = 0
+
+        for r, _ in enumerate(self._model.regions):
+            parameters[1] = r+1
+
+            model_output = self._model.simulate(
+                parameters=parameters,
+                times=times
+            )
+
+            for t in times:
+                total_log_lik += self._model.loglik_deaths(
+                    obs_death=self._deaths,
+                    output=model_output,
+                    fatality_ratio=self._fatality_ratio,
+                    time_to_death=self._time_to_death,
+                    niu=niu,
+                    k=t
+                ) + self._model.loglik_positive_tests(
+                    obs_pos=self._positive_tests,
+                    output=model_output,
+                    tests=self._total_tests,
+                    sens=self._sens,
+                    spec=self._spec,
+                    k=t
+                )
+
+        return total_log_lik
+
+    def _inference_problem_setup(self, times, var_parameters):
         """
         """
-        pass
-
-    def _inference_problem_setup(self, times, observed_output):
-        """
-        """
-        self._infer_problem = pints.MultiOutputProblem(
-            self._model, times, observed_output)
-
-        self._score = pints.SumOfSquaresError(self._infer_problem)
-
-        loglikelihood = self._log_likelihood()
+        loglikelihood = self._log_likelihood(times, var_parameters)
 
         # Starting points
         x0 = [

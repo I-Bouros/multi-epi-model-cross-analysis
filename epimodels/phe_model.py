@@ -844,7 +844,7 @@ class PheSEIRModel(pints.ForwardModel):
         fatality_ratio
             List of age-specific fatality ratios.
         time_to_death
-            List of probabilities of death of individual k days after
+            List of probabilities of death of individual d days after
             infection.
         niu
             Dispesion factor for the negative binomial distribution
