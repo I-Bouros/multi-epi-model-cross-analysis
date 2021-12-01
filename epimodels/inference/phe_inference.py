@@ -18,6 +18,7 @@ matrices.
 
 import numpy as np
 import pints
+from iteration_utilities import deepflatten
 
 import epimodels as em
 
@@ -43,10 +44,13 @@ class PheSEIRInfer(object):
         Paramaters
         ----------
         tests_data
-            (pandas Dataframe) Dataframe of the total number of tests conducted
-
+            (Numpy array) List of regional numpy arrays of the daily number
+            of tests conducted, split by age category. Each column represents
+            an age group.
         positives_data
-
+            (Numpy array) List of regional numpy arrays of the daily number
+            of positive test results, split by age category. Each column
+            represents an age group.
         sens
             Sensitivity of the test (or ratio of true positives).
         spec
@@ -65,8 +69,9 @@ class PheSEIRInfer(object):
         Paramaters
         ----------
         deaths_data
-            (pandas Dataframe) Dataframe of the total number of tests conducted
-
+            (Numpy array) List of regional numpy arrays of the daily number
+            of deaths, split by age category. Each column represents an age
+            group.
         fatality_ratio
             (list) List of age-specific fatality ratios.
         time_to_death
@@ -139,6 +144,7 @@ class PheSEIRInfer(object):
         dL = 4
         delta_t = 0.5
 
+        # [var_r] * reg
         parameters = [
             var_parameters,
             0,
@@ -157,22 +163,22 @@ class PheSEIRInfer(object):
             parameters[1] = r+1
 
             model_output = self._model.simulate(
-                parameters=parameters,
+                parameters=list(deepflatten(parameters, ignore=str)),
                 times=times
             )
 
             for t in times:
                 total_log_lik += self._model.loglik_deaths(
-                    obs_death=self._deaths,
+                    obs_death=self._deaths[r][t, :],
                     output=model_output,
                     fatality_ratio=self._fatality_ratio,
                     time_to_death=self._time_to_death,
                     niu=niu,
                     k=t
                 ) + self._model.loglik_positive_tests(
-                    obs_pos=self._positive_tests,
+                    obs_pos=self._positive_tests[r][t, :],
                     output=model_output,
-                    tests=self._total_tests,
+                    tests=self._total_tests[r][t, :],
                     sens=self._sens,
                     spec=self._spec,
                     k=t
