@@ -186,6 +186,18 @@ class PheSEIRInfer(object):
 
         return total_log_lik
 
+    class InferLogLikelihood(pints.LogPDF):
+        """
+        """
+        def __init__(self, var_parameters):
+            self._parameters = var_parameters
+
+        def n_parameters(self):
+            return len(self._parameters)
+
+        def __call__(self, x):
+            pass
+
     def inference_problem_setup(self, times, var_parameters):
         """
         Runs the parameter inference routine for the PHE model.
