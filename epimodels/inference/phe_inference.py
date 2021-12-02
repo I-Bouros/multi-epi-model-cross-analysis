@@ -23,6 +23,125 @@ from iteration_utilities import deepflatten
 import epimodels as em
 
 
+class InferLogLikelihood(pints.LogPDF):
+    """
+    """
+    def __init__(self, var_parameters):
+        self._parameters = var_parameters
+
+    def n_parameters(self):
+        return len(self._parameters)
+
+    def read_inference_controller(self):
+        """
+        """
+        pass
+
+    def _log_likelihood(self, times):
+        """
+        Computes the log-likelihood of the non-fixed parameters
+        using death and serology data.
+
+        Parameters
+        ----------
+        times
+            (list) List of time points at which we have data for the
+            log-likelihood computation.
+
+        """
+        # Use prior mean for the over-dispersion parameter
+        niu = 5
+
+        # Set fixed parameters
+        # Initial Conditions
+        susceptibles = [
+            [68124, 299908, 773741, 668994, 1554740, 1632059, 660187, 578319],  # noqa
+            [117840, 488164, 1140597, 1033029, 3050671, 2050173, 586472, 495043],  # noqa
+            [116401, 508081, 1321675, 1319046, 2689334, 2765974, 1106091, 943363],  # noqa
+            [85845, 374034, 978659, 1005275, 2036049, 2128261, 857595, 707190],  # noqa
+            [81258, 348379, 894662, 871907, 1864807, 1905072, 750263, 624848],  # noqa
+            [95825, 424854, 1141632, 1044242, 2257437, 2424929, 946459, 844757],  # noqa
+            [53565, 237359, 641486, 635602, 1304264, 1499291, 668999, 584130]]  # noqa
+
+        exposed1 = np.zeros((
+            len(self._model.regions),
+            len(self._model._num_ages))).tolist()
+
+        exposed2 = np.zeros((
+            len(self._model.regions),
+            len(self._model._num_ages))).tolist()
+
+        infectives1 = [
+            [0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 2, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0]]
+
+        infectives2 = np.zeros((
+            len(self._model.regions),
+            len(self._model._num_ages))).tolist()
+
+        recovered = np.zeros((
+            len(self._model.regions),
+            len(self._model._num_ages))).tolist()
+
+        # Beta multipliers
+        betas = np.ones((len(self._model.regions), len(times))).tolist()
+
+        # Other parameters
+        dI = 4
+        dL = 4
+        delta_t = 0.5
+
+        # [var_r] * reg
+        parameters = [
+            self._parameters,
+            0,
+            susceptibles, exposed1, exposed2, infectives1, infectives2,
+            recovered,
+            betas,
+            dL,
+            dI,
+            delta_t,
+            'RK45'
+        ]
+
+        total_log_lik = 0
+
+        for r, _ in enumerate(self._model.regions):
+            parameters[1] = r+1
+
+            model_output = self._model.simulate(
+                parameters=list(deepflatten(parameters, ignore=str)),
+                times=times
+            )
+
+            for t in times:
+                total_log_lik += self._model.loglik_deaths(
+                    obs_death=self._deaths[r][t, :],
+                    output=model_output,
+                    fatality_ratio=self._fatality_ratio,
+                    time_to_death=self._time_to_death,
+                    niu=niu,
+                    k=t
+                ) + self._model.loglik_positive_tests(
+                    obs_pos=self._positive_tests[r][t, :],
+                    output=model_output,
+                    tests=self._total_tests[r][t, :],
+                    sens=self._sens,
+                    spec=self._spec,
+                    k=t
+                )
+
+        return total_log_lik
+
+    def __call__(self, x):
+        return self._log_likelihood()
+
+
 class PheSEIRInfer(object):
     """PheSEIRInfer Class:
     Controller class for the inference of parameters of the PHE model.
@@ -83,127 +202,11 @@ class PheSEIRInfer(object):
         self._fatality_ratio = fatality_ratio
         self._time_to_death = time_to_death
 
-    def _log_likelihood(self, times, var_parameters):
-        """
-        Computes the log-likelihood of the non-fixed parameters
-        using death and serology data.
-
-        Parameters
-        ----------
-        times
-            (list) List of time points at which we have data for the
-            log-likelihood computation.
-        var_parameters
-            List of values for the model paramaters to infer.
-
-        """
-        # Use prior mean for the over-dispersion parameter
-        niu = 5
-
-        # Set fixed parameters
-        # Initial Conditions
-        susceptibles = [
-            [68124, 299908, 773741, 668994, 1554740, 1632059, 660187, 578319],
-            [117840, 488164, 1140597, 1033029, 3050671, 2050173, 586472, 495043],  # noqa
-            [116401, 508081, 1321675, 1319046, 2689334, 2765974, 1106091, 943363],  # noqa
-            [85845, 374034, 978659, 1005275, 2036049, 2128261, 857595, 707190],
-            [81258, 348379, 894662, 871907, 1864807, 1905072, 750263, 624848],
-            [95825, 424854, 1141632, 1044242, 2257437, 2424929, 946459, 844757],  # noqa
-            [53565, 237359, 641486, 635602, 1304264, 1499291, 668999, 584130]]
-
-        exposed1 = np.zeros((
-            len(self._model.regions),
-            len(self._model._num_ages))).tolist()
-
-        exposed2 = np.zeros((
-            len(self._model.regions),
-            len(self._model._num_ages))).tolist()
-
-        infectives1 = [
-            [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 2, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0]]
-
-        infectives2 = np.zeros((
-            len(self._model.regions),
-            len(self._model._num_ages))).tolist()
-
-        recovered = np.zeros((
-            len(self._model.regions),
-            len(self._model._num_ages))).tolist()
-
-        # Beta multipliers
-        betas = np.ones((len(self._model.regions), len(times))).tolist()
-
-        # Other parameters
-        dI = 4
-        dL = 4
-        delta_t = 0.5
-
-        # [var_r] * reg
-        parameters = [
-            var_parameters,
-            0,
-            susceptibles, exposed1, exposed2, infectives1, infectives2,
-            recovered,
-            betas,
-            dL,
-            dI,
-            delta_t,
-            'RK45'
-        ]
-
-        total_log_lik = 0
-
-        for r, _ in enumerate(self._model.regions):
-            parameters[1] = r+1
-
-            model_output = self._model.simulate(
-                parameters=list(deepflatten(parameters, ignore=str)),
-                times=times
-            )
-
-            for t in times:
-                total_log_lik += self._model.loglik_deaths(
-                    obs_death=self._deaths[r][t, :],
-                    output=model_output,
-                    fatality_ratio=self._fatality_ratio,
-                    time_to_death=self._time_to_death,
-                    niu=niu,
-                    k=t
-                ) + self._model.loglik_positive_tests(
-                    obs_pos=self._positive_tests[r][t, :],
-                    output=model_output,
-                    tests=self._total_tests[r][t, :],
-                    sens=self._sens,
-                    spec=self._spec,
-                    k=t
-                )
-
-        return total_log_lik
-
-    class InferLogLikelihood(pints.LogPDF):
-        """
-        """
-        def __init__(self, var_parameters):
-            self._parameters = var_parameters
-
-        def n_parameters(self):
-            return len(self._parameters)
-
-        def __call__(self, x):
-            pass
-
     def inference_problem_setup(self, times, var_parameters):
         """
         Runs the parameter inference routine for the PHE model.
         """
-        def loglikelihood(var_parameters):
-            return self._log_likelihood(times, var_parameters)
+        loglikelihood = InferLogLikelihood(var_parameters)
 
         # Starting points
         x0 = [
