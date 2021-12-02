@@ -189,7 +189,8 @@ class PheSEIRInfer(object):
     def _inference_problem_setup(self, times, var_parameters):
         """
         """
-        loglikelihood = self._log_likelihood(times, var_parameters)
+        def loglikelihood(var_parameters):
+            return self._log_likelihood(times, var_parameters)
 
         # Starting points
         x0 = [
