@@ -25,28 +25,25 @@ import epimodels as em
 
 class InferLogLikelihood(pints.LogPDF):
     """
+    Parameters
+    ----------
+    times
+        (list) List of time points at which we have data for the
+        log-likelihood computation.
+
     """
-    def __init__(self, var_parameters):
-        self._parameters = var_parameters
+    def __init__(self, model, times, real_values):
+        self._model = model
+        self._times = times
+        self._model_output = real_values
 
     def n_parameters(self):
         return len(self._parameters)
 
-    def read_inference_controller(self):
-        """
-        """
-        pass
-
-    def _log_likelihood(self, times):
+    def _log_likelihood(self, var_parameters):
         """
         Computes the log-likelihood of the non-fixed parameters
         using death and serology data.
-
-        Parameters
-        ----------
-        times
-            (list) List of time points at which we have data for the
-            log-likelihood computation.
 
         """
         # Use prior mean for the over-dispersion parameter
@@ -89,7 +86,7 @@ class InferLogLikelihood(pints.LogPDF):
             len(self._model._num_ages))).tolist()
 
         # Beta multipliers
-        betas = np.ones((len(self._model.regions), len(times))).tolist()
+        betas = np.ones((len(self._model.regions), len(self._times))).tolist()
 
         # Other parameters
         dI = 4
@@ -98,7 +95,7 @@ class InferLogLikelihood(pints.LogPDF):
 
         # [var_r] * reg
         parameters = [
-            self._parameters,
+            var_parameters,
             0,
             susceptibles, exposed1, exposed2, infectives1, infectives2,
             recovered,
@@ -116,10 +113,10 @@ class InferLogLikelihood(pints.LogPDF):
 
             model_output = self._model.simulate(
                 parameters=list(deepflatten(parameters, ignore=str)),
-                times=times
+                times=self._times
             )
 
-            for t in times:
+            for t in self._times:
                 total_log_lik += self._model.loglik_deaths(
                     obs_death=self._deaths[r][t, :],
                     output=model_output,
@@ -139,7 +136,7 @@ class InferLogLikelihood(pints.LogPDF):
         return total_log_lik
 
     def __call__(self, x):
-        return self._log_likelihood()
+        return self._log_likelihood(x)
 
 
 class PheSEIRInfer(object):
@@ -206,7 +203,8 @@ class PheSEIRInfer(object):
         """
         Runs the parameter inference routine for the PHE model.
         """
-        loglikelihood = InferLogLikelihood(var_parameters)
+        loglikelihood = InferLogLikelihood(
+            var_parameters, self._model, times)
 
         # Starting points
         x0 = [
@@ -225,6 +223,5 @@ class PheSEIRInfer(object):
         results = pints.MCMCSummary(
             chains=chains, time=mcmc.time(),
             parameter_names=[
-                'gamma', 'v', 'S_0', 'sigma infected',
-                'sigma recovery'])
+                'initial_r'])
         print(results)
