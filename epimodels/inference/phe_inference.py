@@ -18,7 +18,7 @@ matrices.
 
 import numpy as np
 import pints
-from iteration_utilities import deepflatten
+# from iteration_utilities import deepflatten
 
 import epimodels as em
 
@@ -38,7 +38,7 @@ class InferLogLikelihood(pints.LogPDF):
         self._model_output = real_values
 
     def n_parameters(self):
-        return len(self._parameters)
+        return 0
 
     def _log_likelihood(self, var_parameters):
         """
@@ -111,22 +111,22 @@ class InferLogLikelihood(pints.LogPDF):
         for r, _ in enumerate(self._model.regions):
             parameters[1] = r+1
 
-            model_output = self._model.simulate(
-                parameters=list(deepflatten(parameters, ignore=str)),
-                times=self._times
-            )
+            # model_output = self._model.simulate(
+            #    parameters=list(deepflatten(parameters, ignore=str)),
+            #    times=self._times
+            # )
 
             for t in self._times:
                 total_log_lik += self._model.loglik_deaths(
                     obs_death=self._deaths[r][t, :],
-                    output=model_output,
+                    output=self._model_output[r],
                     fatality_ratio=self._fatality_ratio,
                     time_to_death=self._time_to_death,
                     niu=niu,
                     k=t
                 ) + self._model.loglik_positive_tests(
                     obs_pos=self._positive_tests[r][t, :],
-                    output=model_output,
+                    output=self._model_output[r],
                     tests=self._total_tests[r][t, :],
                     sens=self._sens,
                     spec=self._spec,
@@ -199,12 +199,12 @@ class PheSEIRInfer(object):
         self._fatality_ratio = fatality_ratio
         self._time_to_death = time_to_death
 
-    def inference_problem_setup(self, times, var_parameters):
+    def inference_problem_setup(self, times, model_output):
         """
         Runs the parameter inference routine for the PHE model.
         """
         loglikelihood = InferLogLikelihood(
-            var_parameters, self._model, times)
+            self._model, times, model_output)
 
         # Starting points
         x0 = [
