@@ -18,7 +18,7 @@ matrices.
 
 import numpy as np
 import pints
-# from iteration_utilities import deepflatten
+from iteration_utilities import deepflatten
 
 import epimodels as em
 
@@ -27,29 +27,66 @@ class InferLogLikelihood(pints.LogPDF):
     """
     Parameters
     ----------
+    model
+        (PheSEIRModel) The model for which we solve the inference
+        problem.
     times
         (list) List of time points at which we have data for the
         log-likelihood computation.
+    deaths_data
+        (Numpy array) List of regional numpy arrays of the daily number
+        of deaths, split by age category. Each column represents an age
+        group.
+    fatality_ratio
+        (list) List of age-specific fatality ratios.
+    time_to_death
+        (list) List of probabilities of death of individual d days after
+        infection.
+    tests_data
+        (Numpy array) List of regional numpy arrays of the daily number
+        of tests conducted, split by age category. Each column represents
+        an age group.
+    positives_data
+        (Numpy array) List of regional numpy arrays of the daily number
+        of positive test results, split by age category. Each column
+        represents an age group.
+    sens
+        Sensitivity of the test (or ratio of true positives).
+    spec
+        Specificity of the test (or ratio of true negatives).
 
     """
-    def __init__(self, model, times, real_values):
+    def __init__(self, model, times,
+                 deaths, fatality_ratio, time_to_death,
+                 tests_data, positives_data, sens, spec):
+        # Set the prerequsites for the inference wrapper
         self._model = model
         self._times = times
-        self._model_output = real_values
+        self._deaths = deaths
+        self._fatality_ratio = fatality_ratio
+        self._time_to_death = time_to_death
+        self._total_tests = tests_data
+        self._positive_tests = positives_data
+        self._sens = sens
+        self._spec = spec
 
-    def n_parameters(self):
+    def n_Parameters(self):
         return 0
 
     def _log_likelihood(self, var_parameters):
         """
-        Computes the log-likelihood of the non-fixed parameters
+        Computes the log-likelihood of the non-fixed Parameters
         using death and serology data.
+
+        Parameters
+        ----------
+        var_parameters
 
         """
         # Use prior mean for the over-dispersion parameter
         niu = 5
 
-        # Set fixed parameters
+        # Set fixed Parameters
         # Initial Conditions
         susceptibles = [
             [68124, 299908, 773741, 668994, 1554740, 1632059, 660187, 578319],  # noqa
@@ -88,14 +125,14 @@ class InferLogLikelihood(pints.LogPDF):
         # Beta multipliers
         betas = np.ones((len(self._model.regions), len(self._times))).tolist()
 
-        # Other parameters
+        # Other Parameters
         dI = 4
         dL = 4
         delta_t = 0.5
 
         # [var_r] * reg
         parameters = [
-            var_parameters,
+            [var_parameters] * len(self._model.regions),
             0,
             susceptibles, exposed1, exposed2, infectives1, infectives2,
             recovered,
@@ -111,22 +148,22 @@ class InferLogLikelihood(pints.LogPDF):
         for r, _ in enumerate(self._model.regions):
             parameters[1] = r+1
 
-            # model_output = self._model.simulate(
-            #    parameters=list(deepflatten(parameters, ignore=str)),
-            #    times=self._times
-            # )
+            model_output = self._model.simulate(
+               parameters=list(deepflatten(parameters, ignore=str)),
+               times=self._times
+            )
 
             for t in self._times:
                 total_log_lik += self._model.loglik_deaths(
                     obs_death=self._deaths[r][t, :],
-                    output=self._model_output[r],
+                    output=model_output[r],
                     fatality_ratio=self._fatality_ratio,
                     time_to_death=self._time_to_death,
                     niu=niu,
                     k=t
                 ) + self._model.loglik_positive_tests(
                     obs_pos=self._positive_tests[r][t, :],
-                    output=self._model_output[r],
+                    output=model_output[r],
                     tests=self._total_tests[r][t, :],
                     sens=self._sens,
                     spec=self._spec,
@@ -141,7 +178,7 @@ class InferLogLikelihood(pints.LogPDF):
 
 class PheSEIRInfer(object):
     """PheSEIRInfer Class:
-    Controller class for the inference of parameters of the PHE model.
+    Controller class for the inference of Parameters of the PHE model.
 
     """
     def __init__(self, model):
@@ -149,13 +186,13 @@ class PheSEIRInfer(object):
 
         # Assign model for inference
         if not isinstance(model, em.PheSEIRModel):
-            raise TypeError('Wrong model type for parameters inference.')
+            raise TypeError('Wrong model type for Parameters inference.')
 
         self._model = model
 
     def read_serology_data(self, tests_data, positives_data, sens, spec):
         """
-        Sets the serology data used for the model's parameters inference.
+        Sets the serology data used for the model's Parameters inference.
 
         Paramaters
         ----------
@@ -180,7 +217,7 @@ class PheSEIRInfer(object):
 
     def read_deaths_data(self, deaths_data, fatality_ratio, time_to_death):
         """
-        Sets the serology data used for the model's parameters inference.
+        Sets the serology data used for the model's Parameters inference.
 
         Paramaters
         ----------
@@ -199,18 +236,26 @@ class PheSEIRInfer(object):
         self._fatality_ratio = fatality_ratio
         self._time_to_death = time_to_death
 
-    def inference_problem_setup(self, times, model_output):
+    def inference_problem_setup(self, times):
         """
         Runs the parameter inference routine for the PHE model.
+
+        Parameters
+        ----------
+        times
+            (list) List of time points at which we have data for the
+            log-likelihood computation.
         """
         loglikelihood = InferLogLikelihood(
-            self._model, times, model_output)
+            self._model, times,
+            self._deaths, self._fatality_ratio, self._time_to_death,
+            self._total_tests, self._positive_tests, self._sens, self._spec)
 
         # Starting points
         x0 = [
-            [0.001, 0.20, 52, 3, 3],
-            [0.05, 0.34, 34, 3, 3],
-            [0.02, 0.18, 20, 3, 3],
+            3,
+            3,
+            3,
         ]
 
         # Create MCMC routine
