@@ -70,8 +70,8 @@ class InferLogLikelihood(pints.LogPDF):
         self._sens = sens
         self._spec = spec
 
-    def n_Parameters(self):
-        return 0
+    def n_parameters(self):
+        return 1
 
     def _log_likelihood(self, var_parameters):
         """
@@ -99,11 +99,11 @@ class InferLogLikelihood(pints.LogPDF):
 
         exposed1 = np.zeros((
             len(self._model.regions),
-            len(self._model._num_ages))).tolist()
+            self._model._num_ages)).tolist()
 
         exposed2 = np.zeros((
             len(self._model.regions),
-            len(self._model._num_ages))).tolist()
+            self._model._num_ages)).tolist()
 
         infectives1 = [
             [0, 0, 0, 0, 0, 1, 0, 0],
@@ -116,11 +116,11 @@ class InferLogLikelihood(pints.LogPDF):
 
         infectives2 = np.zeros((
             len(self._model.regions),
-            len(self._model._num_ages))).tolist()
+            self._model._num_ages)).tolist()
 
         recovered = np.zeros((
             len(self._model.regions),
-            len(self._model._num_ages))).tolist()
+            self._model._num_ages)).tolist()
 
         # Beta multipliers
         betas = np.ones((len(self._model.regions), len(self._times))).tolist()
@@ -153,17 +153,17 @@ class InferLogLikelihood(pints.LogPDF):
                times=self._times
             )
 
-            for t in self._times:
+            for t, _ in enumerate(self._times):
                 total_log_lik += self._model.loglik_deaths(
                     obs_death=self._deaths[r][t, :],
-                    output=model_output[r],
+                    output=model_output,
                     fatality_ratio=self._fatality_ratio,
                     time_to_death=self._time_to_death,
                     niu=niu,
                     k=t
                 ) + self._model.loglik_positive_tests(
                     obs_pos=self._positive_tests[r][t, :],
-                    output=model_output[r],
+                    output=model_output,
                     tests=self._total_tests[r][t, :],
                     sens=self._sens,
                     spec=self._spec,
@@ -253,16 +253,20 @@ class PheSEIRInfer(object):
 
         # Starting points
         x0 = [
-            3,
-            3,
-            3,
+            [3],
+            [3],
+            [3],
         ]
 
         # Create MCMC routine
-        mcmc = pints.MCMCController(loglikelihood, 3, x0)
+        mcmc = pints.MCMCController(
+            loglikelihood, 3, x0, method=pints.HaarioACMC)
         mcmc.set_max_iterations(3000)
         mcmc.set_log_to_screen(False)
+
+        print('Running...')
         chains = mcmc.run()
+        print('Done!')
 
         # Check convergence and other properties of chains
         results = pints.MCMCSummary(
