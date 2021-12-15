@@ -70,23 +70,65 @@ class InferLogLikelihood(pints.LogPDF):
         self._sens = sens
         self._spec = spec
 
+        # Set fixed parameters of the model
+        self.set_fixed_parameters()
+
     def n_parameters(self):
         return 1
 
     def _log_likelihood(self, var_parameters):
         """
-        Computes the log-likelihood of the non-fixed Parameters
+        Computes the log-likelihood of the non-fixed parameters
         using death and serology data.
 
         Parameters
         ----------
         var_parameters
+            (list) List of varying parameters of the model for which
+            the log-likelihood is computed for.
+
+        """
+        # Update parameters
+        self._parameters[0] = [var_parameters] * len(self._model.regions)
+
+        total_log_lik = 0
+
+        for r, _ in enumerate(self._model.regions):
+            self._parameters[1] = r+1
+
+            model_output = self._model.simulate(
+               parameters=list(deepflatten(self._parameters, ignore=str)),
+               times=self._times
+            )
+
+            for t, _ in enumerate(self._times):
+                total_log_lik += self._model.loglik_deaths(
+                    obs_death=self._deaths[r][t, :],
+                    output=model_output,
+                    fatality_ratio=self._fatality_ratio,
+                    time_to_death=self._time_to_death,
+                    niu=self._niu,
+                    k=t
+                ) + self._model.loglik_positive_tests(
+                    obs_pos=self._positive_tests[r][t, :],
+                    output=model_output,
+                    tests=self._total_tests[r][t, :],
+                    sens=self._sens,
+                    spec=self._spec,
+                    k=t
+                )
+
+        return np.sum(total_log_lik)
+
+    def set_fixed_parameters(self):
+        """
+        Sets the non-changing parameters of the model in the class structure
+        to save time in the evaluation of the log-likelihood.
 
         """
         # Use prior mean for the over-dispersion parameter
-        niu = 5
+        self._niu = 5
 
-        # Set fixed Parameters
         # Initial Conditions
         susceptibles = [
             [68124, 299908, 773741, 668994, 1554740, 1632059, 660187, 578319],  # noqa
@@ -131,8 +173,8 @@ class InferLogLikelihood(pints.LogPDF):
         delta_t = 0.5
 
         # [var_r] * reg
-        parameters = [
-            [var_parameters] * len(self._model.regions),
+        self._parameters = [
+            np.zeros(len(self._model.regions)).tolist(),
             0,
             susceptibles, exposed1, exposed2, infectives1, infectives2,
             recovered,
@@ -143,42 +185,17 @@ class InferLogLikelihood(pints.LogPDF):
             'RK45'
         ]
 
-        total_log_lik = 0
-
-        for r, _ in enumerate(self._model.regions):
-            parameters[1] = r+1
-
-            model_output = self._model.simulate(
-               parameters=list(deepflatten(parameters, ignore=str)),
-               times=self._times
-            )
-
-            for t, _ in enumerate(self._times):
-                total_log_lik += self._model.loglik_deaths(
-                    obs_death=self._deaths[r][t, :],
-                    output=model_output,
-                    fatality_ratio=self._fatality_ratio,
-                    time_to_death=self._time_to_death,
-                    niu=niu,
-                    k=t
-                ) + self._model.loglik_positive_tests(
-                    obs_pos=self._positive_tests[r][t, :],
-                    output=model_output,
-                    tests=self._total_tests[r][t, :],
-                    sens=self._sens,
-                    spec=self._spec,
-                    k=t
-                )
-
-        return np.sum(total_log_lik)
-
     def __call__(self, x):
+        """
+        Evaluates the log-lokelihood in a PINTS framework.
+
+        """
         return self._log_likelihood(x[0])
 
 
 class PheSEIRInfer(object):
     """PheSEIRInfer Class:
-    Controller class for the inference of Parameters of the PHE model.
+    Controller class for the inference of parameters of the PHE model.
 
     """
     def __init__(self, model):
@@ -186,13 +203,13 @@ class PheSEIRInfer(object):
 
         # Assign model for inference
         if not isinstance(model, em.PheSEIRModel):
-            raise TypeError('Wrong model type for Parameters inference.')
+            raise TypeError('Wrong model type for parameters inference.')
 
         self._model = model
 
     def read_serology_data(self, tests_data, positives_data, sens, spec):
         """
-        Sets the serology data used for the model's Parameters inference.
+        Sets the serology data used for the model's parameters inference.
 
         Paramaters
         ----------
@@ -217,7 +234,7 @@ class PheSEIRInfer(object):
 
     def read_deaths_data(self, deaths_data, fatality_ratio, time_to_death):
         """
-        Sets the serology data used for the model's Parameters inference.
+        Sets the serology data used for the model's parameters inference.
 
         Paramaters
         ----------
