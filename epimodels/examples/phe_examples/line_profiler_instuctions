@@ -1,0 +1,3 @@
+1. Write notebook into python script
+2. Run ``python kernprof.py -l phe_2021_inference.py`` to run line_profiler
+3. Run ``python -m line_profiler phe_2021_inference.py.lprof`` to assess results of profiler

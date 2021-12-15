@@ -635,6 +635,27 @@ class PheSEIRModel(pints.ForwardModel):
                     raise TypeError(
                         'Model output elements must be integer or float.')
 
+    def _check_new_infections_format(self, new_infections):
+        """
+        Checks correct format of the new infections matrix.
+
+        """
+        if np.asarray(new_infections).ndim != 2:
+            raise ValueError(
+                'Model new infections storage format must be 2-dimensional.')
+        if np.asarray(new_infections).shape[0] != self._times.shape[0]:
+            raise ValueError(
+                    'Wrong number of rows for the model new infections.')
+        if np.asarray(new_infections).shape[1] != self._num_ages:
+            raise ValueError(
+                    'Wrong number of columns for the model new infections.')
+        for r in np.asarray(new_infections):
+            for _ in r:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'Model new infections elements must be integer or \
+                            float.')
+
     def new_infections(self, output):
         """
         Computes number of new infections at each time step in specified
@@ -680,7 +701,8 @@ class PheSEIRModel(pints.ForwardModel):
         return d_infec
 
     def loglik_deaths(
-            self, obs_death, output, fatality_ratio, time_to_death, niu, k):
+            self, obs_death, new_infections, fatality_ratio, time_to_death,
+            niu, k):
         r"""
         Computes the log-likelihood for the number of deaths at time step
         :math:`k` in specified region, given the simulated timeline of
@@ -698,23 +720,24 @@ class PheSEIRModel(pints.ForwardModel):
         :math:`\delta_{r,t_l,i}^{infec}` is the number of new infections
         in specified region, for age group :math:`i` on day :math:`t_l`.
 
-        It uses an output of the simulation method for the PheSEIRModel,
-        taking all the rest of the parameters necessary for the computation
-        from the way its simulation has been fitted.
+        It uses new_infections output of the simulation method for the
+        PheSEIRModel, taking all the rest of the parameters necessary for
+        the computation from the way its simulation has been fitted.
 
         Parameters
         ----------
         obs_death
             List of number of observed deaths by age group at time point k.
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
+        new_infections
+            (numpy.array) Number of new infections from the simulation method
+            for the PheSEIRModel.
         fatality_ratio
             List of age-specific fatality ratios.
         time_to_death
             List of probabilities of death of individual k days after
             infection.
         niu
-            Dispersion factor for the negative binomial distribution
+            Dispersion factor for the negative binomial distribution.
         k
             Index of day for which we intend to sample the number of deaths for
             by age group.
@@ -726,11 +749,11 @@ class PheSEIRModel(pints.ForwardModel):
 
         Notes
         -----
-        Always run :meth:`PheSEIRModel.simulate` before running this one.
+        Always run :meth:`PheSEIRModel.new_infections` and
+        :meth:`PheSEIRModel.check_death_format` before running this one.
 
         """
-        self._check_death_format(
-            output, fatality_ratio, time_to_death, niu, k)
+        self._check_time_step_format(k)
 
         # Check correct format for observed number of deaths
         if np.asarray(obs_death).ndim != 1:
@@ -746,11 +769,10 @@ class PheSEIRModel(pints.ForwardModel):
                 raise ValueError('Observed number of deaths must be => 0.')
 
         # Compute mean of negative-binomial
-        d_infec = self.new_infections(output)
         log_lik_death = np.empty(self._num_ages)
         for _ in range(self._num_ages):
             mean = self.mean_deaths(
-                fatality_ratio, time_to_death, k, _, d_infec)
+                fatality_ratio, time_to_death, k, _, new_infections)
             log_lik_death[_] = nbinom.logpmf(
                 k=obs_death[_],
                 n=mean*niu,
@@ -758,26 +780,30 @@ class PheSEIRModel(pints.ForwardModel):
 
         return log_lik_death
 
-    def _check_death_format(
-            self, output, fatality_ratio, time_to_death, niu, k):
+    def check_death_format(
+            self, new_infections, fatality_ratio, time_to_death, niu):
         """
         Checks correct format of the inputs of number of death calculation.
 
+        Parameters
+        ----------
+        new_infections
+            (numpy.array) Number of new infections from the simulation method
+            for the PheSEIRModel.
+        fatality_ratio
+            List of age-specific fatality ratios.
+        time_to_death
+            List of probabilities of death of individual k days after
+            infection.
+        niu
+            Dispersion factor for the negative binomial distribution.
+
         """
-        self._check_output_format(output)
+        self._check_new_infections_format(new_infections)
         if not isinstance(niu, (int, float)):
             raise TypeError('Dispersion factor must be integer or float.')
         if niu <= 0:
             raise ValueError('Dispersion factor must be > 0.')
-        if not isinstance(k, int):
-            raise TypeError('Index of time of computation of the log-likelihood \
-                must be integer.')
-        if k < 0:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be >= 0.')
-        if k >= self._times.shape[0]:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be within those considered in the output.')
         if np.asarray(fatality_ratio).ndim != 1:
             raise ValueError('Fatality ratios by age category storage \
                 format is 1-dimensional.')
@@ -815,7 +841,7 @@ class PheSEIRModel(pints.ForwardModel):
         return mean
 
     def samples_deaths(
-            self, output, fatality_ratio, time_to_death, niu, k):
+            self, new_infections, fatality_ratio, time_to_death, niu, k):
         r"""
         Computes samples for the number of deaths at time step
         :math:`k` in specified region, given the simulated timeline of
@@ -839,15 +865,16 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
+        new_infections
+            (numpy.array) Number of new infections from the simulation method
+            for the PheSEIRModel.
         fatality_ratio
             List of age-specific fatality ratios.
         time_to_death
             List of probabilities of death of individual d days after
             infection.
         niu
-            Dispesion factor for the negative binomial distribution
+            Dispesion factor for the negative binomial distribution.
         k
             Index of day for which we intend to sample the number of deaths for
             by age group.
@@ -859,18 +886,17 @@ class PheSEIRModel(pints.ForwardModel):
 
         Notes
         -----
-        Always run :meth:`PheSEIRModel.simulate` before running this one.
+        Always run :meth:`PheSEIRModel.new_infections` and
+        :meth:`PheSEIRModel.check_death_format` before running this one.
 
         """
-        self._check_death_format(
-            output, fatality_ratio, time_to_death, niu, k)
+        self._check_time_step_format(k)
 
         # Compute mean of negative-binomial
-        d_infec = self.new_infections(output)
         sample_death = np.empty(self._num_ages)
         for _ in range(self._num_ages):
             mean = self.mean_deaths(
-                fatality_ratio, time_to_death, k, _, d_infec)
+                fatality_ratio, time_to_death, k, _, new_infections)
             sample_death[_] = nbinom.rvs(
                 n=mean*niu,
                 p=niu/(1+niu))
@@ -927,10 +953,11 @@ class PheSEIRModel(pints.ForwardModel):
 
         Notes
         -----
-        Always run :meth:`PheSEIRModel.simulate` before running this one.
+        Always run :meth:`PheSEIRModel.simulate` and
+        :meth:`PheSEIRModel.check_positives_format` before running this one.
 
         """
-        self._check_positives_format(output, tests, sens, spec, k)
+        self._check_time_step_format(k)
 
         # Check correct format for observed number of positive results
         if np.asarray(obs_pos).ndim != 1:
@@ -971,33 +998,7 @@ class PheSEIRModel(pints.ForwardModel):
 
         return log_lik_pos
 
-    def _check_positives_format(self, output, tests, sens, spec, k):
-        """
-        Checks correct format of the inputs of number of positie test results
-        calculation.
-
-        """
-        self._check_output_format(output)
-        if np.asarray(tests).ndim != 1:
-            raise ValueError('Number of tests conducted by age category storage \
-                format is 1-dimensional.')
-        if np.asarray(tests).shape[0] != self._num_ages:
-            raise ValueError('Wrong number of age groups for observed number \
-                of tests conducted.')
-        for _ in tests:
-            if not isinstance(_, (int, np.integer)):
-                raise TypeError('Number of tests conducted must be integer.')
-            if _ < 0:
-                raise ValueError('Number of tests conducted ratio must \
-                    be => 0.')
-        if not isinstance(sens, (int, float)):
-            raise TypeError('Sensitivity must be integer or float.')
-        if (sens < 0) or (sens > 1):
-            raise ValueError('Sensitivity must be >= 0 and <=1.')
-        if not isinstance(spec, (int, float)):
-            raise TypeError('Specificity must be integer or float.')
-        if (spec < 0) or (spec > 1):
-            raise ValueError('Specificity must be >= 0 and >=1.')
+    def _check_time_step_format(self, k):
         if not isinstance(k, int):
             raise TypeError('Index of time of computation of the log-likelihood \
                 must be integer.')
@@ -1007,6 +1008,48 @@ class PheSEIRModel(pints.ForwardModel):
         if k >= self._times.shape[0]:
             raise ValueError('Index of time of computation of the log-likelihood \
                 must be within those considered in the output.')
+
+    def check_positives_format(self, output, tests, sens, spec):
+        """
+        Checks correct format of the inputs of number of positie test results
+        calculation.
+
+        Parameters
+        ----------
+        output
+            (numpy.array) Output of the simulation method for the PheSEIRModel.
+        tests
+            (numpy.array) Numpy arrays of the daily number of tests conducted,
+            split by age category. Each column represents an age group.
+        sens
+            Sensitivity of the test (or ratio of true positives).
+        spec
+            Specificity of the test (or ratio of true negatives).
+
+        """
+        self._check_output_format(output)
+        if np.asarray(tests).ndim != 2:
+            raise ValueError('Number of tests conducted by age category storage \
+                format is 2-dimensional.')
+        if np.asarray(tests).shape[1] != self._num_ages:
+            raise ValueError('Wrong number of age groups for observed number \
+                of tests conducted.')
+        for i in tests:
+            for _ in i:
+                if not isinstance(_, (int, np.integer)):
+                    raise TypeError('Number of tests conducted must be \
+                        integer.')
+                if _ < 0:
+                    raise ValueError('Number of tests conducted ratio must \
+                        be => 0.')
+        if not isinstance(sens, (int, float)):
+            raise TypeError('Sensitivity must be integer or float.')
+        if (sens < 0) or (sens > 1):
+            raise ValueError('Sensitivity must be >= 0 and <=1.')
+        if not isinstance(spec, (int, float)):
+            raise TypeError('Specificity must be integer or float.')
+        if (spec < 0) or (spec > 1):
+            raise ValueError('Specificity must be >= 0 and >=1.')
 
     def mean_positives(self, sens, spec, a, suscep, pop):
         """
@@ -1065,10 +1108,11 @@ class PheSEIRModel(pints.ForwardModel):
 
         Notes
         -----
-        Always run :meth:`PheSEIRModel.simulate` before running this one.
+        Always run :meth:`PheSEIRModel.simulate` and
+        :meth:`PheSEIRModel.check_positives_format` before running this one.
 
         """
-        self._check_positives_format(output, tests, sens, spec, k)
+        self._check_time_step_format(k)
 
         a = self._num_ages
         # Compute parameters of binomial

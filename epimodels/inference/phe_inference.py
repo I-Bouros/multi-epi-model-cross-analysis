@@ -100,11 +100,25 @@ class InferLogLikelihood(pints.LogPDF):
                parameters=list(deepflatten(self._parameters, ignore=str)),
                times=self._times
             )
+            model_new_infections = self._model.new_infections(model_output)
+
+            # Check input of log-likelihoods fixed data
+            self._model.check_death_format(
+                model_new_infections,
+                self._fatality_ratio,
+                self._time_to_death,
+                self._niu)
+
+            self._model.check_positives_format(
+                model_output,
+                self._total_tests[r],
+                self._sens,
+                self._spec)
 
             for t, _ in enumerate(self._times):
                 total_log_lik += self._model.loglik_deaths(
                     obs_death=self._deaths[r][t, :],
-                    output=model_output,
+                    new_infections=model_new_infections,
                     fatality_ratio=self._fatality_ratio,
                     time_to_death=self._time_to_death,
                     niu=self._niu,
