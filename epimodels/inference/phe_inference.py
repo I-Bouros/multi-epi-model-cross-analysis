@@ -170,10 +170,10 @@ class InferLogLikelihood(pints.LogPDF):
                     k=t
                 )
 
-        return total_log_lik
+        return np.sum(total_log_lik)
 
     def __call__(self, x):
-        return self._log_likelihood(x)
+        return self._log_likelihood(x[0])
 
 
 class PheSEIRInfer(object):
@@ -258,11 +258,13 @@ class PheSEIRInfer(object):
             [3],
         ]
 
+        # print(loglikelihood(x0[0]))
+
         # Create MCMC routine
         mcmc = pints.MCMCController(
             loglikelihood, 3, x0, method=pints.HaarioACMC)
-        mcmc.set_max_iterations(3000)
-        mcmc.set_log_to_screen(False)
+        mcmc.set_max_iterations(20)
+        mcmc.set_log_to_screen(True)
 
         print('Running...')
         chains = mcmc.run()
