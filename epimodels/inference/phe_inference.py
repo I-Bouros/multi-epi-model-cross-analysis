@@ -293,7 +293,7 @@ class PheSEIRInfer(object):
 
         # Create MCMC routine
         mcmc = pints.MCMCController(
-            loglikelihood, 3, x0, method=pints.HaarioACMC)
+            loglikelihood, 3, x0)
         mcmc.set_max_iterations(20)
         mcmc.set_log_to_screen(True)
 

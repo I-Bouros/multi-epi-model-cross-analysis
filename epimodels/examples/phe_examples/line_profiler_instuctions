@@ -1,3 +1,8 @@
-1. Write notebook into python script
-2. Run ``python kernprof.py -l phe_2021_inference.py`` to run line_profiler
-3. Run ``python -m line_profiler phe_2021_inference.py.lprof`` to assess results of profiler
+# Steps to run `line_profiler` for python scripts/notebooks
+
+1. Add ``kernprof.py`` from ``https://github.com/pyutils/line_profiler``
+2. Go to folder of notebook in terminal and ``pip install line_profiler``
+3. Write notebook into python script
+4. Add ``@profile`` before the method you want to profile
+5. Run ``python kernprof.py -l phe_2021_inference.py`` to run line_profiler
+6. Run ``python -m line_profiler phe_2021_inference.py.lprof`` to assess results of profiler
