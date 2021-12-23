@@ -267,6 +267,13 @@ class PheSEIRInfer(object):
         self._fatality_ratio = fatality_ratio
         self._time_to_death = time_to_death
 
+    def return_loglikelihood(self, times, x):
+        loglikelihood = InferLogLikelihood(
+            self._model, times,
+            self._deaths, self._fatality_ratio, self._time_to_death,
+            self._total_tests, self._positive_tests, self._sens, self._spec)
+        return loglikelihood(x)
+
     def inference_problem_setup(self, times):
         """
         Runs the parameter inference routine for the PHE model.

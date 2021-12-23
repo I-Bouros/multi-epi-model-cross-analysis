@@ -769,16 +769,11 @@ class PheSEIRModel(pints.ForwardModel):
                 raise ValueError('Observed number of deaths must be => 0.')
 
         # Compute mean of negative-binomial
-        log_lik_death = np.empty(self._num_ages)
-        for _ in range(self._num_ages):
-            mean = self.mean_deaths(
-                fatality_ratio, time_to_death, k, _, new_infections)
-            log_lik_death[_] = nbinom.logpmf(
-                k=obs_death[_],
-                n=mean*niu,
-                p=niu/(1+niu))
-
-        return log_lik_death
+        return nbinom.logpmf(
+            k=obs_death,
+            n=niu * self.mean_deaths(
+                fatality_ratio, time_to_death, k, new_infections),
+            p=niu/(1+niu))
 
     def check_death_format(
             self, new_infections, fatality_ratio, time_to_death, niu):
@@ -829,16 +824,14 @@ class PheSEIRModel(pints.ForwardModel):
                 raise ValueError('Probabilities of death of individual k days after \
                     infection must be => 0 and <=1.')
 
-    def mean_deaths(self, fatality_ratio, time_to_death, k, a, d_infec):
+    def mean_deaths(self, fatality_ratio, time_to_death, k, d_infec):
         """
         Computes the mean of the negative binomial distribution used to
         calculate number of deaths for specified age group.
 
         """
-        mean = fatality_ratio[a] * np.sum(np.multiply(
-            d_infec[:(k+1), a], np.asarray(time_to_death[:(k+1)][::-1])))
-
-        return mean
+        return np.multiply(fatality_ratio, np.sum(np.matmul(
+            np.diag(time_to_death[:(k+1)][::-1]), d_infec[:(k+1), :]), axis=0))
 
     def samples_deaths(
             self, new_infections, fatality_ratio, time_to_death, niu, k):
@@ -893,15 +886,10 @@ class PheSEIRModel(pints.ForwardModel):
         self._check_time_step_format(k)
 
         # Compute mean of negative-binomial
-        sample_death = np.empty(self._num_ages)
-        for _ in range(self._num_ages):
-            mean = self.mean_deaths(
-                fatality_ratio, time_to_death, k, _, new_infections)
-            sample_death[_] = nbinom.rvs(
-                n=mean*niu,
-                p=niu/(1+niu))
-
-        return sample_death
+        return nbinom.rvs(
+            n=niu * self.mean_deaths(
+                fatality_ratio, time_to_death, k, new_infections),
+            p=niu/(1+niu))
 
     def loglik_positive_tests(self, obs_pos, output, tests, sens, spec, k):
         r"""
@@ -988,15 +976,10 @@ class PheSEIRModel(pints.ForwardModel):
         for i in range(6):
             pop += output[k, (i*a):((i+1)*a)]
 
-        log_lik_pos = np.empty(self._num_ages)
-        for _ in range(self._num_ages):
-            prob = self.mean_positives(sens, spec, _, suscep, pop)
-            log_lik_pos[_] = binom.logpmf(
-                k=obs_pos[_],
-                n=tests[_],
-                p=prob)
-
-        return log_lik_pos
+        return binom.logpmf(
+            k=obs_pos,
+            n=tests,
+            p=self.mean_positives(sens, spec, suscep, pop))
 
     def _check_time_step_format(self, k):
         if not isinstance(k, int):
@@ -1051,15 +1034,14 @@ class PheSEIRModel(pints.ForwardModel):
         if (spec < 0) or (spec > 1):
             raise ValueError('Specificity must be >= 0 and >=1.')
 
-    def mean_positives(self, sens, spec, a, suscep, pop):
+    def mean_positives(self, sens, spec, suscep, pop):
         """
         Computes the mean of the binomial distribution used to
         calculate number of positive test results for specified age group.
 
         """
-        prob = sens * (1-suscep[a]/pop[a]) + (
-                1-spec) * suscep[a]/pop[a]
-        return prob
+        return sens * (1-np.divide(suscep, pop)) + (1-spec) * np.divide(
+            suscep, pop)
 
     def samples_positive_tests(self, output, tests, sens, spec, k):
         r"""
@@ -1121,11 +1103,6 @@ class PheSEIRModel(pints.ForwardModel):
         for i in range(6):
             pop += output[k, (i*a):((i+1)*a)]
 
-        sample_pos = np.empty(self._num_ages)
-        for _ in range(self._num_ages):
-            prob = self.mean_positives(sens, spec, _, suscep, pop)
-            sample_pos[_] = binom.rvs(
-                n=tests[_],
-                p=prob)
-
-        return sample_pos
+        return binom.rvs(
+            n=tests,
+            p=self.mean_positives(sens, spec, suscep, pop))
