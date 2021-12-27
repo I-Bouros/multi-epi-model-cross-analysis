@@ -698,6 +698,9 @@ class PheSEIRModel(pints.ForwardModel):
             # fraction of new infectives in delta_t time step
             d_infec[ind, :] = np.multiply(np.asarray(s), lam*self._delta_t)
 
+            if np.any(d_infec[ind, :] < 0):
+                d_infec[ind, :] = np.zeros_like(d_infec[ind, :])
+
         return d_infec
 
     def loglik_deaths(
@@ -830,8 +833,14 @@ class PheSEIRModel(pints.ForwardModel):
         calculate number of deaths for specified age group.
 
         """
-        return np.multiply(fatality_ratio, np.sum(np.matmul(
-            np.diag(time_to_death[:(k+1)][::-1]), d_infec[:(k+1), :]), axis=0))
+        if k >= 30:
+            return np.array(fatality_ratio) * np.sum(np.matmul(
+                np.diag(time_to_death[:31][::-1]),
+                d_infec[(k-30):(k+1), :]), axis=0)
+        else:
+            return np.array(fatality_ratio) * np.sum(np.matmul(
+                np.diag(time_to_death[:(k+1)][::-1]), d_infec[:(k+1), :]),
+                axis=0)
 
     def samples_deaths(
             self, new_infections, fatality_ratio, time_to_death, niu, k):
