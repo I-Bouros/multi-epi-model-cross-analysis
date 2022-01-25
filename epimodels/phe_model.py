@@ -981,7 +981,7 @@ class PheSEIRModel(pints.ForwardModel):
         a = self._num_ages
         # Compute parameters of binomial
         suscep = output[k, :a]
-        pop = output[k, :a]
+        pop = 0
         for i in range(6):
             pop += output[k, (i*a):((i+1)*a)]
 
@@ -1108,7 +1108,7 @@ class PheSEIRModel(pints.ForwardModel):
         a = self._num_ages
         # Compute parameters of binomial
         suscep = output[k, :a]
-        pop = output[k, :a]
+        pop = 0
         for i in range(6):
             pop += output[k, (i*a):((i+1)*a)]
 

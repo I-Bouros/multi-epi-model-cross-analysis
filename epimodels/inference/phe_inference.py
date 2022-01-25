@@ -37,8 +37,6 @@ class InferLogLikelihood(pints.LogPDF):
         (Numpy array) List of regional numpy arrays of the daily number
         of deaths, split by age category. Each column represents an age
         group.
-    fatality_ratio
-        (list) List of age-specific fatality ratios.
     time_to_death
         (list) List of probabilities of death of individual d days after
         infection.
@@ -54,27 +52,32 @@ class InferLogLikelihood(pints.LogPDF):
         Sensitivity of the test (or ratio of true positives).
     spec
         Specificity of the test (or ratio of true negatives).
+    wd
+        Proportion of contribution of the deaths_data to the log-likelihood.
+    wp
+        Proportion of contribution of the poritives_data to the log-likelihood.
 
     """
     def __init__(self, model, times,
-                 deaths, fatality_ratio, time_to_death,
-                 tests_data, positives_data, sens, spec):
+                 deaths, time_to_death,
+                 tests_data, positives_data, sens, spec, wd=1, wp=1):
         # Set the prerequsites for the inference wrapper
         self._model = model
         self._times = times
         self._deaths = deaths
-        self._fatality_ratio = fatality_ratio
         self._time_to_death = time_to_death
         self._total_tests = tests_data
         self._positive_tests = positives_data
         self._sens = sens
         self._spec = spec
+        self._wd = wd
+        self._wp = wp
 
         # Set fixed parameters of the model
         self.set_fixed_parameters()
 
     def n_parameters(self):
-        return 1
+        return 1+self._model._num_ages
 
     def _log_likelihood(self, var_parameters):
         """
@@ -89,7 +92,8 @@ class InferLogLikelihood(pints.LogPDF):
 
         """
         # Update parameters
-        self._parameters[0] = [var_parameters] * len(self._model.regions)
+        self._parameters[0] = [var_parameters[0]] * len(self._model.regions)
+        fatality_ratio = (np.asarray(var_parameters[1:]) * 10**(-4)).tolist()
 
         total_log_lik = 0
 
@@ -105,7 +109,7 @@ class InferLogLikelihood(pints.LogPDF):
             # Check input of log-likelihoods fixed data
             self._model.check_death_format(
                 model_new_infections,
-                self._fatality_ratio,
+                fatality_ratio,
                 self._time_to_death,
                 self._niu)
 
@@ -116,14 +120,14 @@ class InferLogLikelihood(pints.LogPDF):
                 self._spec)
 
             for t, _ in enumerate(self._times):
-                total_log_lik += self._model.loglik_deaths(
+                total_log_lik += self._wd * self._model.loglik_deaths(
                     obs_death=self._deaths[r][t, :],
                     new_infections=model_new_infections,
-                    fatality_ratio=self._fatality_ratio,
+                    fatality_ratio=fatality_ratio,
                     time_to_death=self._time_to_death,
                     niu=self._niu,
                     k=t
-                ) + self._model.loglik_positive_tests(
+                ) + self._wp * self._model.loglik_positive_tests(
                     obs_pos=self._positive_tests[r][t, :],
                     output=model_output,
                     tests=self._total_tests[r][t, :],
@@ -145,13 +149,13 @@ class InferLogLikelihood(pints.LogPDF):
 
         # Initial Conditions
         susceptibles = [
-            [68124, 299908, 773741, 668994, 1554740, 1632059, 660187, 578319],  # noqa
-            [117840, 488164, 1140597, 1033029, 3050671, 2050173, 586472, 495043],  # noqa
-            [116401, 508081, 1321675, 1319046, 2689334, 2765974, 1106091, 943363],  # noqa
-            [85845, 374034, 978659, 1005275, 2036049, 2128261, 857595, 707190],  # noqa
-            [81258, 348379, 894662, 871907, 1864807, 1905072, 750263, 624848],  # noqa
-            [95825, 424854, 1141632, 1044242, 2257437, 2424929, 946459, 844757],  # noqa
-            [53565, 237359, 641486, 635602, 1304264, 1499291, 668999, 584130]]  # noqa
+            #[68124, 299908, 773741, 668994, 1554740, 1632059, 660187, 578319],  # noqa
+            #[117840, 488164, 1140597, 1033029, 3050671, 2050173, 586472, 495043],  # noqa
+            #[116401, 508081, 1321675, 1319046, 2689334, 2765974, 1106091, 943363],  # noqa
+            #[85845, 374034, 978659, 1005275, 2036049, 2128261, 857595, 707190],  # noqa
+            #[81258, 348379, 894662, 871907, 1864807, 1905072, 750263, 624848],  # noqa
+            #[95825, 424854, 1141632, 1044242, 2257437, 2424929, 946459, 844757],  # noqa
+            [53565, 237359, 641486, 635602, 1304264, 1499291, 668999, 584130]] # noqa
 
         exposed1 = np.zeros((
             len(self._model.regions),
@@ -162,12 +166,12 @@ class InferLogLikelihood(pints.LogPDF):
             self._model._num_ages)).tolist()
 
         infectives1 = [
-            [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 0, 2, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0],
-            [0, 0, 0, 1, 0, 0, 0, 0],
+            # [0, 0, 0, 0, 0, 1, 0, 0],
+            # [0, 0, 0, 0, 2, 0, 0, 0],
+            # [0, 0, 0, 0, 0, 0, 1, 0],
+            # [0, 0, 0, 0, 1, 0, 0, 0],
+            # [0, 0, 0, 0, 0, 1, 0, 0],
+            # [0, 0, 0, 1, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 1, 0, 0]]
 
         infectives2 = np.zeros((
@@ -204,7 +208,7 @@ class InferLogLikelihood(pints.LogPDF):
         Evaluates the log-lokelihood in a PINTS framework.
 
         """
-        return self._log_likelihood(x[0])
+        return self._log_likelihood(x)
 
 
 class PheSEIRInfer(object):
@@ -246,7 +250,7 @@ class PheSEIRInfer(object):
         self._sens = sens
         self._spec = spec
 
-    def read_deaths_data(self, deaths_data, fatality_ratio, time_to_death):
+    def read_deaths_data(self, deaths_data, time_to_death):
         """
         Sets the serology data used for the model's parameters inference.
 
@@ -256,25 +260,27 @@ class PheSEIRInfer(object):
             (Numpy array) List of regional numpy arrays of the daily number
             of deaths, split by age category. Each column represents an age
             group.
-        fatality_ratio
-            (list) List of age-specific fatality ratios.
         time_to_death
             (list) List of probabilities of death of individual d days after
             infection.
 
         """
         self._deaths = deaths_data
-        self._fatality_ratio = fatality_ratio
         self._time_to_death = time_to_death
 
-    def return_loglikelihood(self, times, x):
+    def return_loglikelihood(self, times, x, wd=1, wp=1):
+        """
+        Return the log-likelihood used for the inference.
+
+        """
         loglikelihood = InferLogLikelihood(
             self._model, times,
-            self._deaths, self._fatality_ratio, self._time_to_death,
-            self._total_tests, self._positive_tests, self._sens, self._spec)
+            self._deaths, self._time_to_death,
+            self._total_tests, self._positive_tests, self._sens, self._spec,
+            wd, wp)
         return loglikelihood(x)
 
-    def inference_problem_setup(self, times):
+    def inference_problem_setup(self, times, wd=1, wp=1):
         """
         Runs the parameter inference routine for the PHE model.
 
@@ -283,34 +289,54 @@ class PheSEIRInfer(object):
         times
             (list) List of time points at which we have data for the
             log-likelihood computation.
+        wd
+            Proportion of contribution of the deaths_data to the
+            log-likelihood.
+        wp
+            Proportion of contribution of the poritives_data to the
+            log-likelihood.
         """
         loglikelihood = InferLogLikelihood(
             self._model, times,
-            self._deaths, self._fatality_ratio, self._time_to_death,
-            self._total_tests, self._positive_tests, self._sens, self._spec)
+            self._deaths, self._time_to_death,
+            self._total_tests, self._positive_tests, self._sens, self._spec,
+            wd, wp)
+
+        upper_bd = [5]
+        upper_bd.extend([10**4] * self._model._num_ages)
+
+        uniform_log_prior = pints.UniformLogPrior(
+            [0] * (self._model._num_ages+1),
+            upper_bd)
+
+        # Create a posterior log-likelihood (log(likelihood * prior))
+        log_posterior = pints.LogPosterior(loglikelihood, uniform_log_prior)
 
         # Starting points
         x0 = [
-            [3],
-            [3],
-            [3],
+            [3, 0.16, 0.16, 0.43, 1.9, 8.975, 81.5, 310, 605],
+            [3, 0.16, 0.16, 0.43, 1.9, 8.975, 81.5, 310, 605],
+            [3, 0.16, 0.16, 0.43, 1.9, 8.975, 81.5, 310, 605],
         ]
 
         # print(loglikelihood(x0[0]))
 
         # Create MCMC routine
         mcmc = pints.MCMCController(
-            loglikelihood, 3, x0)
-        mcmc.set_max_iterations(20)
+            log_posterior, 3, x0)
+        mcmc.set_max_iterations(9000)
         mcmc.set_log_to_screen(True)
 
         print('Running...')
         chains = mcmc.run()
         print('Done!')
 
+        param_names = ['initial_r']
+        param_names.extend(['fat_rat_{}'.format(
+            i+1) for i in range(self._model._num_ages)])
+
         # Check convergence and other properties of chains
         results = pints.MCMCSummary(
             chains=chains, time=mcmc.time(),
-            parameter_names=[
-                'initial_r'])
+            parameter_names=param_names)
         print(results)
