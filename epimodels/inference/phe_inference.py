@@ -280,7 +280,7 @@ class PheSEIRInfer(object):
             wd, wp)
         return loglikelihood(x)
 
-    def inference_problem_setup(self, times, wd=1, wp=1):
+    def inference_problem_setup(self, times, num_iter, wd=1, wp=1):
         """
         Runs the parameter inference routine for the PHE model.
 
@@ -289,6 +289,8 @@ class PheSEIRInfer(object):
         times
             (list) List of time points at which we have data for the
             log-likelihood computation.
+        num_iter
+            Number of iterations the MCMC sampler algorithm is run for.
         wd
             Proportion of contribution of the deaths_data to the
             log-likelihood.
@@ -324,7 +326,7 @@ class PheSEIRInfer(object):
         # Create MCMC routine
         mcmc = pints.MCMCController(
             log_posterior, 3, x0)
-        mcmc.set_max_iterations(9000)
+        mcmc.set_max_iterations(num_iter)
         mcmc.set_log_to_screen(True)
 
         print('Running...')
@@ -340,3 +342,5 @@ class PheSEIRInfer(object):
             chains=chains, time=mcmc.time(),
             parameter_names=param_names)
         print(results)
+
+        return chains
