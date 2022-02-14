@@ -358,7 +358,7 @@ class PheSEIRInfer(object):
         print('Done!')
 
         param_names = ['initial_r']
-        param_names.extend(['fat_rat_{}'.format(
+        param_names.extend(['fatal_ratio_{}'.format(
             i+1) for i in range(self._model._num_ages)])
 
         # Check convergence and other properties of chains

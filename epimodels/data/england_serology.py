@@ -39,7 +39,7 @@ def read_tests_data(tests_file):
     """
     # Select data from the given state
     path = os.path.join(
-            os.path.dirname(__file__), 'serology_data/')
+            os.path.dirname(__file__), 'serology_data/REACT_data/')
     data = pd.read_csv(
         os.path.join(path, tests_file))
 
@@ -162,6 +162,8 @@ def process_regions(region):
     """
     if region == 'South West':
         return 'SW'
+    elif region == 'London':
+        return 'London'
     elif region == 'South East':
         return 'SE'
     elif region == 'East of England':
@@ -175,7 +177,7 @@ def process_regions(region):
         return 'NW'
 
 
-def main(file):
+def main(files):
     """
     Computes the matrix of age-structured number of tests and the matrix
     of age-structured number of positive results for all regions.
@@ -183,10 +185,13 @@ def main(file):
     Parameters
     ----------
     file
-        File name from which to extract the data.
+        List of file names from which to extract the data.
 
     """
-    data = read_tests_data(file)
+
+    data = pd.concat(
+        [read_tests_data(file) for file in files],
+        ignore_index=True)
 
     # Rename the columns of interest
     data = data.rename(columns={
@@ -203,22 +208,22 @@ def main(file):
         positives, tests = process_tests_data(
             data[data['region'] == region],
             start_date='2020-04-27',
-            end_date='2020-06-01')
+            end_date='2021-07-12')
 
         # Transform recorded deaths to csv file
         path_ = os.path.join(
             os.path.dirname(__file__), 'serology_data/')
         path = os.path.join(
                 path_,
-                '{}_positives_{}.csv'.format(region, file[21:-4]))
+                '{}_positives_{}.csv'.format(region, files[0][21:-6]))
 
         path1 = os.path.join(
                 path_,
-                '{}_tests_{}.csv'.format(region, file[21:-4]))
+                '{}_tests_{}.csv'.format(region, files[0][21:-6]))
 
-        np.savetxt(path, positives, delimiter=',')
-        np.savetxt(path1, tests, delimiter=',')
+        np.savetxt(path, positives, fmt="%d", delimiter=',')
+        np.savetxt(path1, tests, fmt="%d", delimiter=',')
 
 
 if __name__ == '__main__':
-    main('Region_England_cases_nhs.csv')
+    main(['Region_England_cases_nhs_{}.csv'.format(w) for w in range(1, 14)])

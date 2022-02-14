@@ -147,6 +147,8 @@ def process_regions(region):
     """
     if region == 'South West':
         return 'SW'
+    elif region == 'London':
+        return 'London'
     elif region == 'South East':
         return 'SE'
     elif region == 'East of England':
@@ -186,7 +188,7 @@ def main():
                 path_,
                 '{}_deaths.csv'.format(region))
 
-        np.savetxt(path, deaths, delimiter=',')
+        np.savetxt(path, deaths, fmt="%d", delimiter=',')
 
 
 if __name__ == '__main__':
