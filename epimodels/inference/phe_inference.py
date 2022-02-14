@@ -59,17 +59,27 @@ class InferLogLikelihood(pints.LogPDF):
 
     """
     def __init__(self, model, times,
-                 deaths, time_to_death,
-                 tests_data, positives_data, sens, spec, wd=1, wp=1):
+                 deaths, time_to_death, deaths_times,
+                 tests_data, positives_data, serology_times, sens, spec,
+                 wd=1, wp=1):
         # Set the prerequsites for the inference wrapper
+        # Model
         self._model = model
         self._times = times
+
+        # Death data
         self._deaths = deaths
+        self._deaths_times = deaths_times
         self._time_to_death = time_to_death
+
+        # Serology data
         self._total_tests = tests_data
         self._positive_tests = positives_data
+        self._serology_times = serology_times
         self._sens = sens
         self._spec = spec
+
+        # Contribution parameters
         self._wd = wd
         self._wp = wp
 
@@ -119,21 +129,26 @@ class InferLogLikelihood(pints.LogPDF):
                 self._sens,
                 self._spec)
 
-            for t, _ in enumerate(self._times):
+            # Log-likelihood contribution from death data
+            for t, time in enumerate(self._deaths_times):
                 total_log_lik += self._wd * self._model.loglik_deaths(
                     obs_death=self._deaths[r][t, :],
                     new_infections=model_new_infections,
                     fatality_ratio=fatality_ratio,
                     time_to_death=self._time_to_death,
                     niu=self._niu,
-                    k=t
-                ) + self._wp * self._model.loglik_positive_tests(
+                    k=time
+                )
+
+            # Log-likelihood contribution from serology data
+            for t, time in enumerate(self._serology_times):
+                total_log_lik += self._wp * self._model.loglik_positive_tests(
                     obs_pos=self._positive_tests[r][t, :],
                     output=model_output,
                     tests=self._total_tests[r][t, :],
                     sens=self._sens,
                     spec=self._spec,
-                    k=t
+                    k=time
                 )
 
         return np.sum(total_log_lik)
@@ -225,7 +240,8 @@ class PheSEIRInfer(object):
 
         self._model = model
 
-    def read_serology_data(self, tests_data, positives_data, sens, spec):
+    def read_serology_data(
+            self, tests_data, positives_data, serology_times, sens, spec):
         """
         Sets the serology data used for the model's parameters inference.
 
@@ -239,6 +255,9 @@ class PheSEIRInfer(object):
             (Numpy array) List of regional numpy arrays of the daily number
             of positive test results, split by age category. Each column
             represents an age group.
+        serology_times
+            (Numpy array) List of timepoints for which serology data is
+            available.
         sens
             Sensitivity of the test (or ratio of true positives).
         spec
@@ -247,10 +266,11 @@ class PheSEIRInfer(object):
         """
         self._total_tests = tests_data
         self._positive_tests = positives_data
+        self._serology_times = serology_times
         self._sens = sens
         self._spec = spec
 
-    def read_deaths_data(self, deaths_data, time_to_death):
+    def read_deaths_data(self, deaths_data, deaths_times, time_to_death):
         """
         Sets the serology data used for the model's parameters inference.
 
@@ -260,12 +280,16 @@ class PheSEIRInfer(object):
             (Numpy array) List of regional numpy arrays of the daily number
             of deaths, split by age category. Each column represents an age
             group.
+        deaths_times
+            (Numpy array) List of timepoints for which deaths data is
+            available.
         time_to_death
             (list) List of probabilities of death of individual d days after
             infection.
 
         """
         self._deaths = deaths_data
+        self._deaths_times = deaths_times
         self._time_to_death = time_to_death
 
     def return_loglikelihood(self, times, x, wd=1, wp=1):
