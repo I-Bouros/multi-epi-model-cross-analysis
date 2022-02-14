@@ -6,15 +6,13 @@
 #
 """Processing script for deaths data from [1]_.
 
-It computes region-specific the age-structured daily number which are then
-stored in separate csv files.
+It computes region-specific the age-structured daily number of deaths which
+are the stored in separate csv files.
 
 References
 ----------
-.. [1] Prem K, Cook AR, Jit M (2017) Projecting social contact matrices in 152
-       countries using contact surveys and demographic data. PLOS Computational
-       Biology 13(9): e1005697.
-       https://doi.org/10.1371/journal.pcbi.1005697
+.. [1] Data.gov.uk. Coronavirus (COVID-19) in the UK , GOV.UK,
+       https://coronavirus.data.gov.uk/details/download.
 
 """
 
@@ -27,9 +25,8 @@ import numpy as np
 def read_death_data(
         death_file='England_deaths.csv'):
     """
-    Computes timelines of percentages of deviation from the baseline in
-    activities using Google mobility data, for selected region and between
-    given dates.
+    Parses the csv document containing the age structured regional
+    daily death data.
 
     Parameters
     ----------
@@ -51,9 +48,7 @@ def process_death_data(
         start_date='2020-02-15',
         end_date='2022-01-28'):
     """
-    Computes timelines of percentages of deviation from the baseline in
-    activities using Google mobility data, for selected region and between
-    given dates.
+    Computes the matrix of age-structured number of deaths for a given region.
 
     Parameters
     ----------
@@ -61,9 +56,9 @@ def process_death_data(
         (pandas.Dataframe) Dataframe of age-structured daily number of deaths
         in a given region.
     start_date
-        The initial date from which the deviation percentages are calculated.
+        The initial date from which the number of deaths are calculated.
     end_date
-        The final date from which the deviation percentages are calculated.
+        The final date from which the number of deaths are calculated.
 
     """
     data = data.sort_values('date')
@@ -99,6 +94,18 @@ def process_death_data(
 
 
 def process_ages(age_groups, data):
+    """
+    Parses daily data into the correct age structure types.
+
+    Parameters
+    ----------
+    age_groups
+        List of the names for the age groups the data is split into.
+    data
+        (pandas.Dataframe) Dataframe of age-structured daily number of deaths
+        in a given region.
+
+    """
     newrow = {}
     # Process 0-1
     newrow[age_groups[0]] = 0
@@ -111,7 +118,7 @@ def process_ages(age_groups, data):
         ['05_09', '10_15'])]['deaths'].sum()
 
     # Process 15-25
-    newrow[age_groups[2]] = data[data['age'].isin(
+    newrow[age_groups[3]] = data[data['age'].isin(
         ['15_19', '20_24'])]['deaths'].sum()
 
     # Process 25-45
@@ -154,14 +161,14 @@ def process_regions(region):
 
 def main():
     """
-    Combines timelines of deviation percentages and baseline activity-specific
-    contact matrices to get weekly, region-specific contact matrices.
+    Computes the matrix of age-structured number of deaths for all regions.
 
     """
     data = read_death_data()
 
     # Rename the columns of interest
     data = data.rename(columns={'areaName': 'region'})
+
     data['region'] = [process_regions(x) for x in data['region']]
 
     all_regions = ['EE', 'London', 'Mid', 'NE', 'NW', 'SE', 'SW']
