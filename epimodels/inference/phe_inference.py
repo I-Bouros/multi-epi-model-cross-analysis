@@ -137,7 +137,7 @@ class InferLogLikelihood(pints.LogPDF):
                     fatality_ratio=fatality_ratio,
                     time_to_death=self._time_to_death,
                     niu=self._niu,
-                    k=time
+                    k=time-1
                 )
 
             # Log-likelihood contribution from serology data
@@ -148,7 +148,7 @@ class InferLogLikelihood(pints.LogPDF):
                     tests=self._total_tests[r][t, :],
                     sens=self._sens,
                     spec=self._spec,
-                    k=time
+                    k=time-1
                 )
 
         return np.sum(total_log_lik)
@@ -165,12 +165,13 @@ class InferLogLikelihood(pints.LogPDF):
         # Initial Conditions
         susceptibles = [
             #[68124, 299908, 773741, 668994, 1554740, 1632059, 660187, 578319],  # noqa
-            #[117840, 488164, 1140597, 1033029, 3050671, 2050173, 586472, 495043],  # noqa
+            [117840, 488164, 1140597, 1033029, 3050671, 2050173, 586472, 495043],  # noqa
             #[116401, 508081, 1321675, 1319046, 2689334, 2765974, 1106091, 943363],  # noqa
             #[85845, 374034, 978659, 1005275, 2036049, 2128261, 857595, 707190],  # noqa
-            #[81258, 348379, 894662, 871907, 1864807, 1905072, 750263, 624848],  # noqa
+            [81258, 348379, 894662, 871907, 1864807, 1905072, 750263, 624848],  # noqa
             #[95825, 424854, 1141632, 1044242, 2257437, 2424929, 946459, 844757],  # noqa
-            [53565, 237359, 641486, 635602, 1304264, 1499291, 668999, 584130]] # noqa
+            #[53565, 237359, 641486, 635602, 1304264, 1499291, 668999, 584130]  # noqa
+            ]
 
         exposed1 = np.zeros((
             len(self._model.regions),
@@ -181,13 +182,14 @@ class InferLogLikelihood(pints.LogPDF):
             self._model._num_ages)).tolist()
 
         infectives1 = [
-            # [0, 0, 0, 0, 0, 1, 0, 0],
-            # [0, 0, 0, 0, 2, 0, 0, 0],
-            # [0, 0, 0, 0, 0, 0, 1, 0],
-            # [0, 0, 0, 0, 1, 0, 0, 0],
-            # [0, 0, 0, 0, 0, 1, 0, 0],
-            # [0, 0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0]]
+            # [0, 0, 0, 0, 0, 1, 0, 0],  # noqa
+            [0, 0, 0, 0, 2, 0, 0, 0],  # noqa
+            # [0, 0, 0, 0, 0, 0, 1, 0],  # noqa
+            # [0, 0, 0, 0, 1, 0, 0, 0],  # noqa
+            [0, 0, 0, 0, 0, 1, 0, 0],  # noqa
+            # [0, 0, 0, 1, 0, 0, 0, 0],  # noqa
+            # [0, 0, 0, 0, 0, 1, 0, 0]  # noqa
+            ]
 
         infectives2 = np.zeros((
             len(self._model.regions),
