@@ -207,7 +207,7 @@ def main(files):
     for region in all_regions:
         positives, tests = process_tests_data(
             data[data['region'] == region],
-            start_date='2020-04-27',
+            start_date='2020-05-04',
             end_date='2021-07-12')
 
         # Transform recorded deaths to csv file

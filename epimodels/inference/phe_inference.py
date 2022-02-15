@@ -324,9 +324,9 @@ class PheSEIRInfer(object):
         """
         loglikelihood = InferLogLikelihood(
             self._model, times,
-            self._deaths, self._time_to_death,
-            self._total_tests, self._positive_tests, self._sens, self._spec,
-            wd, wp)
+            self._deaths, self._time_to_death, self._deaths_times,
+            self._total_tests, self._positive_tests, self._serology_times,
+            self._sens, self._spec, wd, wp)
 
         upper_bd = [5]
         upper_bd.extend([10**4] * self._model._num_ages)

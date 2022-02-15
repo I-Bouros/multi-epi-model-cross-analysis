@@ -178,7 +178,7 @@ def main():
     for region in all_regions:
         deaths = process_death_data(
             data[data['region'] == region],
-            start_date='2020-02-15',
+            start_date='2020-03-12',
             end_date='2021-06-25')
 
         # Transform recorded deaths to csv file
