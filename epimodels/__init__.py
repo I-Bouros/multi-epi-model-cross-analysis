@@ -21,4 +21,4 @@ from ._setup_matrices import ContactMatrix, RegionMatrix, UniNextGenMatrix, UniI
 from .phe_model import PheSEIRModel  # noqa
 
 # Import inference classes
-from .inference.phe_inference import PheSEIRInfer  # noqa
+from .inference.phe_inference import PheSEIRInfer, PHELogLik, PHELogPrior  # noqa
