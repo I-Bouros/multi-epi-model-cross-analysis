@@ -331,7 +331,7 @@ class PheSEIRInfer(object):
         """
         Sets the serology data used for the model's parameters inference.
 
-        Paramaters
+        Parameters
         ----------
         tests_data
             (Numpy array) List of regional numpy arrays of the daily number
@@ -361,7 +361,7 @@ class PheSEIRInfer(object):
         """
         Sets the serology data used for the model's parameters inference.
 
-        Paramaters
+        Parameters
         ----------
         deaths_data
             (Numpy array) List of regional numpy arrays of the daily number
