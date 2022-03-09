@@ -11,6 +11,7 @@ This is the documentation for the implementation of a collection of multiple epi
 .. toctree::
    setup_matrices
    models
+   inference
 
 
 Indices and tables
