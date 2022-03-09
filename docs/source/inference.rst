@@ -4,11 +4,13 @@ List of Epidemiology Models
 
 This section documents the classes used for the parameetr inference of epidemiological models curated in this collection.
 
-.. currentmodule:: epimodels
+.. currentmodule:: epimodels.inference
 
 Overview:
 
-- :class:``
+- :class:`PheSEIRInfer`
+- :class:`PHELogLik`
+- :class:`PHELogPrior`
 
 Public Health England & Cambridge Model
 ***************************************
