@@ -434,176 +434,216 @@ class TestPheSEIRModel(unittest.TestCase):
         output = model.simulate(
             list(deepflatten(parameters, ignore=str)), times)
 
+        new_infections = model.new_infections(output)
+
         obs_death = [10, 12]
         fatality_ratio = [0.1, 0.5]
         time_to_death = [0.5, 0.5]
 
         self.assertEqual(
             model.loglik_deaths(
-                obs_death, output, fatality_ratio,
+                obs_death, new_infections, fatality_ratio,
                 time_to_death, 0.5, 1).shape,
             (len(age_groups),))
 
-        with self.assertRaises(TypeError):
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio,
-                time_to_death, '0.5', 1)
-
         with self.assertRaises(ValueError):
             model.loglik_deaths(
-                obs_death, output, fatality_ratio,
-                time_to_death, -2, 1)
-
-        with self.assertRaises(ValueError):
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio,
+                obs_death, new_infections, fatality_ratio,
                 time_to_death, 0.5, -1)
 
         with self.assertRaises(TypeError):
             model.loglik_deaths(
-                obs_death, output, fatality_ratio,
+                obs_death, new_infections, fatality_ratio,
                 time_to_death, 0.5, '1')
 
         with self.assertRaises(ValueError):
             model.loglik_deaths(
-                obs_death, output, fatality_ratio,
-                time_to_death, 0.5, -1)
-
-        with self.assertRaises(ValueError):
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio,
+                obs_death, new_infections, fatality_ratio,
                 time_to_death, 0.5, 2)
 
         with self.assertRaises(ValueError):
             model.loglik_deaths(
-                0, output, fatality_ratio,
+                0, new_infections, fatality_ratio,
                 time_to_death, 0.5, 1)
 
         with self.assertRaises(ValueError):
             obs_death1 = np.array([5, 6, 0, 0])
 
             model.loglik_deaths(
-                obs_death1, output, fatality_ratio,
+                obs_death1, new_infections, fatality_ratio,
                 time_to_death, 0.5, 1)
 
         with self.assertRaises(TypeError):
             obs_death1 = np.array(['5', 6])
 
             model.loglik_deaths(
-                obs_death1, output, fatality_ratio,
+                obs_death1, new_infections, fatality_ratio,
                 time_to_death, 0.5, 1)
 
         with self.assertRaises(ValueError):
             obs_death1 = np.array([5, -1])
 
             model.loglik_deaths(
-                obs_death1, output, fatality_ratio,
+                obs_death1, new_infections, fatality_ratio,
                 time_to_death, 0.5, 1)
 
-        with self.assertRaises(ValueError):
-            output1 = np.array([5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    def test_check_death_format(self):
+        model = em.PheSEIRModel()
 
-            model.loglik_deaths(
-                obs_death, output1, fatality_ratio,
-                time_to_death, 0.5, 1)
+        # Populate the model
+        regions = ['London', 'Cornwall']
+        age_groups = ['0-10', '10-25']
 
-        with self.assertRaises(ValueError):
-            output1 = np.array([
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0]])
+        # Initial state of the system
+        contact_data_matrix_0 = np.array([[1, 0], [0, 3]])
+        contact_data_matrix_1 = np.array([[10, 5.2], [0, 3]])
 
-            model.loglik_deaths(
-                obs_death, output1, fatality_ratio,
-                time_to_death, 0.5, 1)
+        region_data_matrix_0_0 = np.array([[0.5, 0], [0, 6]])
+        region_data_matrix_0_1 = np.array([[1, 10], [1, 0]])
+        region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
+        region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
 
-        with self.assertRaises(ValueError):
-            output1 = np.array([
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+        susceptibles = [[5, 6], [7, 8]]
+        dI = 4
 
-            model.loglik_deaths(
-                obs_death, output1, fatality_ratio,
-                time_to_death, 0.5, 1)
+        contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
+        contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
+        regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_0_0)
+        regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_0_1)
+        regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_1_0)
+        regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_1_1)
+
+        # Matrices contact
+        matrices_contact = [contacts_0, contacts_1]
+        time_changes_contact = [1, 3]
+        matrices_region = [
+            [regional_0_0, regional_0_1],
+            [regional_1_0, regional_1_1]]
+        time_changes_region = [1, 2]
+
+        model.set_regions(regions)
+        model.read_contact_data(matrices_contact, time_changes_contact)
+        model.read_regional_data(matrices_region, time_changes_region)
+
+        initial_r = [0.5, 1]
+
+        parameters = [
+            initial_r, 1, susceptibles,
+            [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
+            [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
+
+        times = [1, 2]
+
+        output = model.simulate(
+            list(deepflatten(parameters, ignore=str)), times)
+
+        new_infections = model.new_infections(output)
+
+        fatality_ratio = [0.1, 0.5]
+        time_to_death = [0.5, 0.5]
 
         with self.assertRaises(TypeError):
-            output1 = np.array([
-                ['5', 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, '0', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+            model.check_death_format(
+                new_infections, fatality_ratio, time_to_death, '0.5')
 
-            model.loglik_deaths(
-                obs_death, output1, fatality_ratio,
-                time_to_death, 0.5, 1)
+        with self.assertRaises(ValueError):
+            model.check_death_format(
+                new_infections, fatality_ratio, time_to_death, -2)
+
+        with self.assertRaises(ValueError):
+            new_infections1 = \
+                np.array([5, 6])
+
+            model.check_death_format(
+                new_infections1, fatality_ratio, time_to_death, 0.5)
+
+        with self.assertRaises(ValueError):
+            new_infections1 = np.array([
+                [5, 6, 0, 0],
+                [5, 6, 0, 0]])
+
+            model.check_death_format(
+                new_infections1, fatality_ratio, time_to_death, 0.5)
+
+        with self.assertRaises(ValueError):
+            new_infections1 = np.array([
+                [5, 6], [5, 6], [5, 6]])
+
+            model.check_death_format(
+                new_infections1, fatality_ratio, time_to_death, 0.5)
+
+        with self.assertRaises(TypeError):
+            new_infections1 = np.array([
+                ['5', 6],
+                [5, '0']])
+
+            model.check_death_format(
+                new_infections1, fatality_ratio, time_to_death, 0.5)
 
         with self.assertRaises(ValueError):
             fatality_ratio1 = 0
 
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio1,
-                time_to_death, 0.5, 1)
+            model.check_death_format(
+                new_infections, fatality_ratio1, time_to_death, 0.5)
 
         with self.assertRaises(ValueError):
             fatality_ratio1 = np.array([0.1, 0.5, 0.1])
 
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio1,
-                time_to_death, 0.5, 1)
+            model.check_death_format(
+                new_infections, fatality_ratio1, time_to_death, 0.5)
 
         with self.assertRaises(TypeError):
             fatality_ratio1 = np.array([0.1, '0.5'])
 
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio1,
-                time_to_death, 0.5, 1)
+            model.check_death_format(
+                new_infections, fatality_ratio1, time_to_death, 0.5)
 
         with self.assertRaises(ValueError):
             fatality_ratio1 = np.array([-0.1, 0.5])
 
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio1,
-                time_to_death, 0.5, 1)
+            model.check_death_format(
+                new_infections, fatality_ratio1, time_to_death, 0.5)
 
         with self.assertRaises(ValueError):
             fatality_ratio1 = np.array([0.1, 1.5])
 
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio1,
-                time_to_death, 0.5, 1)
+            model.check_death_format(
+                new_infections, fatality_ratio1, time_to_death, 0.5)
 
         with self.assertRaises(ValueError):
             time_to_death1 = np.array([[0.5], [0.5]])
 
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio,
-                time_to_death1, 0.5, 1)
+            model.check_death_format(
+                new_infections, fatality_ratio, time_to_death1, 0.5)
 
         with self.assertRaises(ValueError):
             time_to_death1 = np.array([0.5, 0.5, 0.15])
 
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio,
-                time_to_death1, 0.5, 1)
+            model.check_death_format(
+                new_infections, fatality_ratio, time_to_death1, 0.5)
 
         with self.assertRaises(TypeError):
             time_to_death1 = np.array(['0.1', 0.5])
 
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio,
-                time_to_death1, 0.5, 1)
+            model.check_death_format(
+                new_infections, fatality_ratio, time_to_death1, 0.5)
 
         with self.assertRaises(ValueError):
             time_to_death1 = np.array([-0.1, 0.5])
 
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio,
-                time_to_death1, 0.5, 1)
+            model.check_death_format(
+                new_infections, fatality_ratio, time_to_death1, 0.5)
 
         with self.assertRaises(ValueError):
             time_to_death1 = np.array([0.5, 1.1])
 
-            model.loglik_deaths(
-                obs_death, output, fatality_ratio,
-                time_to_death1, 0.5, 1)
+            model.check_death_format(
+                new_infections, fatality_ratio, time_to_death1, 0.5)
 
     def test_samples_deaths(self):
         model = em.PheSEIRModel()
@@ -660,149 +700,31 @@ class TestPheSEIRModel(unittest.TestCase):
         output = model.simulate(
             list(deepflatten(parameters, ignore=str)), times)
 
+        new_infections = model.new_infections(output)
+
         fatality_ratio = [0.1, 0.5]
         time_to_death = [0.5, 0.5]
 
         self.assertEqual(
             model.samples_deaths(
-                output, fatality_ratio,
+                new_infections, fatality_ratio,
                 time_to_death, 0.5, 1).shape,
             (len(age_groups),))
 
-        with self.assertRaises(TypeError):
-            model.samples_deaths(
-                output, fatality_ratio,
-                time_to_death, '0.5', 1)
-
         with self.assertRaises(ValueError):
             model.samples_deaths(
-                output, fatality_ratio,
-                time_to_death, -2, 1)
-
-        with self.assertRaises(ValueError):
-            model.samples_deaths(
-                output, fatality_ratio,
+                new_infections, fatality_ratio,
                 time_to_death, 0.5, -1)
 
         with self.assertRaises(TypeError):
             model.samples_deaths(
-                output, fatality_ratio,
+                new_infections, fatality_ratio,
                 time_to_death, 0.5, '1')
 
         with self.assertRaises(ValueError):
             model.samples_deaths(
-                output, fatality_ratio,
-                time_to_death, 0.5, -1)
-
-        with self.assertRaises(ValueError):
-            model.samples_deaths(
-                output, fatality_ratio,
+                new_infections, fatality_ratio,
                 time_to_death, 0.5, 2)
-
-        with self.assertRaises(ValueError):
-            output1 = np.array([5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-
-            model.samples_deaths(
-                output1, fatality_ratio,
-                time_to_death, 0.5, 1)
-
-        with self.assertRaises(ValueError):
-            output1 = np.array([
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0]])
-
-            model.samples_deaths(
-                output1, fatality_ratio,
-                time_to_death, 0.5, 1)
-
-        with self.assertRaises(ValueError):
-            output1 = np.array([
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-
-            model.samples_deaths(
-                output1, fatality_ratio,
-                time_to_death, 0.5, 1)
-
-        with self.assertRaises(TypeError):
-            output1 = np.array([
-                ['5', 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, '0', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-
-            model.samples_deaths(
-                output1, fatality_ratio,
-                time_to_death, 0.5, 1)
-
-        with self.assertRaises(ValueError):
-            fatality_ratio1 = 0
-
-            model.samples_deaths(
-                output, fatality_ratio1,
-                time_to_death, 0.5, 1)
-
-        with self.assertRaises(ValueError):
-            fatality_ratio1 = np.array([0.1, 0.5, 0.1])
-
-            model.samples_deaths(
-                output, fatality_ratio1,
-                time_to_death, 0.5, 1)
-
-        with self.assertRaises(TypeError):
-            fatality_ratio1 = np.array([0.1, '0.5'])
-
-            model.samples_deaths(
-                output, fatality_ratio1,
-                time_to_death, 0.5, 1)
-
-        with self.assertRaises(ValueError):
-            fatality_ratio1 = np.array([-0.1, 0.5])
-
-            model.samples_deaths(
-                output, fatality_ratio1,
-                time_to_death, 0.5, 1)
-
-        with self.assertRaises(ValueError):
-            fatality_ratio1 = np.array([0.1, 1.5])
-
-            model.samples_deaths(
-                output, fatality_ratio1,
-                time_to_death, 0.5, 1)
-
-        with self.assertRaises(ValueError):
-            time_to_death1 = np.array([[0.5], [0.5]])
-
-            model.samples_deaths(
-                output, fatality_ratio,
-                time_to_death1, 0.5, 1)
-
-        with self.assertRaises(ValueError):
-            time_to_death1 = np.array([0.5, 0.5, 0.15])
-
-            model.samples_deaths(
-                output, fatality_ratio,
-                time_to_death1, 0.5, 1)
-
-        with self.assertRaises(TypeError):
-            time_to_death1 = np.array(['0.1', 0.5])
-
-            model.samples_deaths(
-                output, fatality_ratio,
-                time_to_death1, 0.5, 1)
-
-        with self.assertRaises(ValueError):
-            time_to_death1 = np.array([-0.1, 0.5])
-
-            model.samples_deaths(
-                output, fatality_ratio,
-                time_to_death1, 0.5, 1)
-
-        with self.assertRaises(ValueError):
-            time_to_death1 = np.array([0.5, 1.1])
-
-            model.samples_deaths(
-                output, fatality_ratio,
-                time_to_death1, 0.5, 1)
 
     def test_loglik_positive_tests(self):
         model = em.PheSEIRModel()
@@ -859,62 +781,120 @@ class TestPheSEIRModel(unittest.TestCase):
             list(deepflatten(parameters, ignore=str)), times)
 
         obs_pos = [10, 12]
-        tests = [20, 30]
+        tests = [[20, 30], [10, 0]]
         sens = 0.9
         spec = 0.1
 
         self.assertEqual(
             model.loglik_positive_tests(
-                obs_pos, output, tests, sens, spec, 0).shape,
+                obs_pos, output, tests[0], sens, spec, 0).shape,
             (len(age_groups),))
 
         with self.assertRaises(TypeError):
             model.loglik_positive_tests(
-                obs_pos, output, tests, sens, spec, '1')
+                obs_pos, output, tests[0], sens, spec, '1')
 
         with self.assertRaises(ValueError):
             model.loglik_positive_tests(
-                obs_pos, output, tests, sens, spec, -1)
+                obs_pos, output, tests[0], sens, spec, -1)
 
         with self.assertRaises(ValueError):
             model.loglik_positive_tests(
-                obs_pos, output, tests, sens, spec, 3)
+                obs_pos, output, tests[0], sens, spec, 3)
 
         with self.assertRaises(ValueError):
             model.loglik_positive_tests(
-                0, output, tests, sens, spec, 0)
+                0, output, tests[0], sens, spec, 0)
 
         with self.assertRaises(ValueError):
             obs_pos1 = np.array([5, 6, 0, 0])
 
             model.loglik_positive_tests(
-                obs_pos1, output, tests, sens, spec, 0)
+                obs_pos1, output, tests[0], sens, spec, 0)
 
         with self.assertRaises(TypeError):
             obs_pos1 = np.array(['5', 6])
 
             model.loglik_positive_tests(
-                obs_pos1, output, tests, sens, spec, 0)
+                obs_pos1, output, tests[0], sens, spec, 0)
 
         with self.assertRaises(ValueError):
             obs_pos1 = np.array([5, -1])
 
             model.loglik_positive_tests(
-                obs_pos1, output, tests, sens, spec, 0)
+                obs_pos1, output, tests[0], sens, spec, 0)
+
+    def test_check_positives_format(self):
+        model = em.PheSEIRModel()
+
+        # Populate the model
+        regions = ['London', 'Cornwall']
+        age_groups = ['0-10', '10-25']
+
+        # Initial state of the system
+        contact_data_matrix_0 = np.array([[1, 0], [0, 3]])
+        contact_data_matrix_1 = np.array([[10, 5.2], [0, 3]])
+
+        region_data_matrix_0_0 = np.array([[0.5, 0], [0, 6]])
+        region_data_matrix_0_1 = np.array([[1, 10], [1, 0]])
+        region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
+        region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
+
+        susceptibles = [[5, 6], [7, 8]]
+        dI = 4
+
+        contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
+        contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
+        regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_0_0)
+        regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_0_1)
+        regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_1_0)
+        regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_1_1)
+
+        # Matrices contact
+        matrices_contact = [contacts_0, contacts_1]
+        time_changes_contact = [1, 3]
+        matrices_region = [
+            [regional_0_0, regional_0_1],
+            [regional_1_0, regional_1_1]]
+        time_changes_region = [1, 2]
+
+        model.set_regions(regions)
+        model.read_contact_data(matrices_contact, time_changes_contact)
+        model.read_regional_data(matrices_region, time_changes_region)
+
+        initial_r = [0.5, 1]
+
+        parameters = [
+            initial_r, 1, susceptibles, [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
+            [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
+
+        times = [1, 2]
+
+        output = model.simulate(
+            list(deepflatten(parameters, ignore=str)), times)
+
+        tests = [[20, 30], [10, 0]]
+        sens = 0.9
+        spec = 0.1
 
         with self.assertRaises(ValueError):
             output1 = np.array([5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-            model.loglik_positive_tests(
-                obs_pos, output1, tests, sens, spec, 0)
+            model.check_positives_format(
+                output1, tests, sens, spec)
 
         with self.assertRaises(ValueError):
             output1 = np.array([
                 [5, 6, 0, 0, 0, 0, 0, 0, 0, 0],
                 [5, 6, 0, 0, 0, 0, 0, 0, 0, 0]])
 
-            model.loglik_positive_tests(
-                obs_pos, output1, tests, sens, spec, 0)
+            model.check_positives_format(
+                output1, tests, sens, spec)
 
         with self.assertRaises(ValueError):
             output1 = np.array([
@@ -922,70 +902,70 @@ class TestPheSEIRModel(unittest.TestCase):
                 [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
 
-            model.loglik_positive_tests(
-                obs_pos, output1, tests, sens, spec, 0)
+            model.check_positives_format(
+                output1, tests, sens, spec)
 
         with self.assertRaises(TypeError):
             output1 = np.array([
                 ['5', 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [5, 6, '0', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
 
-            model.loglik_positive_tests(
-                obs_pos, output1, tests, sens, spec, 0)
+            model.check_positives_format(
+                output1, tests, sens, spec)
 
         with self.assertRaises(ValueError):
             tests1 = 100
 
-            model.loglik_positive_tests(
-                obs_pos, output, tests1, sens, spec, 0)
+            model.check_positives_format(
+                output, tests1, sens, spec)
 
         with self.assertRaises(ValueError):
             tests1 = np.array([20, 30, 1])
 
-            model.loglik_positive_tests(
-                obs_pos, output, tests1, sens, spec, 0)
+            model.check_positives_format(
+                output, tests1, sens, spec)
 
         with self.assertRaises(TypeError):
-            tests1 = np.array([20, '30'])
+            tests1 = np.array([[20, '30'], [10, 0]])
 
-            model.loglik_positive_tests(
-                obs_pos, output, tests1, sens, spec, 0)
+            model.check_positives_format(
+                output, tests1, sens, spec)
 
         with self.assertRaises(ValueError):
             tests1 = np.array([-1, 50])
 
-            model.loglik_positive_tests(
-                obs_pos, output, tests1, sens, spec, 0)
+            model.check_positives_format(
+                output, tests1, sens, spec)
 
         with self.assertRaises(ValueError):
             tests1 = np.array([2, 50])
 
-            model.loglik_positive_tests(
-                obs_pos, output, tests1, sens, spec, 0)
+            model.check_positives_format(
+                output, tests1, sens, spec)
 
         with self.assertRaises(TypeError):
-            model.loglik_positive_tests(
-                obs_pos, output, tests, '0.9', spec, 0)
+            model.check_positives_format(
+                output, tests, '0.9', spec)
 
         with self.assertRaises(ValueError):
-            model.loglik_positive_tests(
-                obs_pos, output, tests, -0.2, spec, 0)
+            model.check_positives_format(
+                output, tests, -0.2, spec)
 
         with self.assertRaises(ValueError):
-            model.loglik_positive_tests(
-                obs_pos, output, tests, 1.2, spec, 0)
+            model.check_positives_format(
+                output, tests, 1.2, spec)
 
         with self.assertRaises(TypeError):
-            model.loglik_positive_tests(
-                obs_pos, output, tests, sens, '0.1', 0)
+            model.check_positives_format(
+                output, tests, sens, '0.1')
 
         with self.assertRaises(ValueError):
-            model.loglik_positive_tests(
-                obs_pos, output, tests, sens, -0.1, 0)
+            model.check_positives_format(
+                output, tests, sens, -0.1)
 
         with self.assertRaises(ValueError):
-            model.loglik_positive_tests(
-                obs_pos, output, tests, sens, 1.2, 0)
+            model.check_positives_format(
+                output, tests, sens, 1.2)
 
     def test_samples_positive_tests(self):
         model = em.PheSEIRModel()
@@ -1041,102 +1021,23 @@ class TestPheSEIRModel(unittest.TestCase):
         output = model.simulate(
             list(deepflatten(parameters, ignore=str)), times)
 
-        tests = [20, 30]
+        tests = [[20, 30], [10, 0]]
         sens = 0.9
         spec = 0.1
 
         self.assertEqual(
             model.samples_positive_tests(
-                output, tests, sens, spec, 0).shape,
+                output, tests[0], sens, spec, 0).shape,
             (len(age_groups),))
 
         with self.assertRaises(TypeError):
             model.samples_positive_tests(
-                output, tests, sens, spec, '1')
+                output, tests[0], sens, spec, '1')
 
         with self.assertRaises(ValueError):
             model.samples_positive_tests(
-                output, tests, sens, spec, -1)
+                output, tests[0], sens, spec, -1)
 
         with self.assertRaises(ValueError):
             model.samples_positive_tests(
-                output, tests, sens, spec, 3)
-
-        with self.assertRaises(ValueError):
-            output1 = np.array([5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-
-            model.samples_positive_tests(
-                output1, tests, sens, spec, 0)
-
-        with self.assertRaises(ValueError):
-            output1 = np.array([
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0]])
-
-            model.samples_positive_tests(
-                output1, tests, sens, spec, 0)
-
-        with self.assertRaises(ValueError):
-            output1 = np.array([
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-
-            model.samples_positive_tests(
-                output1, tests, sens, spec, 0)
-
-        with self.assertRaises(TypeError):
-            output1 = np.array([
-                ['5', 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 6, '0', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-
-            model.samples_positive_tests(
-                output1, tests, sens, spec, 0)
-
-        with self.assertRaises(ValueError):
-            tests1 = 100
-
-            model.samples_positive_tests(
-                output, tests1, sens, spec, 0)
-
-        with self.assertRaises(ValueError):
-            tests1 = np.array([20, 30, 1])
-
-            model.samples_positive_tests(
-                output, tests1, sens, spec, 0)
-
-        with self.assertRaises(TypeError):
-            tests1 = np.array([20, '30'])
-
-            model.samples_positive_tests(
-                output, tests1, sens, spec, 0)
-
-        with self.assertRaises(ValueError):
-            tests1 = np.array([-1, 50])
-
-            model.samples_positive_tests(
-                output, tests1, sens, spec, 0)
-
-        with self.assertRaises(TypeError):
-            model.samples_positive_tests(
-                output, tests, '0.9', spec, 0)
-
-        with self.assertRaises(ValueError):
-            model.samples_positive_tests(
-                output, tests, -0.2, spec, 0)
-
-        with self.assertRaises(ValueError):
-            model.samples_positive_tests(
-                output, tests, 1.2, spec, 0)
-
-        with self.assertRaises(TypeError):
-            model.samples_positive_tests(
-                output, tests, sens, '0.1', 0)
-
-        with self.assertRaises(ValueError):
-            model.samples_positive_tests(
-                output, tests, sens, -0.1, 0)
-
-        with self.assertRaises(ValueError):
-            model.samples_positive_tests(
-                output, tests, sens, 1.2, 0)
+                output, tests[0], sens, spec, 3)

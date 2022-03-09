@@ -215,7 +215,7 @@ class TestUniNextGenMatrixClass(unittest.TestCase):
         self.assertEqual(next_gen.infection_period, 4)
 
         pdt.assert_frame_equal(
-            next_gen.next_gen_matrix,
+            next_gen.get_next_gen_matrix(),
             pd.DataFrame(
                 data=np.array([[360, 449.28], [0, 144]]),
                 index=['0-10', '10-25'],

@@ -387,6 +387,8 @@ class UniNextGenMatrix(object):
         infectious in age group :math:`j`.
 
         """
+        self._compute_next_gen_matrix()
+
         return pd.DataFrame(
             data=self.generator, index=self.ages, columns=self.ages)
 
