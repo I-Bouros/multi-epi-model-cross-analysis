@@ -145,7 +145,7 @@ def doctest_rst_and_public_interface():
         'epimodels.version_info',
         'epimodels._setup_matrices',
         'epimodels.phe_model',
-        'epimodels.inference.phe_inference'
+        'epimodels.inference'
         ]
 
     doc_symbols = get_all_documented_symbols()
