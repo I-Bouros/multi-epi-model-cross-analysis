@@ -19,7 +19,7 @@ matrices.
 import numpy as np
 import pints
 from iteration_utilities import deepflatten
-from scipy.stats import norm
+from scipy.stats import norm, gamma
 
 import epimodels as em
 
@@ -67,12 +67,14 @@ class PHELogLik(pints.LogPDF):
         Proportion of contribution of the deaths_data to the log-likelihood.
     wp
         Proportion of contribution of the poritives_data to the log-likelihood.
+    ic_weight
+        (list) List of regional initial conditions infections amplitudes.
 
     """
     def __init__(self, model, times,
                  deaths, time_to_death, deaths_times, fatality_ratio,
                  tests_data, positives_data, serology_times, sens, spec,
-                 wd=1, wp=1):
+                 wd=1, wp=1, ic_weight=100):
         # Set the prerequsites for the inference wrapper
         # Model
         self._model = model
@@ -96,10 +98,7 @@ class PHELogLik(pints.LogPDF):
         self._wp = wp
 
         # Set fixed parameters of the model
-        self.set_fixed_parameters()
-
-        # Run model one time
-        self._model.simulate(self._parameters)
+        self.set_fixed_parameters(ic_weight)
 
     def n_parameters(self):
         """
@@ -123,8 +122,8 @@ class PHELogLik(pints.LogPDF):
         # Update parameters
         self._parameters[0] = [var_parameters[0]] * len(self._model.regions)
 
-        self._parameters[5] = [np.floor(var_parameters[-1])] * \
-            self._model._num_ages
+        # self._parameters[5] = [np.floor(var_parameters[-1])] * \
+        #    self._model._num_ages
 
         LEN = len(np.arange(44, len(self._times), 7))
 
@@ -188,10 +187,15 @@ class PHELogLik(pints.LogPDF):
         except ValueError:
             return -np.inf
 
-    def set_fixed_parameters(self):
+    def set_fixed_parameters(self, ic_weight):
         """
         Sets the non-changing parameters of the model in the class structure
         to save time in the evaluation of the log-likelihood.
+
+        Parameters
+        ----------
+        ic_weight
+            (list) List of regional initial conditions infections amplitudes.
 
         """
         # Use prior mean for the over-dispersion parameter
@@ -218,7 +222,7 @@ class PHELogLik(pints.LogPDF):
 
         infectives1 = [
             # [0, 0, 0, 0, 0, 1, 0, 0],  # noqa
-            [1]*8,  # noqa
+            [ic_weight]*8,  # noqa
             # [0, 0, 0, 0, 0, 0, 1, 0],  # noqa
             # [0, 0, 0, 0, 1, 0, 0, 0],  # noqa
             # [0, 0, 0, 0, 0, 1, 0, 0],  # noqa
@@ -260,7 +264,7 @@ class PHELogLik(pints.LogPDF):
         Evaluates the log-likelihood in a PINTS framework.
 
         """
-        return self._log_likelihood(x)
+        return self._log_likelihood(x[:-1])
 
 
 class PHELogPrior(pints.LogPrior):
@@ -300,10 +304,12 @@ class PHELogPrior(pints.LogPrior):
         log_prior = pints.UniformLogPrior([0], [5])(x[0])
 
         # Prior contribution for ICs
-        log_prior += pints.UniformLogPrior([0], [1000])(x[-1])
+        # log_prior += pints.UniformLogPrior([0], [1000])(x[-1])
 
         # Variance for betas
-        sigma_b = 1/100
+        sigma_b = x[-1]
+
+        log_prior += gamma.logpdf(sigma_b, 1, scale=1/100)
 
         # Prior contriubution for betas
         LEN = len(np.arange(44, len(self._times), 7))
@@ -404,7 +410,7 @@ class PheSEIRInfer(object):
             self._sens, self._spec, wd, wp)
         return loglikelihood(x)
 
-    def _create_posterior(self, times, wd, wp):
+    def _create_posterior(self, times, wd, wp, ic_weight):
         """
         Runs the initial conditions optimisation routine for the PHE model.
 
@@ -419,6 +425,8 @@ class PheSEIRInfer(object):
         wp
             Proportion of contribution of the poritives_data to the
             log-likelihood.
+        ic_weight
+            (list) List of regional initial conditions infections amplitudes.
 
         """
         # Create a likelihood
@@ -427,7 +435,7 @@ class PheSEIRInfer(object):
             self._deaths, self._time_to_death, self._deaths_times,
             self._fatality_ratio,
             self._total_tests, self._positive_tests, self._serology_times,
-            self._sens, self._spec, wd, wp)
+            self._sens, self._spec, wd, wp, ic_weight=ic_weight)
 
         # Create a prior
         log_prior = PHELogPrior(self._model, times)
@@ -481,7 +489,7 @@ class PheSEIRInfer(object):
 
         return chains
 
-    def optimisation_problem_setup(self, times,  wd=1, wp=1):
+    def optimisation_problem_setup(self, times, ic_weight,  wd=1, wp=1):
         """
         Runs the initial conditions optimisation routine for the PHE model.
 
@@ -490,6 +498,8 @@ class PheSEIRInfer(object):
         times
             (list) List of time points at which we have data for the
             log-likelihood computation.
+        ic_weight
+            (list) List of regional initial conditions infections amplitudes.
         wd
             Proportion of contribution of the deaths_data to the
             log-likelihood.
@@ -498,20 +508,20 @@ class PheSEIRInfer(object):
             log-likelihood.
 
         """
-
-        self._create_posterior(times, wd, wp)
+        self._create_posterior(times, wd, wp, ic_weight)
 
         # Starting points
         x0 = [3]
         x0.extend([1]*len(np.arange(44, len(times), 7)))
-        x0.extend([100])
+        x0.extend([0.1])
 
-        sigma0 = [1] * (1+len(np.arange(44, len(times), 7)))
-        sigma0.extend([1000])
+        # sigma0 = [1] * (1+len(np.arange(44, len(times), 7)))
+        # sigma0.extend([1000])
 
         # Create Optimisation routine
         optimiser = pints.OptimisationController(
-            self._log_posterior, x0, sigma0=sigma0, method=pints.CMAES)
+            self._log_posterior, x0,  # sigma0=sigma0,
+            method=pints.CMAES)
 
         optimiser.set_max_unchanged_iterations(100, 1)
 
