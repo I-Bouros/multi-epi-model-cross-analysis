@@ -98,6 +98,9 @@ class PHELogLik(pints.LogPDF):
         # Set fixed parameters of the model
         self.set_fixed_parameters()
 
+        # Run model one time
+        self._model.simulate(self._parameters)
+
     def n_parameters(self):
         """
         Returns number of parameters for log-likelihood object.
@@ -495,6 +498,7 @@ class PheSEIRInfer(object):
             log-likelihood.
 
         """
+
         self._create_posterior(times, wd, wp)
 
         # Starting points
