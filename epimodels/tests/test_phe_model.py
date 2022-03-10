@@ -59,6 +59,15 @@ class TestPheSEIRModel(unittest.TestCase):
             model.region_names(),
             ['London', 'Cornwall'])
 
+    def test_set_age_groups(self):
+        model = em.PheSEIRModel()
+        age_groups = ['0-10', '10-20']
+        model.set_age_groups(age_groups)
+
+        self.assertEqual(
+            model.age_groups_names(),
+            ['0-10', '10-20'])
+
     def test_set_outputs(self):
         model = em.PheSEIRModel()
         outputs = ['S', 'I1', 'I2', 'Incidence']

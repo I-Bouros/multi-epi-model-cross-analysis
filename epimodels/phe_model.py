@@ -136,12 +136,27 @@ class PheSEIRModel(pints.ForwardModel):
         """
         self.regions = regions
 
+    def set_age_groups(self, age_groups):
+        """
+        Sets age group names.
+
+        """
+        self.age_groups = age_groups
+        self._num_ages = len(self.age_groups)
+
     def region_names(self):
         """
         Returns the regions names.
 
         """
         return self.regions
+
+    def age_groups_names(self):
+        """
+        Returns the age group names.
+
+        """
+        return self.age_groups
 
     def set_outputs(self, outputs):
         """
