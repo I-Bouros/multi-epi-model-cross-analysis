@@ -102,7 +102,7 @@ class PHELogLik(pints.LogPDF):
         """
         Returns number of parameters for log-likelihood object.
         """
-        return 1+len(np.arange(44, len(self._times), 7)) * len(
+        return 2+len(np.arange(44, len(self._times), 7)) * len(
             self._model.regions)
 
     def _log_likelihood(self, var_parameters):
@@ -119,6 +119,9 @@ class PHELogLik(pints.LogPDF):
         """
         # Update parameters
         self._parameters[0] = [var_parameters[0]] * len(self._model.regions)
+
+        self._parameters[5] = [np.floor(var_parameters[-1])] * \
+            self._model._num_ages
 
         LEN = len(np.arange(44, len(self._times), 7))
 
@@ -212,7 +215,7 @@ class PHELogLik(pints.LogPDF):
 
         infectives1 = [
             # [0, 0, 0, 0, 0, 1, 0, 0],  # noqa
-            [10, 10, 50, 100, 150, 50, 50, 50],  # noqa
+            [1]*8,  # noqa
             # [0, 0, 0, 0, 0, 0, 1, 0],  # noqa
             # [0, 0, 0, 0, 1, 0, 0, 0],  # noqa
             # [0, 0, 0, 0, 0, 1, 0, 0],  # noqa
@@ -282,7 +285,7 @@ class PHELogPrior(pints.LogPrior):
         """
         Returns number of parameters for log-prior object.
         """
-        return 1+len(np.arange(44, len(self._times), 7)) * len(
+        return 2+len(np.arange(44, len(self._times), 7)) * len(
             self._model.regions)
 
     def __call__(self, x):
@@ -292,6 +295,9 @@ class PHELogPrior(pints.LogPrior):
         """
         # Prior contribution for initial R
         log_prior = pints.UniformLogPrior([0], [5])(x[0])
+
+        # Prior contribution for ICs
+        log_prior += pints.UniformLogPrior([0], [1000])(x[-1])
 
         # Variance for betas
         sigma_b = 1/100
@@ -462,6 +468,8 @@ class PheSEIRInfer(object):
         param_names.extend(['beta_W{}'.format(
             i+1) for i in range(len(np.arange(44, len(times), 7)))])
 
+        param_names.extend(['ICs_multiplier'])
+
         # Check convergence and other properties of chains
         results = pints.MCMCSummary(
             chains=chains, time=mcmc.time(),
@@ -492,10 +500,14 @@ class PheSEIRInfer(object):
         # Starting points
         x0 = [3]
         x0.extend([1]*len(np.arange(44, len(times), 7)))
+        x0.extend([100])
+
+        sigma0 = [1] * (1+len(np.arange(44, len(times), 7)))
+        sigma0.extend([1000])
 
         # Create Optimisation routine
         optimiser = pints.OptimisationController(
-            self._log_posterior, x0, method=pints.CMAES)
+            self._log_posterior, x0, sigma0=sigma0, method=pints.CMAES)
 
         optimiser.set_max_unchanged_iterations(100, 1)
 
