@@ -33,31 +33,37 @@ class PHELogLik(pints.LogPDF):
     model
         (PheSEIRModel) The model for which we solve the optimisation
         problem.
+    susceptibles_data
+        (list) List of regional age-structured lists of initial number of
+        susceptibles.
+    infectives_data
+        (list) List of regional age-structured lists of initial number of
+        infectives in the first infectives compartment.
     times
         (list) List of time points at which we have data for the
         log-likelihood computation.
     deaths_data
-        (Numpy array) List of regional numpy arrays of the daily number
+        (numpy.array) List of regional numpy arrays of the daily number
         of deaths, split by age category. Each column represents an age
         group.
     time_to_death
         (list) List of probabilities of death of individual d days after
         infection.
     deaths_times
-        (Numpy array) List of timepoints for which deaths data is
+        (numpy.array) List of timepoints for which deaths data is
         available.
     fatality_ratio
         List of age-specific fatality ratios.
     tests_data
-        (Numpy array) List of regional numpy arrays of the daily number
+        (numpy.array) List of regional numpy arrays of the daily number
         of tests conducted, split by age category. Each column represents
         an age group.
     positives_data
-        (Numpy array) List of regional numpy arrays of the daily number
+        (numpy.array) List of regional numpy arrays of the daily number
         of positive test results, split by age category. Each column
         represents an age group.
     serology_times
-        (Numpy array) List of timepoints for which serology data is
+        (numpy.array) List of timepoints for which serology data is
         available.
     sens
         Sensitivity of the test (or ratio of true positives).
@@ -67,18 +73,19 @@ class PHELogLik(pints.LogPDF):
         Proportion of contribution of the deaths_data to the log-likelihood.
     wp
         Proportion of contribution of the poritives_data to the log-likelihood.
-    ic_weight
-        (list) List of regional initial conditions infections amplitudes.
 
     """
-    def __init__(self, model, times,
+    def __init__(self, model, susceptibles_data, infectives_data, times,
                  deaths, time_to_death, deaths_times, fatality_ratio,
                  tests_data, positives_data, serology_times, sens, spec,
-                 wd=1, wp=1, ic_weight=100):
+                 wd=1, wp=1):
         # Set the prerequsites for the inference wrapper
-        # Model
+        # Model and its data
         self._model = model
         self._times = times
+
+        self._susceptibles = susceptibles_data
+        self._infectives = infectives_data
 
         # Death data
         self._deaths = deaths
@@ -98,7 +105,7 @@ class PHELogLik(pints.LogPDF):
         self._wp = wp
 
         # Set fixed parameters of the model
-        self.set_fixed_parameters(ic_weight)
+        self.set_fixed_parameters()
 
     def n_parameters(self):
         """
@@ -187,30 +194,17 @@ class PHELogLik(pints.LogPDF):
         except ValueError:
             return -np.inf
 
-    def set_fixed_parameters(self, ic_weight):
+    def set_fixed_parameters(self):
         """
         Sets the non-changing parameters of the model in the class structure
         to save time in the evaluation of the log-likelihood.
-
-        Parameters
-        ----------
-        ic_weight
-            (list) List of regional initial conditions infections amplitudes.
 
         """
         # Use prior mean for the over-dispersion parameter
         self._niu = 5
 
         # Initial Conditions
-        susceptibles = [
-            #[68124, 299908, 773741, 668994, 1554740, 1632059, 660187, 578319],  # noqa
-            [117840, 488164, 1140597, 1033029, 3050671, 2050173, 586472, 495043],  # noqa
-            #[116401, 508081, 1321675, 1319046, 2689334, 2765974, 1106091, 943363],  # noqa
-            #[85845, 374034, 978659, 1005275, 2036049, 2128261, 857595, 707190],  # noqa
-            #[81258, 348379, 894662, 871907, 1864807, 1905072, 750263, 624848],  # noqa
-            #[95825, 424854, 1141632, 1044242, 2257437, 2424929, 946459, 844757],  # noqa
-            #[53565, 237359, 641486, 635602, 1304264, 1499291, 668999, 584130]  # noqa
-            ]
+        susceptibles = self._susceptibles
 
         exposed1 = np.zeros((
             len(self._model.regions),
@@ -220,15 +214,7 @@ class PHELogLik(pints.LogPDF):
             len(self._model.regions),
             self._model._num_ages)).tolist()
 
-        infectives1 = [
-            # [0, 0, 0, 0, 0, 1, 0, 0],  # noqa
-            [ic_weight]*8,  # noqa
-            # [0, 0, 0, 0, 0, 0, 1, 0],  # noqa
-            # [0, 0, 0, 0, 1, 0, 0, 0],  # noqa
-            # [0, 0, 0, 0, 0, 1, 0, 0],  # noqa
-            # [0, 0, 0, 1, 0, 0, 0, 0],  # noqa
-            # [0, 0, 0, 0, 0, 1, 0, 0]  # noqa
-            ]
+        infectives1 = self._infectives
 
         infectives2 = np.zeros((
             len(self._model.regions),
@@ -341,6 +327,24 @@ class PheSEIRInfer(object):
 
         self._model = model
 
+    def read_model_data(
+            self, susceptibles_data, infectives_data):
+        """
+        Sets the serology data used for the model's parameters inference.
+
+        Parameters
+        ----------
+        susceptibles_data
+            (list) List of regional age-structured lists of initial number of
+            susceptibles.
+        infectives_data
+            (list) List of regional age-structured lists of initial number of
+            infectives in the first infectives compartment.
+
+        """
+        self._susceptibles_data = susceptibles_data
+        self._infectives_data = infectives_data
+
     def read_serology_data(
             self, tests_data, positives_data, serology_times, sens, spec):
         """
@@ -349,15 +353,15 @@ class PheSEIRInfer(object):
         Parameters
         ----------
         tests_data
-            (Numpy array) List of regional numpy arrays of the daily number
+            (numpy.array) List of regional numpy arrays of the daily number
             of tests conducted, split by age category. Each column represents
             an age group.
         positives_data
-            (Numpy array) List of regional numpy arrays of the daily number
+            (numpy.array) List of regional numpy arrays of the daily number
             of positive test results, split by age category. Each column
             represents an age group.
         serology_times
-            (Numpy array) List of timepoints for which serology data is
+            (numpy.array) List of timepoints for which serology data is
             available.
         sens
             Sensitivity of the test (or ratio of true positives).
@@ -379,11 +383,11 @@ class PheSEIRInfer(object):
         Parameters
         ----------
         deaths_data
-            (Numpy array) List of regional numpy arrays of the daily number
+            (numpy.array) List of regional numpy arrays of the daily number
             of deaths, split by age category. Each column represents an age
             group.
         deaths_times
-            (Numpy array) List of timepoints for which deaths data is
+            (numpy.array) List of timepoints for which deaths data is
             available.
         time_to_death
             (list) List of probabilities of death of individual d days after
@@ -410,7 +414,7 @@ class PheSEIRInfer(object):
             self._sens, self._spec, wd, wp)
         return loglikelihood(x)
 
-    def _create_posterior(self, times, wd, wp, ic_weight):
+    def _create_posterior(self, times, wd, wp):
         """
         Runs the initial conditions optimisation routine for the PHE model.
 
@@ -425,17 +429,15 @@ class PheSEIRInfer(object):
         wp
             Proportion of contribution of the poritives_data to the
             log-likelihood.
-        ic_weight
-            (list) List of regional initial conditions infections amplitudes.
 
         """
         # Create a likelihood
         loglikelihood = PHELogLik(
-            self._model, times,
+            self._model, self._susceptibles_data, self._infectives_data, times,
             self._deaths, self._time_to_death, self._deaths_times,
             self._fatality_ratio,
             self._total_tests, self._positive_tests, self._serology_times,
-            self._sens, self._spec, wd, wp, ic_weight=ic_weight)
+            self._sens, self._spec, wd, wp)
 
         # Create a prior
         log_prior = PHELogPrior(self._model, times)
@@ -489,7 +491,7 @@ class PheSEIRInfer(object):
 
         return chains
 
-    def optimisation_problem_setup(self, times, ic_weight,  wd=1, wp=1):
+    def optimisation_problem_setup(self, times,  wd=1, wp=1):
         """
         Runs the initial conditions optimisation routine for the PHE model.
 
@@ -498,8 +500,6 @@ class PheSEIRInfer(object):
         times
             (list) List of time points at which we have data for the
             log-likelihood computation.
-        ic_weight
-            (list) List of regional initial conditions infections amplitudes.
         wd
             Proportion of contribution of the deaths_data to the
             log-likelihood.
@@ -508,7 +508,7 @@ class PheSEIRInfer(object):
             log-likelihood.
 
         """
-        self._create_posterior(times, wd, wp, ic_weight)
+        self._create_posterior(times, wd, wp)
 
         # Starting points
         x0 = [3]
