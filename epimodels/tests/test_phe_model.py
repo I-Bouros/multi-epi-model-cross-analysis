@@ -730,12 +730,13 @@ class TestPheSEIRModel(unittest.TestCase):
 
         new_infections = model.new_infections(output)
 
+        fatality_ratio = [0.1, 0.5]
+
         td_mean = 15.0
         td_var = 12.1**2
         theta = td_var / td_mean
         k = td_mean / theta
-        fatality_ratio = gamma(k, scale=theta).pdf(np.arange(1, 60)).tolist()
-        time_to_death = [0.5, 0.5]
+        time_to_death = gamma(k, scale=theta).pdf(np.arange(1, 60)).tolist()
 
         self.assertEqual(
             model.samples_deaths(
@@ -743,7 +744,6 @@ class TestPheSEIRModel(unittest.TestCase):
                 time_to_death, 0.5, 1).shape,
             (len(age_groups),))
 
-        fatality_ratio = [0.1, 0.5]
         time_to_death = [0.5, 0.5]
 
         self.assertEqual(
