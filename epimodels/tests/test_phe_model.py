@@ -721,9 +721,9 @@ class TestPheSEIRModel(unittest.TestCase):
             initial_r, 1, susceptibles,
             [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
             [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
+            [[1]*60, [1]*60], 4, dI, 0.5, 'my-solver']
 
-        times = [1, 2]
+        times = np.arange(1, 61).tolist()
 
         output = model.simulate(
             list(deepflatten(parameters, ignore=str)), times)
@@ -741,10 +741,8 @@ class TestPheSEIRModel(unittest.TestCase):
         self.assertEqual(
             model.samples_deaths(
                 new_infections, fatality_ratio,
-                time_to_death, 0.5, 1).shape,
+                time_to_death, 0.5, 41).shape,
             (len(age_groups),))
-
-        time_to_death = [0.5, 0.5]
 
         self.assertEqual(
             model.samples_deaths(
@@ -765,7 +763,7 @@ class TestPheSEIRModel(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.samples_deaths(
                 new_infections, fatality_ratio,
-                time_to_death, 0.5, 2)
+                time_to_death, 0.5, 62)
 
     def test_loglik_positive_tests(self):
         model = em.PheSEIRModel()
