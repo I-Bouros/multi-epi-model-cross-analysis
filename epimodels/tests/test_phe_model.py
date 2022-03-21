@@ -9,6 +9,7 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
+from scipy.stats import gamma
 from iteration_utilities import deepflatten
 
 import epimodels as em
@@ -153,7 +154,7 @@ class TestPheSEIRModel(unittest.TestCase):
         parameters[-1] = 'my-solver'
 
         with self.assertRaises(TypeError):
-            model.simulate(list(deepflatten(parameters, ignore=str)), 0)
+            model.simulate(list(deepflatten(parameters, ignore=str)), '0')
 
         with self.assertRaises(TypeError):
             model.simulate(list(deepflatten(parameters, ignore=str)), ['1', 2])
@@ -303,6 +304,24 @@ class TestPheSEIRModel(unittest.TestCase):
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
                 [[1]*2, [1]*2], 4, dI, 0, 'my-solver']
+
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
+
+        with self.assertRaises(TypeError):
+            parameters1 = [
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                [[1]*2, [1]*2], 4, dI, 0.5, 3]
+
+            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
+
+        with self.assertRaises(ValueError):
+            parameters1 = [
+                initial_r, 1, susceptibles,
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
+                [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver2']
 
             model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
@@ -711,6 +730,19 @@ class TestPheSEIRModel(unittest.TestCase):
 
         new_infections = model.new_infections(output)
 
+        td_mean = 15.0
+        td_var = 12.1**2
+        theta = td_var / td_mean
+        k = td_mean / theta
+        fatality_ratio = gamma(k, scale=theta).pdf(np.arange(1, 60)).tolist()
+        time_to_death = [0.5, 0.5]
+
+        self.assertEqual(
+            model.samples_deaths(
+                new_infections, fatality_ratio,
+                time_to_death, 0.5, 1).shape,
+            (len(age_groups),))
+
         fatality_ratio = [0.1, 0.5]
         time_to_death = [0.5, 0.5]
 
@@ -833,6 +865,12 @@ class TestPheSEIRModel(unittest.TestCase):
             model.loglik_positive_tests(
                 obs_pos1, output, tests[0], sens, spec, 0)
 
+        with self.assertRaises(ValueError):
+            obs_pos1 = np.array([5, 40])
+
+            model.loglik_positive_tests(
+                obs_pos1, output, tests[0], sens, spec, 0)
+
     def test_check_positives_format(self):
         model = em.PheSEIRModel()
 
@@ -929,7 +967,13 @@ class TestPheSEIRModel(unittest.TestCase):
                 output, tests1, sens, spec)
 
         with self.assertRaises(ValueError):
-            tests1 = np.array([20, 30, 1])
+            tests1 = np.array([2, 50])
+
+            model.check_positives_format(
+                output, tests1, sens, spec)
+
+        with self.assertRaises(ValueError):
+            tests1 = np.array([[20, 30, 1], [10, 0, 0]])
 
             model.check_positives_format(
                 output, tests1, sens, spec)
@@ -941,13 +985,7 @@ class TestPheSEIRModel(unittest.TestCase):
                 output, tests1, sens, spec)
 
         with self.assertRaises(ValueError):
-            tests1 = np.array([-1, 50])
-
-            model.check_positives_format(
-                output, tests1, sens, spec)
-
-        with self.assertRaises(ValueError):
-            tests1 = np.array([2, 50])
+            tests1 = np.array([[-1, 50], [10, 0]])
 
             model.check_positives_format(
                 output, tests1, sens, spec)
