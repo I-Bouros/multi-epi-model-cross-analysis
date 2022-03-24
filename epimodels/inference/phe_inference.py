@@ -1,5 +1,5 @@
 #
-# PheSEIRInfer Class
+# PHELogLik Class
 #
 # This file is part of EPIMODELS
 # (https://github.com/I-Bouros/multi-epi-model-cross-analysis.git) which is
@@ -252,6 +252,10 @@ class PHELogLik(pints.LogPDF):
         """
         return self._log_likelihood(x[:-1])
 
+#
+# PHELogPrior Class
+#
+
 
 class PHELogPrior(pints.LogPrior):
     """
@@ -311,6 +315,10 @@ class PHELogPrior(pints.LogPrior):
                     scale=sigma_b)
 
         return log_prior
+
+#
+# PheSEIRInfer Class
+#
 
 
 class PheSEIRInfer(object):
