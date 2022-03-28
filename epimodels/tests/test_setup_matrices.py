@@ -15,6 +15,10 @@ import pandas.testing as pdt
 
 import epimodels as em
 
+#
+# Test ContactMatrix Class
+#
+
 
 class TestContactMatrixClass(unittest.TestCase):
     """
@@ -94,6 +98,10 @@ class TestContactMatrixClass(unittest.TestCase):
 
         # Assert show_figure is called once
         assert show_patch.called
+
+#
+# Test RegionMatrix Class
+#
 
 
 class TestRegionMatrixClass(unittest.TestCase):
@@ -190,6 +198,10 @@ class TestRegionMatrixClass(unittest.TestCase):
         # Assert show_figure is called once
         assert show_patch.called
 
+#
+# Test UniNextGenMatrix Class
+#
+
 
 class TestUniNextGenMatrixClass(unittest.TestCase):
     """
@@ -215,7 +227,7 @@ class TestUniNextGenMatrixClass(unittest.TestCase):
         self.assertEqual(next_gen.infection_period, 4)
 
         pdt.assert_frame_equal(
-            next_gen.next_gen_matrix,
+            next_gen.get_next_gen_matrix(),
             pd.DataFrame(
                 data=np.array([[360, 449.28], [0, 144]]),
                 index=['0-10', '10-25'],
@@ -264,6 +276,10 @@ class TestUniNextGenMatrixClass(unittest.TestCase):
         next_gen = em.UniNextGenMatrix(pop_size, contacts, regional, dI)
 
         self.assertEqual(next_gen.compute_dom_eigenvalue(), 144)
+
+#
+# Test UniInfectivityMatrix Class
+#
 
 
 class TestUniInfectivityMatrixClass(unittest.TestCase):
@@ -389,6 +405,10 @@ class TestUniInfectivityMatrixClass(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             infect.compute_reproduction_number(temp_variation, 0)
+
+#
+# Test MultiTimesInfectivity Class
+#
 
 
 class TestMultiTimesInfectivityClass(unittest.TestCase):

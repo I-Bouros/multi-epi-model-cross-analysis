@@ -19,13 +19,14 @@ matrices.
 from itertools import chain
 
 import numpy as np
+import pints
 from scipy.stats import nbinom, binom
 from scipy.integrate import solve_ivp
 
 import epimodels as em
 
 
-class PheSEIRModel(object):
+class PheSEIRModel(pints.ForwardModel):
     r"""PheSEIRModel Class:
     Base class for constructing the ODE model: deterministic SEIR used by the
     Public Health England to model the Covid-19 epidemic in UK based on region.
@@ -79,6 +80,8 @@ class PheSEIRModel(object):
     where :math:`d_L` refers to mean latent period until disease onset and
     :math:`d_I` to mean period of infection.
 
+    Extends :class:`pints.ForwardModel`.
+
     """
     def __init__(self):
         super(PheSEIRModel, self).__init__()
@@ -125,6 +128,35 @@ class PheSEIRModel(object):
 
         """
         return self._parameter_names
+
+    def set_regions(self, regions):
+        """
+        Sets region names.
+
+        """
+        self.regions = regions
+
+    def set_age_groups(self, age_groups):
+        """
+        Sets age group names.
+
+        """
+        self.age_groups = age_groups
+        self._num_ages = len(self.age_groups)
+
+    def region_names(self):
+        """
+        Returns the regions names.
+
+        """
+        return self.regions
+
+    def age_groups_names(self):
+        """
+        Returns the age group names.
+
+        """
+        return self.age_groups
 
     def set_outputs(self, outputs):
         """
@@ -221,7 +253,7 @@ class PheSEIRModel(object):
         c
             (list) List values used to compute the parameters of the ODEs
             system. It assumes c = [beta, kappa, gamma], where :math:`beta`
-            encaplsulates temporal fluctuations in transmition for all ages.
+            encaplsulates temporal fluctuations in transmission for all ages.
         num_a_groups
             (int) Number of age groups in which the population is split. It
             refers to the number of compartments of each type.
@@ -355,10 +387,8 @@ class PheSEIRModel(object):
             [times[0], times[-1]], init_cond, method=method, t_eval=times)
         return sol
 
-    def simulate(
-            self, parameters, times, matrices_contact, time_changes_contact,
-            regions, initial_r, matrices_region, time_changes_region,
-            method):
+    def _simulate(
+            self, parameters, times, initial_r, method):
         r"""
         Computes the number of individuals in each compartment at the given
         time points and specified region.
@@ -376,104 +406,30 @@ class PheSEIRModel(object):
         times
             (list) List of time points at which we wish to evaluate the ODEs
             system.
-        matrices_contact
-            (list of ContactMatrix) Time-dependent contact matrices used for
-            the modelling.
-        time_changes_contact
-            (list) Times at which the next contact matrix recorded starts to be
-            used. In increasing order.
         regions
             (list) List of region names for the region-specific relative
             susceptibility matrices.
-        matrices_region
-            (list of lists of RegionMatrix)) Time-dependent and region-specific
-            relative susceptibility matrices used for the modelling.
-        time_changes_region
-            (list) Times at which the next instances of region-specific
-            relative susceptibility matrices recorded start to be used. In
-            increasing order.
         initial_r
             (list) List of initial values of the reproduction number by region.
         method
             (string) The type of solver implemented by the simulator.
 
         """
-        # Check correct format of output
-        if not isinstance(times, list):
-            raise TypeError('Time points of evaluation must be given in a list \
-                format.')
-        for _ in times:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Time points of evaluation must be integer or \
-                    float.')
-            if _ <= 0:
-                raise ValueError('Time points of evaluation must be > 0.')
-        if not isinstance(parameters, list):
-            raise TypeError('Parametrs must be given in a list format.')
-        if len(parameters) != 11:
-            raise ValueError('List of parameters needs to be of length 11.')
-        if not isinstance(parameters[0], int):
-            raise TypeError('Index of region to evaluate must be integer.')
-        if parameters[0] <= 0:
-            raise ValueError('Index of region to evaluate must be >= 1.')
-        if parameters[0] > len(regions):
-            raise ValueError('Index of region to evaluate is out of bounds.')
-        for _ in range(1, 7):
-            if np.asarray(parameters[_]).ndim != 2:
-                raise ValueError(
-                    'Storage format for the numbers in each type of compartment\
-                        must be 2-dimensional.')
-            if np.asarray(parameters[_]).shape[0] != len(regions):
-                raise ValueError(
-                    'Number of age-split compartments of each type does not match \
-                        that of the regions.')
-            if np.asarray(parameters[_]).shape[1] != len(
-                    matrices_contact[0].ages):
-                raise ValueError(
-                    'Number of age compartments of each type for given region does not match \
-                        that of age groups.')
-        if np.asarray(parameters[7]).ndim != 2:
-            raise ValueError(
-                'Storage format for the temporal and regional fluctuations in transmition\
-                    must be 2-dimensional.')
-        if np.asarray(parameters[7]).shape[0] != len(regions):
-            raise ValueError(
-                'Number of temporal and regional fluctuations in transmition does not match \
-                    that of the regions.')
-        if np.asarray(parameters[7]).shape[1] != len(times):
-            raise ValueError(
-                'Number of temporal and regional fluctuations in transmition does not match \
-                    that of time points.')
-        if not isinstance(parameters[8], (float, int)):
-            raise TypeError('Mean latent period must be float or integer.')
-        if parameters[8] <= 0:
-            raise ValueError('Mean latent period must be > 0.')
-        if not isinstance(parameters[9], (float, int)):
-            raise TypeError('Mean infection period must be float or integer.')
-        if parameters[9] <= 0:
-            raise ValueError('Mean infection period must be > 0.')
-        if not isinstance(parameters[10], (float, int)):
-            raise TypeError(
-                'Time step for ODE solver must be float or integer.')
-        if parameters[10] <= 0:
-            raise ValueError('Time step for ODE solver must be > 0.')
-
         # Split parameters into the features of the model
         self._region = parameters[0]
         self._y_init = parameters[1:7]
         self._c = parameters[7:10]
         self._delta_t = parameters[10]
         self.infectivity_timeline = em.MultiTimesInfectivity(
-            matrices_contact,
-            time_changes_contact,
-            regions,
-            matrices_region,
-            time_changes_region,
+            self.matrices_contact,
+            self.time_changes_contact,
+            self.regions,
+            self.matrices_region,
+            self.time_changes_region,
             initial_r,
             self._c[2],
             self._y_init[0])
 
-        self._num_ages = matrices_contact[0]._num_a_groups
         self._times = np.asarray(times)
 
         # Select method of simulation
@@ -513,6 +469,167 @@ class PheSEIRModel(object):
 
         return output.transpose()
 
+    def read_contact_data(self, matrices_contact, time_changes_contact):
+        """
+        Reads in tthe timelines of contact data used for the modelling.
+
+        Parameters
+        ----------
+        matrices_contact
+            (list of ContactMatrix) Time-dependent contact matrices used for
+            the modelling.
+        time_changes_contact
+            (list) Times at which the next contact matrix recorded starts to be
+            used. In increasing order.
+
+        """
+        self.matrices_contact = matrices_contact
+        self.time_changes_contact = time_changes_contact
+
+    def read_regional_data(self, matrices_region, time_changes_region):
+        """
+        Reads in tthe timelines of regional data used for the modelling.
+
+        Parameters
+        ----------
+        matrices_region
+            (list of lists of RegionMatrix)) Time-dependent and region-specific
+            relative susceptibility matrices used for the modelling.
+        time_changes_region
+            (list) Times at which the next instances of region-specific
+            relative susceptibility matrices recorded start to be used. In
+            increasing order.
+
+        """
+        self.matrices_region = matrices_region
+        self.time_changes_region = time_changes_region
+
+    def simulate(self, parameters, times):
+        r"""
+        PINTS-configured wrapper for the simulation method of the PHE model.
+
+        Extends the :meth:`_simulation`. Always apply methods
+        :meth:`set_regions`, :meth:`read_contact_data` and
+        :meth:`read_regional_data` before running the
+        :meth:`PheSEIRModel.simulate`.
+
+        Parameters
+        ----------
+        parameters
+            Long vector format of the quantities that characterise the PHE
+            SEIR model in this order:
+            (1) initial values of the reproduction number
+            by region,
+            (2) index of region for which we wish to simulate,
+            (3) initial conditions matrices classifed by age (column name) and
+            region (row name) for each type of compartment (s, e1, e2, i1, i2,
+            r),
+            (4) temporal and regional fluctuation matrix :math:`\beta`,
+            (5) mean latent period :math:`d_L`,
+            (6) mean infection period :math:`d_I`,
+            (7) time step for the 'homemade' solver and
+            (8) (string) the type of solver implemented by the simulator.
+            Splited into the formats necessary for the :meth:`_simulate`
+            method.
+        times
+            (list) List of time points at which we wish to evaluate the ODEs
+            system.
+
+        """
+        # Number of regions and age groups
+        self._num_ages = self.matrices_contact[0]._num_a_groups
+
+        n_ages = self._num_ages
+        n_reg = len(self.regions)
+
+        start_index = n_reg * (1 + (len(self._output_names)-1) * n_ages) + 1
+        finish_index = start_index + n_reg * len(times)
+
+        self._check_input_simulate(
+            parameters, times, finish_index + 4, n_reg)
+
+        # Read initial reproduction numbers
+        initial_r = parameters[:n_reg]
+
+        # Separate list of parameters into the structures needed for the
+        # simulation
+        my_parameters = []
+
+        # Add index of region
+        my_parameters.append(parameters[n_reg])
+
+        # Add initial conditions for the s, e1, e2, i1, i2, r compartments
+        for c in range(len(self._output_names)-1):
+            initial_cond_comp = []
+            for r in range(n_reg):
+                ind = n_reg + r * n_ages + n_reg * c * n_ages + 1
+                initial_cond_comp.append(
+                    parameters[ind:(ind + n_ages)])
+            my_parameters.append(initial_cond_comp)
+
+        # Add beta parameters
+        beta_param = np.array(
+            parameters[start_index:finish_index]).reshape(n_reg, -1)
+
+        my_parameters.append(beta_param.tolist())
+
+        # Add mean latent period, mean infection period and delta_t
+        my_parameters.extend(parameters[finish_index:(finish_index + 3)])
+
+        # Add method
+        method = parameters[finish_index + 3]
+
+        return self._simulate(my_parameters,
+                              times,
+                              initial_r,
+                              method)
+
+    def _check_input_simulate(
+            self, parameters, times, L, n_reg):
+        """
+        Check correct format of input of simulate method.
+
+        """
+        if not isinstance(times, list):
+            raise TypeError('Time points of evaluation must be given in a list \
+                format.')
+        for _ in times:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of evaluation must be integer or \
+                    float.')
+            if _ <= 0:
+                raise ValueError('Time points of evaluation must be > 0.')
+
+        if not isinstance(parameters, list):
+            raise TypeError('Parameters must be given in a list format.')
+        if len(parameters) != L:
+            raise ValueError('List of parameters has wrong length.')
+        if not isinstance(parameters[n_reg], int):
+            raise TypeError('Index of region to evaluate must be integer.')
+        if parameters[n_reg] <= 0:
+            raise ValueError('Index of region to evaluate must be >= 1.')
+        if parameters[n_reg] > n_reg:
+            raise ValueError('Index of region to evaluate is out of bounds.')
+        if not isinstance(parameters[-4], (float, int)):
+            raise TypeError('Mean latent period must be float or integer.')
+        if parameters[-4] <= 0:
+            raise ValueError('Mean latent period must be > 0.')
+        if not isinstance(parameters[-3], (float, int)):
+            raise TypeError('Mean infection period must be float or integer.')
+        if parameters[-3] <= 0:
+            raise ValueError('Mean infection period must be > 0.')
+        if not isinstance(parameters[-2], (float, int)):
+            raise TypeError(
+                'Time step for ODE solver must be float or integer.')
+        if parameters[-2] <= 0:
+            raise ValueError('Time step for ODE solver must be > 0.')
+        if not isinstance(parameters[-1], str):
+            raise TypeError('Simulation method must be a string.')
+        if parameters[-1] not in (
+                'my-solver', 'RK45', 'RK23', 'Radau',
+                'BDF', 'LSODA', 'DOP853'):
+            raise ValueError('Simulation method not available.')
+
     def _check_output_format(self, output):
         """
         Checks correct format of the output matrix.
@@ -532,6 +649,27 @@ class PheSEIRModel(object):
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
                         'Model output elements must be integer or float.')
+
+    def _check_new_infections_format(self, new_infections):
+        """
+        Checks correct format of the new infections matrix.
+
+        """
+        if np.asarray(new_infections).ndim != 2:
+            raise ValueError(
+                'Model new infections storage format must be 2-dimensional.')
+        if np.asarray(new_infections).shape[0] != self._times.shape[0]:
+            raise ValueError(
+                    'Wrong number of rows for the model new infections.')
+        if np.asarray(new_infections).shape[1] != self._num_ages:
+            raise ValueError(
+                    'Wrong number of columns for the model new infections.')
+        for r in np.asarray(new_infections):
+            for _ in r:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'Model new infections elements must be integer or \
+                            float.')
 
     def new_infections(self, output):
         """
@@ -575,10 +713,14 @@ class PheSEIRModel(object):
             # fraction of new infectives in delta_t time step
             d_infec[ind, :] = np.multiply(np.asarray(s), lam*self._delta_t)
 
+            if np.any(d_infec[ind, :] < 0):  # pragma: no cover
+                d_infec[ind, :] = np.zeros_like(d_infec[ind, :])
+
         return d_infec
 
     def loglik_deaths(
-            self, obs_death, output, fatality_ratio, time_to_death, niu, k):
+            self, obs_death, new_infections, fatality_ratio, time_to_death,
+            niu, k):
         r"""
         Computes the log-likelihood for the number of deaths at time step
         :math:`k` in specified region, given the simulated timeline of
@@ -596,23 +738,24 @@ class PheSEIRModel(object):
         :math:`\delta_{r,t_l,i}^{infec}` is the number of new infections
         in specified region, for age group :math:`i` on day :math:`t_l`.
 
-        It uses an output of the simulation method for the PheSEIRModel,
-        taking all the rest of the parameters necessary for the computation
-        from the way its simulation has been fitted.
+        It uses new_infections output of the simulation method for the
+        PheSEIRModel, taking all the rest of the parameters necessary for
+        the computation from the way its simulation has been fitted.
 
         Parameters
         ----------
         obs_death
             List of number of observed deaths by age group at time point k.
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
+        new_infections
+            (numpy.array) Number of new infections from the simulation method
+            for the PheSEIRModel.
         fatality_ratio
             List of age-specific fatality ratios.
         time_to_death
             List of probabilities of death of individual k days after
             infection.
         niu
-            Dispesion factor for the negative binomial distribution
+            Dispersion factor for the negative binomial distribution.
         k
             Index of day for which we intend to sample the number of deaths for
             by age group.
@@ -624,11 +767,11 @@ class PheSEIRModel(object):
 
         Notes
         -----
-        Always run :meth:`PheSEIRModel.simulate` before running this one.
+        Always run :meth:`PheSEIRModel.new_infections` and
+        :meth:`PheSEIRModel.check_death_format` before running this one.
 
         """
-        self._check_death_format(
-            output, fatality_ratio, time_to_death, niu, k)
+        self._check_time_step_format(k)
 
         # Check correct format for observed number of deaths
         if np.asarray(obs_death).ndim != 1:
@@ -644,38 +787,36 @@ class PheSEIRModel(object):
                 raise ValueError('Observed number of deaths must be => 0.')
 
         # Compute mean of negative-binomial
-        d_infec = self.new_infections(output)
-        log_lik_death = np.empty(self._num_ages)
-        for _ in range(self._num_ages):
-            mean = self.mean_deaths(
-                fatality_ratio, time_to_death, k, _, d_infec)
-            log_lik_death[_] = nbinom.logpmf(
-                k=obs_death[_],
-                n=mean*niu,
-                p=niu/(1+niu))
+        return nbinom.logpmf(
+            k=obs_death,
+            n=niu * self.mean_deaths(
+                fatality_ratio, time_to_death, k, new_infections),
+            p=niu/(1+niu))
 
-        return log_lik_death
-
-    def _check_death_format(
-            self, output, fatality_ratio, time_to_death, niu, k):
+    def check_death_format(
+            self, new_infections, fatality_ratio, time_to_death, niu):
         """
         Checks correct format of the inputs of number of death calculation.
 
+        Parameters
+        ----------
+        new_infections
+            (numpy.array) Number of new infections from the simulation method
+            for the PheSEIRModel.
+        fatality_ratio
+            List of age-specific fatality ratios.
+        time_to_death
+            List of probabilities of death of individual k days after
+            infection.
+        niu
+            Dispersion factor for the negative binomial distribution.
+
         """
-        self._check_output_format(output)
+        self._check_new_infections_format(new_infections)
         if not isinstance(niu, (int, float)):
             raise TypeError('Dispersion factor must be integer or float.')
         if niu <= 0:
             raise ValueError('Dispersion factor must be > 0.')
-        if not isinstance(k, int):
-            raise TypeError('Index of time of computation of the log-likelihood \
-                must be integer.')
-        if k < 0:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be >= 0.')
-        if k >= self._times.shape[0]:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be within those considered in the output.')
         if np.asarray(fatality_ratio).ndim != 1:
             raise ValueError('Fatality ratios by age category storage \
                 format is 1-dimensional.')
@@ -701,19 +842,23 @@ class PheSEIRModel(object):
                 raise ValueError('Probabilities of death of individual k days after \
                     infection must be => 0 and <=1.')
 
-    def mean_deaths(self, fatality_ratio, time_to_death, k, a, d_infec):
+    def mean_deaths(self, fatality_ratio, time_to_death, k, d_infec):
         """
         Computes the mean of the negative binomial distribution used to
         calculate number of deaths for specified age group.
 
         """
-        mean = fatality_ratio[a] * np.sum(np.multiply(
-            d_infec[:(k+1), a], np.asarray(time_to_death[:(k+1)][::-1])))
-
-        return mean
+        if k >= 30:
+            return np.array(fatality_ratio) * np.sum(np.matmul(
+                np.diag(time_to_death[:31][::-1]),
+                d_infec[(k-30):(k+1), :]), axis=0)
+        else:
+            return np.array(fatality_ratio) * np.sum(np.matmul(
+                np.diag(time_to_death[:(k+1)][::-1]), d_infec[:(k+1), :]),
+                axis=0)
 
     def samples_deaths(
-            self, output, fatality_ratio, time_to_death, niu, k):
+            self, new_infections, fatality_ratio, time_to_death, niu, k):
         r"""
         Computes samples for the number of deaths at time step
         :math:`k` in specified region, given the simulated timeline of
@@ -737,15 +882,16 @@ class PheSEIRModel(object):
 
         Parameters
         ----------
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
+        new_infections
+            (numpy.array) Number of new infections from the simulation method
+            for the PheSEIRModel.
         fatality_ratio
             List of age-specific fatality ratios.
         time_to_death
-            List of probabilities of death of individual k days after
+            List of probabilities of death of individual d days after
             infection.
         niu
-            Dispesion factor for the negative binomial distribution
+            Dispesion factor for the negative binomial distribution.
         k
             Index of day for which we intend to sample the number of deaths for
             by age group.
@@ -757,23 +903,17 @@ class PheSEIRModel(object):
 
         Notes
         -----
-        Always run :meth:`PheSEIRModel.simulate` before running this one.
+        Always run :meth:`PheSEIRModel.new_infections` and
+        :meth:`PheSEIRModel.check_death_format` before running this one.
 
         """
-        self._check_death_format(
-            output, fatality_ratio, time_to_death, niu, k)
+        self._check_time_step_format(k)
 
         # Compute mean of negative-binomial
-        d_infec = self.new_infections(output)
-        sample_death = np.empty(self._num_ages)
-        for _ in range(self._num_ages):
-            mean = self.mean_deaths(
-                fatality_ratio, time_to_death, k, _, d_infec)
-            sample_death[_] = nbinom.rvs(
-                n=mean*niu,
-                p=niu/(1+niu))
-
-        return sample_death
+        return nbinom.rvs(
+            n=niu * self.mean_deaths(
+                fatality_ratio, time_to_death, k, new_infections),
+            p=niu/(1+niu))
 
     def loglik_positive_tests(self, obs_pos, output, tests, sens, spec, k):
         r"""
@@ -825,10 +965,11 @@ class PheSEIRModel(object):
 
         Notes
         -----
-        Always run :meth:`PheSEIRModel.simulate` before running this one.
+        Always run :meth:`PheSEIRModel.simulate` and
+        :meth:`PheSEIRModel.check_positives_format` before running this one.
 
         """
-        self._check_positives_format(output, tests, sens, spec, k)
+        self._check_time_step_format(k)
 
         # Check correct format for observed number of positive results
         if np.asarray(obs_pos).ndim != 1:
@@ -855,47 +996,16 @@ class PheSEIRModel(object):
         a = self._num_ages
         # Compute parameters of binomial
         suscep = output[k, :a]
-        pop = output[k, :a]
+        pop = 0
         for i in range(6):
             pop += output[k, (i*a):((i+1)*a)]
 
-        log_lik_pos = np.empty(self._num_ages)
-        for _ in range(self._num_ages):
-            prob = self.mean_positives(sens, spec, _, suscep, pop)
-            log_lik_pos[_] = binom.logpmf(
-                k=obs_pos[_],
-                n=tests[_],
-                p=prob)
+        return binom.logpmf(
+            k=obs_pos,
+            n=tests,
+            p=self.mean_positives(sens, spec, suscep, pop))
 
-        return log_lik_pos
-
-    def _check_positives_format(self, output, tests, sens, spec, k):
-        """
-        Checks correct format of the inputs of number of positie test results
-        calculation.
-
-        """
-        self._check_output_format(output)
-        if np.asarray(tests).ndim != 1:
-            raise ValueError('Number of tests conducted by age category storage \
-                format is 1-dimensional.')
-        if np.asarray(tests).shape[0] != self._num_ages:
-            raise ValueError('Wrong number of age groups for observed number \
-                of tests conducted.')
-        for _ in tests:
-            if not isinstance(_, (int, np.integer)):
-                raise TypeError('Number of tests conducted must be integer.')
-            if _ < 0:
-                raise ValueError('Number of tests conducted ratio must \
-                    be => 0.')
-        if not isinstance(sens, (int, float)):
-            raise TypeError('Sensitivity must be integer or float.')
-        if (sens < 0) or (sens > 1):
-            raise ValueError('Sensitivity must be >= 0 and <=1.')
-        if not isinstance(spec, (int, float)):
-            raise TypeError('Specificity must be integer or float.')
-        if (spec < 0) or (spec > 1):
-            raise ValueError('Specificity must be >= 0 and >=1.')
+    def _check_time_step_format(self, k):
         if not isinstance(k, int):
             raise TypeError('Index of time of computation of the log-likelihood \
                 must be integer.')
@@ -906,15 +1016,56 @@ class PheSEIRModel(object):
             raise ValueError('Index of time of computation of the log-likelihood \
                 must be within those considered in the output.')
 
-    def mean_positives(self, sens, spec, a, suscep, pop):
+    def check_positives_format(self, output, tests, sens, spec):
+        """
+        Checks correct format of the inputs of number of positie test results
+        calculation.
+
+        Parameters
+        ----------
+        output
+            (numpy.array) Output of the simulation method for the PheSEIRModel.
+        tests
+            (numpy.array) Numpy arrays of the daily number of tests conducted,
+            split by age category. Each column represents an age group.
+        sens
+            Sensitivity of the test (or ratio of true positives).
+        spec
+            Specificity of the test (or ratio of true negatives).
+
+        """
+        self._check_output_format(output)
+        if np.asarray(tests).ndim != 2:
+            raise ValueError('Number of tests conducted by age category storage \
+                format is 2-dimensional.')
+        if np.asarray(tests).shape[1] != self._num_ages:
+            raise ValueError('Wrong number of age groups for observed number \
+                of tests conducted.')
+        for i in tests:
+            for _ in i:
+                if not isinstance(_, (int, np.integer)):
+                    raise TypeError('Number of tests conducted must be \
+                        integer.')
+                if _ < 0:
+                    raise ValueError('Number of tests conducted ratio must \
+                        be => 0.')
+        if not isinstance(sens, (int, float)):
+            raise TypeError('Sensitivity must be integer or float.')
+        if (sens < 0) or (sens > 1):
+            raise ValueError('Sensitivity must be >= 0 and <=1.')
+        if not isinstance(spec, (int, float)):
+            raise TypeError('Specificity must be integer or float.')
+        if (spec < 0) or (spec > 1):
+            raise ValueError('Specificity must be >= 0 and >=1.')
+
+    def mean_positives(self, sens, spec, suscep, pop):
         """
         Computes the mean of the binomial distribution used to
         calculate number of positive test results for specified age group.
 
         """
-        prob = sens * (1-suscep[a]/pop[a]) + (
-                1-spec) * suscep[a]/pop[a]
-        return prob
+        return sens * (1-np.divide(suscep, pop)) + (1-spec) * np.divide(
+            suscep, pop)
 
     def samples_positive_tests(self, output, tests, sens, spec, k):
         r"""
@@ -963,23 +1114,19 @@ class PheSEIRModel(object):
 
         Notes
         -----
-        Always run :meth:`PheSEIRModel.simulate` before running this one.
+        Always run :meth:`PheSEIRModel.simulate` and
+        :meth:`PheSEIRModel.check_positives_format` before running this one.
 
         """
-        self._check_positives_format(output, tests, sens, spec, k)
+        self._check_time_step_format(k)
 
         a = self._num_ages
         # Compute parameters of binomial
         suscep = output[k, :a]
-        pop = output[k, :a]
+        pop = 0
         for i in range(6):
             pop += output[k, (i*a):((i+1)*a)]
 
-        sample_pos = np.empty(self._num_ages)
-        for _ in range(self._num_ages):
-            prob = self.mean_positives(sens, spec, _, suscep, pop)
-            sample_pos[_] = binom.rvs(
-                n=tests[_],
-                p=prob)
-
-        return sample_pos
+        return binom.rvs(
+            n=tests,
+            p=self.mean_positives(sens, spec, suscep, pop))

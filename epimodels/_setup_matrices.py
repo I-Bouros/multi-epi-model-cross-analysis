@@ -118,8 +118,8 @@ class ContactMatrix():
         to the age group structure of population.
 
         """
-        return(pd.DataFrame(
-            data=self._data, index=self.ages, columns=self.ages))
+        return pd.DataFrame(
+            data=self._data, index=self.ages, columns=self.ages)
 
     def plot_heat_map(self):
         """
@@ -218,7 +218,7 @@ class RegionMatrix(ContactMatrix):
         to the age group structure of population.
 
         """
-        return(self._create_contact_matrix())
+        return self._create_contact_matrix()
 
     def change_region_name(self, new_region_name):
         """
@@ -351,15 +351,13 @@ class UniNextGenMatrix(object):
         self.region = region_matrix.region
         self.ages = region_matrix.ages
         self.susceptibles = np.asarray(pop_size)
-        self.contacts = contact_matrix.contact_matrix.to_numpy()
-        self.regional_suscep = region_matrix.region_matrix.to_numpy()
+        self.contacts = contact_matrix._data
+        self.regional_suscep = region_matrix._data
         self.infection_period = dI
-        self.next_gen_matrix = self._compute_next_gen_matrix()
-        self.unnorm_next_gen = self._compute_unnormalised_next_gen_matrix()
 
     def _compute_unnormalised_next_gen_matrix(self):
         """
-        Computes unnormalised next genearation matrix. Element :math:`(i, j)`
+        Computes unnormalised next generation matrix. Element :math:`(i, j)`
         refers the expected number of new infections in age group :math:`i`
         caused by an infectious in age group :math:`j`.
 
@@ -368,7 +366,7 @@ class UniNextGenMatrix(object):
 
     def _compute_next_gen_matrix(self):
         """
-        Computes next genearation matrix. Element :math:`(i, j)` refers the
+        Computes next generation matrix. Element :math:`(i, j)` refers the
         expected number of new infections in age group :math:`i` caused by
         infectious in age group :math:`j`.
 
@@ -379,10 +377,17 @@ class UniNextGenMatrix(object):
         self.C_tilde = self._compute_unnormalised_next_gen_matrix()
         self.generator = np.zeros_like(self.contacts)
 
-        for i, row in enumerate(self.generator):
-            for j, _ in enumerate(row):
-                self.generator[i, j] = self.susceptibles[i] * (
-                    self.C_tilde[i, j] * self.infection_period)
+        self.generator = self.infection_period * np.multiply(
+            self.susceptibles.reshape(-1, 1), self.C_tilde)
+
+    def get_next_gen_matrix(self):
+        """
+        Dataframe next generation matrix. Element :math:`(i, j)` refers the
+        expected number of new infections in age group :math:`i` caused by
+        infectious in age group :math:`j`.
+
+        """
+        self._compute_next_gen_matrix()
 
         return pd.DataFrame(
             data=self.generator, index=self.ages, columns=self.ages)
@@ -393,6 +398,8 @@ class UniNextGenMatrix(object):
         generator matrix.
 
         """
+        self._compute_next_gen_matrix()
+
         return max([x for x in np.linalg.eigvals(
             self.generator) if np.isreal(x) and x > 0])
 
@@ -474,7 +481,7 @@ class UniInfectivityMatrix(object):
             raise TypeError(
                 'Current next generation matrix must be a UniNextGenMatrix.')
 
-        return later_nextgen_matrix.unnorm_next_gen * (
+        return later_nextgen_matrix._compute_unnormalised_next_gen_matrix() * (
             self._constant * temp_variation)
 
     def compute_reproduction_number(
