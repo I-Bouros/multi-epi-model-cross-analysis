@@ -8,7 +8,6 @@
 import unittest
 
 import numpy as np
-# import numpy.testing as npt
 from scipy.stats import gamma
 
 import epimodels as em
@@ -29,14 +28,14 @@ class TestPHEModel(em.PheSEIRModel):
         # Populate the model
         regions = ['SW']
         age_groups = [
-            '0-1', '1-5']
+            '65-75', '75+']
 
         matrices_region = []
 
         # Initial state of the system
         weeks_matrices_region = []
         for r in regions:
-            region_data_matrix = np.array([[2.5, 1], [3.9, 6]])
+            region_data_matrix = np.array([[0.5025, 0.1977], [0.1514, 0.7383]])
             regional = em.RegionMatrix(r, age_groups, region_data_matrix)
             weeks_matrices_region.append(regional)
 
@@ -59,7 +58,7 @@ class TestPHEModel(em.PheSEIRModel):
 
     def set_initial_conditions(self, total_days):
         # Initial number of susceptibles
-        susceptibles = [[53565, 237359]]
+        susceptibles = [[668999, 584130]]
 
         # Initial number of infectives
         ICs_multiplier = 30
@@ -113,7 +112,7 @@ class TestDeathData(object):
     """
     def __init__(self, total_days):
         # Toy values for data structures about death
-        self.deaths = [1 * np.ones((total_days, 2))]
+        self.deaths = [4 * np.ones((total_days, 2), dtype=int)]
 
         td_mean = 15.0
         td_var = 12.1**2
@@ -124,9 +123,7 @@ class TestDeathData(object):
         self.time_to_death.extend([0.0] * (total_days-30))
 
         self.deaths_times = np.arange(1, total_days+1, 1).tolist()
-        self.fatality_ratio = (1/100 * np.array(
-            [0.0016, 0.0016, 0.0043, 0.019, 0.08975, 0.815, 3.1, 6.05]
-            )).tolist()
+        self.fatality_ratio = (1/100 * np.array([3.1, 6.05])).tolist()
 
     def __call__(self):
         return (
@@ -144,8 +141,8 @@ class TestSerologyData(object):
     """
     def __init__(self, total_days):
         # Toy values for data structures about serology
-        self.tests_data = [100 * np.ones((total_days, 2))]
-        self.positives_data = [10 * np.ones((total_days, 2))]
+        self.tests_data = [100 * np.ones((total_days, 2), dtype=int)]
+        self.positives_data = [10 * np.ones((total_days, 2), dtype=int)]
         self.serology_times = np.arange(1, total_days+1, 1).tolist()
         self.sens = 0.7
         self.spec = 0.95
@@ -177,8 +174,8 @@ class TestPHELogLik(unittest.TestCase):
             TestSerologyData(len(times))()
 
         # Set toy model initial conditions
-        susceptibles_data = [[53565, 237359]]
-        infectives_data = [[10, 10]]
+        susceptibles_data = [[668999, 584130]]
+        infectives_data = [[30, 30]]
 
         # Set log-likelihood object
         log_lik = em.inference.PHELogLik(
@@ -203,8 +200,8 @@ class TestPHELogLik(unittest.TestCase):
             TestSerologyData(len(times))()
 
         # Set toy model initial conditions
-        susceptibles_data = [[53565, 237359]]
-        infectives_data = [[10, 10]]
+        susceptibles_data = [[668999, 584130]]
+        infectives_data = [[30, 30]]
 
         # Set log-likelihood object
         log_lik = em.inference.PHELogLik(
@@ -289,8 +286,8 @@ class TestPheSEIRInfer(unittest.TestCase):
             TestSerologyData(len(times))()
 
         # Set toy model initial conditions
-        susceptibles_data = [[53565, 237359]]
-        infectives_data = [[10, 10]]
+        susceptibles_data = [[668999, 584130]]
+        infectives_data = [[30, 30]]
 
         # Set up PHE Inference class
         inference = em.inference.PheSEIRInfer(model)
@@ -346,8 +343,8 @@ class TestPheSEIRInfer(unittest.TestCase):
             TestSerologyData(len(times))()
 
         # Set toy model initial conditions
-        susceptibles_data = [[53565, 237359]]
-        infectives_data = [[10, 10]]
+        susceptibles_data = [[668999, 584130]]
+        infectives_data = [[30, 30]]
 
         # Set up PHE Inference class
         inference = em.inference.PheSEIRInfer(model)
@@ -365,6 +362,39 @@ class TestPheSEIRInfer(unittest.TestCase):
         self.assertIsInstance(log_lik, (int, float))
         self.assertEqual(log_lik < 0, True)
 
+    def test_optimisation_problem_setup(self):
+        # Set times for optimisation
+        times = np.arange(1, 50, 1).tolist()
+
+        # Set toy model, death and serology data
+        model = TestPHEModel()
+        model.set_initial_conditions(len(times))
+        deaths, time_to_death, deaths_times, fatality_ratio = \
+            TestDeathData(len(times))()
+        tests_data, positives_data, serology_times, sens, spec = \
+            TestSerologyData(len(times))()
+
+        # Set toy model initial conditions
+        susceptibles_data = [[668999, 584130]]
+        infectives_data = [[30, 30]]
+
+        # Set up PHE Inference class for optimisation
+        optimisation = em.inference.PheSEIRInfer(model)
+
+        # Add model, death and tests data to the optimisation structure
+        optimisation.read_model_data(susceptibles_data, infectives_data)
+        optimisation.read_serology_data(
+            tests_data, positives_data, serology_times, sens, spec)
+        optimisation.read_deaths_data(
+            deaths, deaths_times, time_to_death, fatality_ratio)
+
+        # Set up and run the optimisation problem
+        found, log_post_value = optimisation.optimisation_problem_setup(times)
+
+        self.assertEqual(len(found), 3)
+        self.assertIsInstance(log_post_value, (int, float))
+        self.assertEqual(log_post_value < 0, True)
+
     def test_inference_problem_setup(self):
         # Set times for inference
         times = np.arange(1, 50, 1).tolist()
@@ -378,8 +408,8 @@ class TestPheSEIRInfer(unittest.TestCase):
             TestSerologyData(len(times))()
 
         # Set toy model initial conditions
-        susceptibles_data = [[53565, 237359]]
-        infectives_data = [[10, 10]]
+        susceptibles_data = [[668999, 584130]]
+        infectives_data = [[30, 30]]
 
         # Set up PHE Inference class
         inference = em.inference.PheSEIRInfer(model)
