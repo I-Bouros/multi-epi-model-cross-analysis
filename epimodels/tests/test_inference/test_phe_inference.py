@@ -364,7 +364,7 @@ class TestPheSEIRInfer(unittest.TestCase):
 
     def test_optimisation_problem_setup(self):
         # Set times for optimisation
-        times = np.arange(1, 50, 1).tolist()
+        times = np.arange(1, 60, 1).tolist()
 
         # Set toy model, death and serology data
         model = TestPHEModel()
@@ -391,7 +391,7 @@ class TestPheSEIRInfer(unittest.TestCase):
         # Set up and run the optimisation problem
         found, log_post_value = optimisation.optimisation_problem_setup(times)
 
-        self.assertEqual(len(found), 3)
+        self.assertEqual(len(found), 5)
         self.assertIsInstance(log_post_value, (int, float))
         self.assertEqual(log_post_value < 0, True)
 
