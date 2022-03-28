@@ -332,7 +332,7 @@ class TestPheSEIRInfer(unittest.TestCase):
 
     def test_return_loglikelihood(self):
         # Set times for inference
-        times = np.arange(1, 50, 1).tolist()
+        times = np.arange(1, 60, 1).tolist()
 
         # Set toy model, death and serology data
         model = TestPHEModel()
@@ -357,7 +357,7 @@ class TestPheSEIRInfer(unittest.TestCase):
             deaths, deaths_times, time_to_death, fatality_ratio)
 
         # Compute the log likelihood at chosen point in the parameter space
-        log_lik = inference.return_loglikelihood(times, [3, 1, 0.1])
+        log_lik = inference.return_loglikelihood(times, [3, 1, 1, 1, 0.1])
 
         self.assertIsInstance(log_lik, (int, float))
         self.assertEqual(log_lik < 0, True)

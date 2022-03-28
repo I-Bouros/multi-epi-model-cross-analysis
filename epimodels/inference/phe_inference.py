@@ -191,7 +191,7 @@ class PHELogLik(pints.LogPDF):
 
             return np.sum(total_log_lik)
 
-        except ValueError:
+        except ValueError:  # pragma: no cover
             return -np.inf
 
     def set_fixed_parameters(self):

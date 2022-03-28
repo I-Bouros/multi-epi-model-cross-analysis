@@ -713,7 +713,7 @@ class PheSEIRModel(pints.ForwardModel):
             # fraction of new infectives in delta_t time step
             d_infec[ind, :] = np.multiply(np.asarray(s), lam*self._delta_t)
 
-            if np.any(d_infec[ind, :] < 0):
+            if np.any(d_infec[ind, :] < 0):  # pragma: no cover
                 d_infec[ind, :] = np.zeros_like(d_infec[ind, :])
 
         return d_infec
