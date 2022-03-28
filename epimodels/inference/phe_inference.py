@@ -501,7 +501,7 @@ class PheSEIRInfer(object):
 
         return chains
 
-    def optimisation_problem_setup(self, times,  wd=1, wp=1):
+    def optimisation_problem_setup(self, times, wd=1, wp=1):
         """
         Runs the initial conditions optimisation routine for the PHE model.
 
