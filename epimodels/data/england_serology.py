@@ -33,8 +33,14 @@ def read_tests_data(tests_file):
 
     Parameters
     ----------
-    tests_file
+    tests_file : csv
         The name of the age structured regional serology data file used.
+
+    Returns
+    -------
+    pandas.Dataframe
+        Dataframe of age-structured daily number of tests and positive results
+        in all given regions.
 
     """
     # Select data from the given state
@@ -56,15 +62,21 @@ def process_tests_data(
 
     Parameters
     ----------
-    data
-        (pandas.Dataframe) Dataframe of age-structured daily number of serology
+    data : pandas.Dataframe
+        Dataframe of age-structured daily number of serology
         in a given region.
-    start_date
+    start_date : str
         The initial date from which the number of tests and positive results
         are calculated.
-    end_date
+    end_date : str
         The final date from which the number of tests and positive results
         are calculated.
+
+    Returns
+    -------
+    tuple of numpy.array
+        Tuple of processed regional tests data and psotive results data as a
+        matrix.
 
     """
     data = data.sort_values('date')
@@ -110,13 +122,18 @@ def process_ages(age_groups, data, type):
 
     Parameters
     ----------
-    age_groups
+    age_groups : list
         List of the names for the age groups the data is split into.
-    data
-        (pandas.Dataframe) Dataframe of age-structured daily number of tests
+    data : pandas.Dataframe
+        Dataframe of age-structured daily number of tests
         or positive results in a given region.
-    type
-        (str) column name for the data we want to parse for.
+    type : str
+        Column name for the data we want to parse for.
+
+    Returns
+    -------
+    pandas.Dataframe
+        Processed dataframe row.
 
     """
     newrow = {}
@@ -157,7 +174,17 @@ def process_ages(age_groups, data, type):
 
 def process_regions(region):
     """
-    Processes regions into standard `epimodels` format.
+    Processes regions into standard `epimodels` name format.
+
+    Parameters
+    ----------
+    region : str
+        Name of the region being processed.
+
+    Returns
+    -------
+    str
+        Name of the region in the standard `epimodels` name format.
 
     """
     if region == 'South West':
@@ -184,8 +211,14 @@ def main(files):
 
     Parameters
     ----------
-    file
+    files : list
         List of file names from which to extract the data.
+
+    Returns
+    -------
+    csv
+        Processed death data files for each different region found in the
+        fiven file.
 
     """
 

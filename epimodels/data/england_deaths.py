@@ -30,8 +30,14 @@ def read_death_data(
 
     Parameters
     ----------
-    death_file
+    death_file : csv
         The name of the age structured regional death data file used.
+
+    Returns
+    -------
+    pandas.Dataframe
+        Dataframe of age-structured daily number of deaths in all given
+        regions.
 
     """
     # Select data from the given state
@@ -52,13 +58,18 @@ def process_death_data(
 
     Parameters
     ----------
-    data
-        (pandas.Dataframe) Dataframe of age-structured daily number of deaths
+    data : pandas.Dataframe
+        Dataframe of age-structured daily number of deaths
         in a given region.
-    start_date
+    start_date : str
         The initial date from which the number of deaths are calculated.
-    end_date
+    end_date : str
         The final date from which the number of deaths are calculated.
+
+    Returns
+    -------
+    numpy.array
+        Processed regional death data as a matrix.
 
     """
     data = data.sort_values('date')
@@ -99,11 +110,15 @@ def process_ages(age_groups, data):
 
     Parameters
     ----------
-    age_groups
+    age_groups : list
         List of the names for the age groups the data is split into.
-    data
-        (pandas.Dataframe) Dataframe of age-structured daily number of deaths
-        in a given region.
+    data : pandas.Dataframe
+        Dataframe of age-structured daily number of deaths in a given region.
+
+    Returns
+    -------
+    pandas.Dataframe
+        Processed dataframe row.
 
     """
     newrow = {}
@@ -142,7 +157,17 @@ def process_ages(age_groups, data):
 
 def process_regions(region):
     """
-    Processes regions into standard `epimodels` format.
+    Processes regions into standard `epimodels` name format.
+
+    Parameters
+    ----------
+    region : str
+        Name of the region being processed.
+
+    Returns
+    -------
+    str
+        Name of the region in the standard `epimodels` name format.
 
     """
     if region == 'South West':
@@ -164,6 +189,12 @@ def process_regions(region):
 def main():
     """
     Computes the matrix of age-structured number of deaths for all regions.
+
+    Returns
+    -------
+    csv
+        Processed death data files for each different region found in the
+        default file.
 
     """
     data = read_death_data()

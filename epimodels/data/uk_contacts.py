@@ -37,10 +37,10 @@ def read_contact_matrices(
 
     Parameters
     ----------
-    file_index
+    file_index : int
         Number of the file containg the baseline contact matrices
         used in the model.
-    state
+    state : str
         Name of the country for which the contact matrices used in
         the model.
 
@@ -77,15 +77,15 @@ def compute_contact_matrices(
 
     Parameters
     ----------
-    region
+    region : str
         Region of the country for which the deviation percentages are
         calculated.
-    start_date
-        The initial date from which the deviation percentages are calculated.
-    end_date
-        The final date from which the deviation percentages are calculated.
-    mobility_file
-        The name of the Google mobility data file used for the computation.
+    start_date : str
+        Initial date from which the deviation percentages are calculated.
+    end_date : str
+        Final date from which the deviation percentages are calculated.
+    mobility_file : str
+        Name of the Google mobility data file used for the computation.
 
     """
     # Select data from the given state
