@@ -23,14 +23,14 @@ import numpy as np
 
 
 def read_death_data(
-        death_file='England_deaths.csv'):
+        death_file: str = 'England_deaths.csv'):
     """
     Parses the csv document containing the age structured regional
     daily death data.
 
     Parameters
     ----------
-    death_file : csv
+    death_file : str
         The name of the age structured regional death data file used.
 
     Returns
@@ -50,9 +50,9 @@ def read_death_data(
 
 
 def process_death_data(
-        data,
-        start_date='2020-02-15',
-        end_date='2022-01-28'):
+        data: pd.DataFrame,
+        start_date: str = '2020-02-15',
+        end_date: str = '2022-01-28'):
     """
     Computes the matrix of age-structured number of deaths for a given region.
 
@@ -62,9 +62,11 @@ def process_death_data(
         Dataframe of age-structured daily number of deaths
         in a given region.
     start_date : str
-        The initial date from which the number of deaths are calculated.
+        The initial date (year-month-date) from which the number of deaths are
+        calculated.
     end_date : str
-        The final date from which the number of deaths are calculated.
+        The final date (year-month-date) from which the number of deaths are
+        calculated.
 
     Returns
     -------
@@ -104,7 +106,7 @@ def process_death_data(
     return deaths.to_numpy()
 
 
-def process_ages(age_groups, data):
+def process_ages(age_groups: list, data: pd.DataFrame):
     """
     Parses daily data into the correct age structure types.
 
@@ -155,7 +157,7 @@ def process_ages(age_groups, data):
     return newrow
 
 
-def process_regions(region):
+def process_regions(region: str):
     """
     Processes regions into standard `epimodels` name format.
 

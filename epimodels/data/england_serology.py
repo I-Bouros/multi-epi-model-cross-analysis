@@ -26,14 +26,14 @@ import pandas as pd
 import numpy as np
 
 
-def read_tests_data(tests_file):
+def read_tests_data(tests_file: str):
     """
     Parses the csv document containing the age structured regional
     serology data.
 
     Parameters
     ----------
-    tests_file : csv
+    tests_file : str
         The name of the age structured regional serology data file used.
 
     Returns
@@ -53,9 +53,9 @@ def read_tests_data(tests_file):
 
 
 def process_tests_data(
-        data,
-        start_date='2020-04-27',
-        end_date='2020-06-01'):
+        data: pd.DataFrame,
+        start_date: str = '2020-04-27',
+        end_date: str = '2020-06-01'):
     """
     Computes the matrix of age-structured number of tests and positive results
     for a given region.
@@ -66,11 +66,11 @@ def process_tests_data(
         Dataframe of age-structured daily number of serology
         in a given region.
     start_date : str
-        The initial date from which the number of tests and positive results
-        are calculated.
+        The initial date (year-month-date) from which the number of tests and
+        positive results are calculated.
     end_date : str
-        The final date from which the number of tests and positive results
-        are calculated.
+        The final date (year-month-date) from which the number of tests and
+        positive results are calculated.
 
     Returns
     -------
@@ -116,7 +116,7 @@ def process_tests_data(
     return positives.to_numpy(), tests.to_numpy()
 
 
-def process_ages(age_groups, data, type):
+def process_ages(age_groups: list, data: pd.DataFrame, type: str):
     """
     Parses daily data into the correct age structure types.
 
@@ -172,7 +172,7 @@ def process_ages(age_groups, data, type):
     return newrow
 
 
-def process_regions(region):
+def process_regions(region: str):
     """
     Processes regions into standard `epimodels` name format.
 
@@ -204,7 +204,7 @@ def process_regions(region):
         return 'NW'
 
 
-def main(files):
+def main(files: list):
     """
     Computes the matrix of age-structured number of tests and the matrix
     of age-structured number of positive results for all regions.

@@ -30,9 +30,10 @@ import numpy as np
 
 
 def read_contact_matrices(
-        file_index=2,
-        state='United Kingdom of Great Britain'):
-    """Read the baseline contact matices for different activities
+        file_index: int = 2,
+        state: str = 'United Kingdom of Great Britain'):
+    """
+    Read the baseline contact matices for different activities
     for given state from the appropriate excel file.
 
     Parameters
@@ -43,6 +44,12 @@ def read_contact_matrices(
     state : str
         Name of the country for which the contact matrices used in
         the model.
+
+    Retruns
+    -------
+    list of pandas.Dataframe
+        List of the baseline contact matices for each activitiy
+        for different for given state.
 
     """
     # Select contact matrices from the given state and activity
@@ -66,10 +73,10 @@ def read_contact_matrices(
 
 
 def compute_contact_matrices(
-        region,
-        start_date='15/02/2020',
-        end_date='04/04/2021',
-        mobility_file='2020_2021_GB_Region_Mobility_Report.csv'):
+        region: str,
+        start_date: str = '15/02/2020',
+        end_date: str = '04/04/2021',
+        mobility_file: str = '2020_2021_GB_Region_Mobility_Report.csv'):
     """
     Computes timelines of percentages of deviation from the baseline in
     activities using Google mobility data, for selected region and between
@@ -81,11 +88,19 @@ def compute_contact_matrices(
         Region of the country for which the deviation percentages are
         calculated.
     start_date : str
-        Initial date from which the deviation percentages are calculated.
+        Initial date (day/month/year) from which the deviation percentages are
+        calculated.
     end_date : str
-        Final date from which the deviation percentages are calculated.
+        Final date (day/month/year) from which the deviation percentages are
+        calculated.
     mobility_file : str
         Name of the Google mobility data file used for the computation.
+
+    Returns
+    -------
+    pandas.Dataframe
+        Dataframe of the daily multipliers for given region for each of the
+        activities.
 
     """
     # Select data from the given state
@@ -144,18 +159,38 @@ def compute_contact_matrices(
     return multipliers
 
 
-def process_dates(date):
+def process_dates(date: str):
     """
     Processes dates into `datetime` format.
+
+    Parameters
+    ----------
+    date : str
+        Date (day/month/year) as it appears in the data frame.
+
+    Returns
+    -------
+    datetime.datetime
+        Date processed into correct format.
 
     """
     struct = time.strptime(date, '%d/%m/%Y')
     return datetime.datetime.fromtimestamp(mktime(struct))
 
 
-def change_age_groups(matrix):
+def change_age_groups(matrix: np.array):
     """
     Reprocess contact matrix so that it has the appropriate age groups.
+
+    Parameters
+    ----------
+    matrix : numpy.array
+        Contact matrix with old age groups.
+
+    Returns
+    -------
+    numpy.array
+        New contact matrix with correct age groups.
 
     """
     new_matrix = np.empty((8, 8))
@@ -182,6 +217,12 @@ def main():
     """
     Combines timelines of deviation percentages and baseline activity-specific
     contact matrices to get weekly, region-specific contact matrices.
+
+    Returns
+    -------
+    csv
+        Processed files for the baseline and time-dependent contact matrix for
+        each different region found in the default file.
 
     """
     activity = ['school', 'home', 'work', 'others']
