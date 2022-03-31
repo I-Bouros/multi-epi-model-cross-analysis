@@ -6,7 +6,7 @@
 #
 """Processing script for serology data from [1]_.
 
-It computes region-specific the age-structured weekly number of tests and
+It computes the region-specific, age-structured weekly number of tests and
 positive results from the REACT1 study data which are then stored in separate
 csv files.
 
@@ -28,19 +28,19 @@ import numpy as np
 
 def read_tests_data(tests_file: str):
     """
-    Parses the csv document containing the age structured regional
-    serology data.
+    Parses the csv document containing the age-structured weekly
+    serology data for all regions.
 
     Parameters
     ----------
     tests_file : str
-        The name of the age structured regional serology data file used.
+        The name of the region- and age-structured serology data file used.
 
     Returns
     -------
     pandas.Dataframe
-        Dataframe of age-structured daily number of tests and positive results
-        in all given regions.
+        Dataframe of the age-structured weekly number of tests and positive
+        results in all given regions.
 
     """
     # Select data from the given state
@@ -63,8 +63,7 @@ def process_tests_data(
     Parameters
     ----------
     data : pandas.Dataframe
-        Dataframe of age-structured daily number of serology
-        in a given region.
+        Dataframe of age-structured daily number of serology in a given region.
     start_date : str
         The initial date (year-month-date) from which the number of tests and
         positive results are calculated.
@@ -118,14 +117,14 @@ def process_tests_data(
 
 def process_ages(age_groups: list, data: pd.DataFrame, type: str):
     """
-    Parses daily data into the correct age structure types.
+    Parses wwekly data into the correct age structure types.
 
     Parameters
     ----------
     age_groups : list
         List of the names for the age groups the data is split into.
     data : pandas.Dataframe
-        Dataframe of age-structured daily number of tests
+        Dataframe of age-structured weekly number of tests
         or positive results in a given region.
     type : str
         Column name for the data we want to parse for.
@@ -206,8 +205,8 @@ def process_regions(region: str):
 
 def main(files: list):
     """
-    Computes the matrix of age-structured number of tests and the matrix
-    of age-structured number of positive results for all regions.
+    Computes the matrices of age-structured weekly number of tests and the
+    matrices of age-structured number of positive results for all regions.
 
     Parameters
     ----------
@@ -217,7 +216,7 @@ def main(files: list):
     Returns
     -------
     csv
-        Processed death data files for each different region found in the
+        Processed serology data files for each different region found in the
         fiven file.
 
     """

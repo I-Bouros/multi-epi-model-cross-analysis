@@ -4,11 +4,11 @@
 # released under the MIT license. See accompanying LICENSE for copyright
 # notice and full license details.
 #
-"""Processing script for contact matrices and Google mobility data from [1]_
-and [2]_.
+"""Processing script for the contact matrices and Google mobility data from
+[1]_ and [2]_.
 
-It computes region-specific contact matrices which are then stored in separate
-csv files.
+It computes the baseline and time-dependent region-specific contact matrices
+which are then stored in separate csv files.
 
 References
 ----------
@@ -33,23 +33,23 @@ def read_contact_matrices(
         file_index: int = 2,
         state: str = 'United Kingdom of Great Britain'):
     """
-    Read the baseline contact matices for different activities
-    for given state from the appropriate excel file.
+    Read the baseline contact matices for different activities recorded
+    for the given state from the appropriate Excel file.
 
     Parameters
     ----------
     file_index : int
-        Number of the file containg the baseline contact matrices
+        Index of the file containg the baseline contact matrices
         used in the model.
     state : str
-        Name of the country for which the contact matrices used in
+        Name of the country whose the baseline contact matrices are used in
         the model.
 
     Retruns
     -------
     list of pandas.Dataframe
-        List of the baseline contact matices for each activitiy
-        for different for given state.
+        List of the baseline contact matices for each activitiy recorded
+        for different for the given state.
 
     """
     # Select contact matrices from the given state and activity
@@ -78,9 +78,9 @@ def compute_contact_matrices(
         end_date: str = '04/04/2021',
         mobility_file: str = '2020_2021_GB_Region_Mobility_Report.csv'):
     """
-    Computes timelines of percentages of deviation from the baseline in
-    activities using Google mobility data, for selected region and between
-    given dates.
+    Computes timelines of percentages of deviation from the baseline levels in
+    the activities recorded, using Google mobility data, for the selected
+    region and between given dates.
 
     Parameters
     ----------
@@ -99,8 +99,8 @@ def compute_contact_matrices(
     Returns
     -------
     pandas.Dataframe
-        Dataframe of the daily multipliers for given region for each of the
-        activities.
+        Dataframe of the daily multipliers for the given region for each of the
+        activities recorded.
 
     """
     # Select data from the given state
@@ -180,7 +180,7 @@ def process_dates(date: str):
 
 def change_age_groups(matrix: np.array):
     """
-    Reprocess contact matrix so that it has the appropriate age groups.
+    Reprocess the contact matrix so that it has the appropriate age groups.
 
     Parameters
     ----------
@@ -215,14 +215,15 @@ def change_age_groups(matrix: np.array):
 
 def main():
     """
-    Combines timelines of deviation percentages and baseline activity-specific
-    contact matrices to get weekly, region-specific contact matrices.
+    Combines the timelines of deviation percentages and baseline
+    activity-specific contact matrices to get weekly, region-specific
+    contact matrices.
 
     Returns
     -------
     csv
-        Processed files for the baseline and time-dependent contact matrix for
-        each different region found in the default file.
+        Processed files for the baseline and region-specific time-dependent
+        contact matrices for each different region found in the default file.
 
     """
     activity = ['school', 'home', 'work', 'others']

@@ -6,8 +6,8 @@
 #
 """Processing script for deaths data from [1]_.
 
-It computes region-specific the age-structured daily number of deaths which
-are the stored in separate csv files.
+It computes the region-specific age-structured daily number of deaths which
+are then stored in separate csv files.
 
 References
 ----------
@@ -36,7 +36,7 @@ def read_death_data(
     Returns
     -------
     pandas.Dataframe
-        Dataframe of age-structured daily number of deaths in all given
+        Dataframe of the age-structured daily number of deaths in all given
         regions.
 
     """
@@ -59,7 +59,7 @@ def process_death_data(
     Parameters
     ----------
     data : pandas.Dataframe
-        Dataframe of age-structured daily number of deaths
+        Dataframe of the age-structured daily number of deaths
         in a given region.
     start_date : str
         The initial date (year-month-date) from which the number of deaths are
@@ -71,7 +71,8 @@ def process_death_data(
     Returns
     -------
     numpy.array
-        Processed regional death data as a matrix.
+        Processed age-structured daily number of deaths in a given region as
+        a matrix.
 
     """
     data = data.sort_values('date')
@@ -108,22 +109,25 @@ def process_death_data(
 
 def process_ages(age_groups: list, data: pd.DataFrame):
     """
-    Parses daily data into the correct age structure types.
+    Parses daily number of deaths data into the correct age structure types.
 
     Parameters
     ----------
     age_groups : list
-        List of the names for the age groups the data is split into.
+        List of the names of the age groups the deaths data is split into.
     data : pandas.Dataframe
-        Dataframe of age-structured daily number of deaths in a given region.
+        Dataframe of the age-structured daily number of deaths in a given
+        region.
 
     Returns
     -------
     pandas.Dataframe
-        Processed dataframe row.
+        Processed dataframe row of the age-structured daily number of deaths
+        in a given region.
 
     """
     newrow = {}
+
     # Process 0-1
     newrow[age_groups[0]] = 0
 
@@ -159,7 +163,7 @@ def process_ages(age_groups: list, data: pd.DataFrame):
 
 def process_regions(region: str):
     """
-    Processes regions into standard `epimodels` name format.
+    Processes region names into standard `epimodels` name format.
 
     Parameters
     ----------
@@ -190,12 +194,13 @@ def process_regions(region: str):
 
 def main():
     """
-    Computes the matrix of age-structured number of deaths for all regions.
+    Computes the matrix of the age-structured daily number of deaths for
+    all regions.
 
     Returns
     -------
     csv
-        Processed death data files for each different region found in the
+        Processed deaths data files for each different region found in the
         default file.
 
     """
