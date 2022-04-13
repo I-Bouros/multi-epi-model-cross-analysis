@@ -8,8 +8,8 @@
 #
 """
 This script contains code for modelling the extended SEIR model created by
-Public Health England and Univerity of Cambridge and which is the official
-model used by the UK government for policy making.
+Public Health England and Univerity of Cambridge. This is one of the
+official models used by the UK government for policy making.
 
 It uses an extended version of an SEIR model and contact and region specific
 matrices.
@@ -28,7 +28,7 @@ import epimodels as em
 
 class PheSEIRModel(pints.ForwardModel):
     r"""PheSEIRModel Class:
-    Base class for constructing the ODE model: deterministic SEIR used by the
+    Base class for constructing the ODE model: a deterministic SEIR used by the
     Public Health England to model the Covid-19 epidemic in UK based on region.
 
     The population is structured according to their age-group (:math:`i`) and
@@ -40,7 +40,7 @@ class PheSEIRModel(pints.ForwardModel):
     (:math:`I`) and recovered (:math:`R`).
 
     In the PHE model framework, the exposed and infectious compartments are
-    split in two:
+    split into two each:
 
     .. math::
        :nowrap:
@@ -94,7 +94,7 @@ class PheSEIRModel(pints.ForwardModel):
         # The default number of outputs is 7,
         # i.e. S, E1, E2, I1, I2, R and Incidence
         self._n_outputs = len(self._output_names)
-        # The default number of outputs is 7,
+        # The default number of parameters is 9,
         # i.e. 6 initial conditions and 3 parameters
         self._n_parameters = len(self._parameter_names)
 
@@ -104,6 +104,11 @@ class PheSEIRModel(pints.ForwardModel):
         """
         Returns the number of outputs.
 
+        Returns
+        -------
+        int
+            Number of outputs.
+
         """
         return self._n_outputs
 
@@ -111,12 +116,22 @@ class PheSEIRModel(pints.ForwardModel):
         """
         Returns the number of parameters.
 
+        Returns
+        -------
+        int
+            Number of parameters.
+
         """
         return self._n_parameters
 
     def output_names(self):
         """
         Returns the (selected) output names.
+
+        Returns
+        -------
+        list
+            List of the (selected) output names.
 
         """
         names = [self._output_names[x] for x in self._output_indices]
@@ -126,6 +141,11 @@ class PheSEIRModel(pints.ForwardModel):
         """
         Returns the parameter names.
 
+        Returns
+        -------
+        list
+            List of the parameter names.
+
         """
         return self._parameter_names
 
@@ -133,12 +153,22 @@ class PheSEIRModel(pints.ForwardModel):
         """
         Sets region names.
 
+        Parameters
+        ----------
+        regions
+            List of region names considered by the model.
+
         """
         self.regions = regions
 
     def set_age_groups(self, age_groups):
         """
-        Sets age group names.
+        Sets age group names and counts their number.
+
+        Parameters
+        ----------
+        age_groups
+            List of age group names considered by the model.
 
         """
         self.age_groups = age_groups
@@ -148,6 +178,11 @@ class PheSEIRModel(pints.ForwardModel):
         """
         Returns the regions names.
 
+        Returns
+        -------
+        list
+            List of the regions names.
+
         """
         return self.regions
 
@@ -155,12 +190,22 @@ class PheSEIRModel(pints.ForwardModel):
         """
         Returns the age group names.
 
+        Returns
+        -------
+        list
+            List of the age group names.
+
         """
         return self.age_groups
 
     def set_outputs(self, outputs):
         """
-        Checks existence of outputs.
+        Checks existence of outputs and selects only those remaining.
+
+        Parameters
+        ----------
+        outputs
+            List of output names that are selected.
 
         """
         for output in outputs:
@@ -184,14 +229,14 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        s
-            vector of susceptibles by age group.
-        i1
-            vector of 1st infective by age group.
-        i2
-            vector of 2nd infective by age group.
-        b
-            probability matrix of infectivity.
+        s : list
+            Vector of susceptibles by age group.
+        i1 : list
+            Vector of 1st infective by age group.
+        i2 : list
+            Vector of 2nd infective by age group.
+        b : numpy.array
+            Probability matrix of infectivity.
 
         """
         lam = np.empty_like(s)
@@ -206,6 +251,20 @@ class PheSEIRModel(pints.ForwardModel):
     def _compute_evaluation_moments(self, times):
         """
         Returns the points at which we keep the evaluations of the ODE system.
+
+        Parameters
+        ----------
+        times : list
+            List of all the time points at which we simulate.
+
+        Returns
+        -------
+        list
+            List of the times point values for which we want to keep the
+            values recorded.
+        list
+            List of the indeces these times point values for which we want
+            to keep the values recorded with respect to the finer timescale.
 
         """
         eval_times = np.around(
@@ -240,23 +299,28 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        t
-            (float) Time point at which we compute the evaluation.
-        r
-            (int) The index of the region to which the current instance of the
-            ODEs system refers.
-        y
-            (array) Array of all the compartments of the ODE system, segregated
+        t : float
+            Time point at which we compute the evaluation.
+        r : int
+            The index of the region to which the current instance of the ODEs
+            system refers.
+        y : numpy.array
+            Array of all the compartments of the ODE system, segregated
             by age-group. It assumes y = [S, E1, E2, I1, I2, R] where each
             letter actually refers to all compartment of that type. (e.g. S
             refers to the compartments of all ages of susceptibles).
-        c
-            (list) List values used to compute the parameters of the ODEs
+        c : list
+            List of values used to compute the parameters of the ODEs
             system. It assumes c = [beta, kappa, gamma], where :math:`beta`
             encaplsulates temporal fluctuations in transmission for all ages.
-        num_a_groups
-            (int) Number of age groups in which the population is split. It
+        num_a_groups : int
+            Number of age groups in which the population is split. It
             refers to the number of compartments of each type.
+
+        Returns
+        -------
+        numpy.array
+            Age-strictured matrix representation of the RHS of the ODEs system.
 
         """
         # Read in the number of age-groups
@@ -272,7 +336,7 @@ class PheSEIRModel(pints.ForwardModel):
         kappa = 2/dL
         gamma = 2/dI
 
-        # And identify the appropriate MultiTimesInfectivity matrix for the
+        # Identify the appropriate MultiTimesInfectivity matrix for the
         # ODE system
         pos = np.where(self._times <= t)
         ind = pos[-1][-1]
@@ -298,16 +362,20 @@ class PheSEIRModel(pints.ForwardModel):
         """
         Computes the values in each compartment of the PHE ODEs system using
         a 'homemade' solver in the context of the discretised time step version
-        of the model, as suggested in the paper in which it is referenced.
+        of the model, as suggested in the referenced paper.
 
         Parameters
         ----------
-        times
-            (list) List of time points at which we wish to evaluate the ODEs
-            system.
-        num_a_groups
-            (int) Number of age groups in which the population is split. It
+        times : list
+            List of time points at which we wish to evaluate the ODEs system.
+        num_a_groups : int
+            Number of age groups in which the population is split. It
             refers to the number of compartments of each type.
+
+        Returns
+        -------
+        dict
+            Solution of the ODE system at the time points provided.
 
         """
         # Split compartments into their types
@@ -324,12 +392,12 @@ class PheSEIRModel(pints.ForwardModel):
         solution = np.ones((len(times), num_a_groups*6))
 
         for ind, t in enumerate(eval_times):
-            # Add present vlaues of the compartments to the solutions
+            # Add present values of the compartments to the solutions
             if t in times:
                 solution[ind_in_times[ind]] = tuple(
                     chain(s, e1, e2, i1, i2, r))
 
-            # And identify the appropriate MultiTimesInfectivity matrix for the
+            # Identify the appropriate MultiTimesInfectivity matrix for the
             # ODE system
             b = self.infectivity_timeline.compute_prob_infectivity_matrix(
                 self._region, t, s, beta[self._region-1][ind_in_times[ind]])
@@ -361,15 +429,18 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        times
-            (list) List of time points at which we wish to evaluate the ODEs
-            system.
-        num_a_groups
-            (int) Number of age groups in which the population is split. It
+        times : list
+            List of time points at which we wish to evaluate the ODEs system.
+        num_a_groups : int
+            Number of age groups in which the population is split. It
             refers to the number of compartments of each type.
-        method
-            (string) The type of solver implemented by the
-            :meth:`scipy.solve_ivp`.
+        method : str
+            The type of solver implemented by the :meth:`scipy.solve_ivp`.
+
+        Returns
+        -------
+        dict
+            Solution of the ODE system at the time points provided.
 
         """
         # Initial conditions
@@ -395,24 +466,29 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        parameters
-            (list) List of quantities that characterise the PHE SEIR model in
+        parameters : list
+            List of quantities that characterise the PHE SEIR model in
             this order: index of region for which we wish to simulate,
             initial conditions matrices classifed by age (column name) and
             region (row name) for each type of compartment (s, e1, e2, i1, i2,
             r), temporal and regional fluctuation matrix :math:`\beta`,
             mean latent period :math:`d_L`, mean infection period :math:`d_I`
             and time step for the 'homemade' solver.
-        times
-            (list) List of time points at which we wish to evaluate the ODEs
-            system.
-        regions
-            (list) List of region names for the region-specific relative
+        times : list
+            List of time points at which we wish to evaluate the ODEs system.
+        regions : list
+            List of region names for the region-specific relative
             susceptibility matrices.
-        initial_r
-            (list) List of initial values of the reproduction number by region.
-        method
-            (string) The type of solver implemented by the simulator.
+        initial_r : list
+            List of initial values of the reproduction number by region.
+        method : str
+            The type of solver implemented by the simulator.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured output matrix of the simulation for the specified
+            region.
 
         """
         # Split parameters into the features of the model
@@ -475,12 +551,11 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        matrices_contact
-            (list of ContactMatrix) Time-dependent contact matrices used for
-            the modelling.
-        time_changes_contact
-            (list) Times at which the next contact matrix recorded starts to be
-            used. In increasing order.
+        matrices_contact : list of ContactMatrix
+            List of time-dependent contact matrices used for the modelling.
+        time_changes_contact : list
+            List of times at which the next contact matrix recorded starts to
+            be used. In increasing order.
 
         """
         self.matrices_contact = matrices_contact
@@ -492,11 +567,11 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        matrices_region
-            (list of lists of RegionMatrix)) Time-dependent and region-specific
-            relative susceptibility matrices used for the modelling.
-        time_changes_region
-            (list) Times at which the next instances of region-specific
+        matrices_region : lists of RegionMatrix
+            List of ime-dependent and region-specific relative susceptibility
+            matrices used for the modelling.
+        time_changes_region : list
+            List of times at which the next instances of region-specific
             relative susceptibility matrices recorded start to be used. In
             increasing order.
 
@@ -515,7 +590,7 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        parameters
+        parameters : list
             Long vector format of the quantities that characterise the PHE
             SEIR model in this order:
             (1) initial values of the reproduction number
@@ -528,12 +603,18 @@ class PheSEIRModel(pints.ForwardModel):
             (5) mean latent period :math:`d_L`,
             (6) mean infection period :math:`d_I`,
             (7) time step for the 'homemade' solver and
-            (8) (string) the type of solver implemented by the simulator.
+            (8) (str) the type of solver implemented by the simulator.
             Splited into the formats necessary for the :meth:`_simulate`
             method.
-        times
-            (list) List of time points at which we wish to evaluate the ODEs
+        times : list
+            List of time points at which we wish to evaluate the ODEs
             system.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured output matrix of the simulation for the specified
+            region.
 
         """
         # Number of regions and age groups
@@ -589,6 +670,32 @@ class PheSEIRModel(pints.ForwardModel):
         """
         Check correct format of input of simulate method.
 
+        Parameters
+        ----------
+        parameters : list
+            Long vector format of the quantities that characterise the PHE
+            SEIR model in this order:
+            (1) initial values of the reproduction number
+            by region,
+            (2) index of region for which we wish to simulate,
+            (3) initial conditions matrices classifed by age (column name) and
+            region (row name) for each type of compartment (s, e1, e2, i1, i2,
+            r),
+            (4) temporal and regional fluctuation matrix :math:`\beta`,
+            (5) mean latent period :math:`d_L`,
+            (6) mean infection period :math:`d_I`,
+            (7) time step for the 'homemade' solver and
+            (8) (str) the type of solver implemented by the simulator.
+            Splited into the formats necessary for the :meth:`_simulate`
+            method.
+        times : list
+            List of time points at which we wish to evaluate the ODEs
+            system.
+        L : int
+            Number of parameters considered in the model.
+        n_reg : int
+            Number of regions considered in the model.
+
         """
         if not isinstance(times, list):
             raise TypeError('Time points of evaluation must be given in a list \
@@ -634,6 +741,12 @@ class PheSEIRModel(pints.ForwardModel):
         """
         Checks correct format of the output matrix.
 
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the PheSEIRModel.
+
         """
         if np.asarray(output).ndim != 2:
             raise ValueError(
@@ -653,6 +766,12 @@ class PheSEIRModel(pints.ForwardModel):
     def _check_new_infections_format(self, new_infections):
         """
         Checks correct format of the new infections matrix.
+
+        Parameters
+        ----------
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
 
         """
         if np.asarray(new_infections).ndim != 2:
@@ -683,8 +802,15 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
+        output : numpy.array
+            Age-structured output of the simulation method for the
+            PheSEIRModel.
+
+        Returns
+        -------
+        nunmpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
 
         Notes
         -----
@@ -744,26 +870,27 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        obs_death
+        obs_death : list
             List of number of observed deaths by age group at time point k.
-        new_infections
-            (numpy.array) Number of new infections from the simulation method
-            for the PheSEIRModel.
-        fatality_ratio
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
+        fatality_ratio : list
             List of age-specific fatality ratios.
-        time_to_death
+        time_to_death : list
             List of probabilities of death of individual k days after
             infection.
-        niu
+        niu : float
             Dispersion factor for the negative binomial distribution.
-        k
+        k : int
             Index of day for which we intend to sample the number of deaths for
             by age group.
 
         Returns
         -------
-        Array of log-likelihoods for the obsereved number of deaths for
-        each age group in specified region at time :math:`t_k`.
+        numpy.array
+            Age-structured matrix of log-likelihoods for the observed number
+            of deaths in specified region at time :math:`t_k`.
 
         Notes
         -----
@@ -800,15 +927,15 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        new_infections
-            (numpy.array) Number of new infections from the simulation method
-            for the PheSEIRModel.
-        fatality_ratio
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
+        fatality_ratio : list
             List of age-specific fatality ratios.
-        time_to_death
+        time_to_death : list
             List of probabilities of death of individual k days after
             infection.
-        niu
+        niu : float
             Dispersion factor for the negative binomial distribution.
 
         """
@@ -847,6 +974,26 @@ class PheSEIRModel(pints.ForwardModel):
         Computes the mean of the negative binomial distribution used to
         calculate number of deaths for specified age group.
 
+        Parameters
+        ----------
+        fatality_ratio : list
+            List of age-specific fatality ratios.
+        time_to_death : list
+            List of probabilities of death of individual k days after
+            infection.
+        k : int
+            Index of day for which we intend to sample the number of deaths for
+            by age group.
+        d_infec : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured matrix of the expected number of deaths to be
+            observed in specified region at time :math:`t_k`.
+
         """
         if k >= 30:
             return np.array(fatality_ratio) * np.sum(np.matmul(
@@ -882,24 +1029,25 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        new_infections
-            (numpy.array) Number of new infections from the simulation method
-            for the PheSEIRModel.
-        fatality_ratio
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
+        fatality_ratio : list
             List of age-specific fatality ratios.
-        time_to_death
-            List of probabilities of death of individual d days after
+        time_to_death : list
+            List of probabilities of death of individual k days after
             infection.
-        niu
-            Dispesion factor for the negative binomial distribution.
-        k
+        niu : float
+            Dispersion factor for the negative binomial distribution.
+        k : int
             Index of day for which we intend to sample the number of deaths for
             by age group.
 
         Returns
         -------
-        Array of log-likelihoods for the obsereved number of deaths for
-        each age group in specified region at time :math:`t_k`.
+        numpy.array
+            Age-structured matrix of sampled number of deaths in specified
+            region at time :math:`t_k`.
 
         Notes
         -----
@@ -942,26 +1090,29 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        obs_pos
+        obs_pos : list
             List of number of observed positive test results by age group at
             time point k.
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
-        tests
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the PheSEIRModel.
+        tests : list
             List of conducted tests in specified region and at time point k
             classifed by age groups.
-        sens
+        sens : float or int
             Sensitivity of the test (or ratio of true positives).
-        spec
+        spec : float or int
             Specificity of the test (or ratio of true negatives).
-        k
-            Index of day for which we intend to sample the number of deaths for
-            by age group.
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
 
         Returns
         -------
-        Array of log-likelihoods for the obsereved number of positive test
-        results for each age group in specified region at time :math:`t_k`.
+        numpy.array
+            Age-structured matrix of log-likelihoods for the obsereved number
+            of positive test results for each age group in specified region at
+            time :math:`t_k`.
 
         Notes
         -----
@@ -1018,19 +1169,20 @@ class PheSEIRModel(pints.ForwardModel):
 
     def check_positives_format(self, output, tests, sens, spec):
         """
-        Checks correct format of the inputs of number of positie test results
+        Checks correct format of the inputs of number of positive test results
         calculation.
 
         Parameters
         ----------
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
-        tests
-            (numpy.array) Numpy arrays of the daily number of tests conducted,
-            split by age category. Each column represents an age group.
-        sens
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the PheSEIRModel.
+        tests : list
+            List of conducted tests in specified region and at time point k
+            classifed by age groups.
+        sens : float or int
             Sensitivity of the test (or ratio of true positives).
-        spec
+        spec : float or int
             Specificity of the test (or ratio of true negatives).
 
         """
@@ -1063,6 +1215,25 @@ class PheSEIRModel(pints.ForwardModel):
         Computes the mean of the binomial distribution used to
         calculate number of positive test results for specified age group.
 
+        Parameters
+        ----------
+        sens : float or int
+            Sensitivity of the test (or ratio of true positives).
+        spec : float or int
+            Specificity of the test (or ratio of true negatives).
+        suscep : numpy.array
+            Age-structured matrix of the current number of susceptibles
+            in the population.
+        pop : numpy.array
+            Age-structured matrix of the current number of individuals
+            in the population.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured matrix of the expected number of positive test
+            results to be observed in specified region at time :math:`t_k`.
+
         """
         return sens * (1-np.divide(suscep, pop)) + (1-spec) * np.divide(
             suscep, pop)
@@ -1094,23 +1265,25 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
-        tests
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the PheSEIRModel.
+        tests : list
             List of conducted tests in specified region and at time point k
             classifed by age groups.
-        sens
+        sens : float or int
             Sensitivity of the test (or ratio of true positives).
-        spec
+        spec : float or int
             Specificity of the test (or ratio of true negatives).
-        k
-            Index of day for which we intend to sample the number of deaths for
-            by age group.
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
 
         Returns
         -------
-        Array of log-likelihoods for the obsereved number of positive test
-        results for each age group in specified region at time :math:`t_k`.
+        numpy.array
+            Age-structured matrix of sampled number of positive test results
+            in specified region at time :math:`t_k`.
 
         Notes
         -----
