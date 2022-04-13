@@ -8,10 +8,10 @@
 #
 """
 This script contains code for parameter inference of the extended SEIR model
-created by Public Health England and Univerity of Cambridge and which is the
-official model used by the UK government for policy making.
+created by Public Health England and Univerity of Cambridge. This is one of the
+official models used by the UK government for policy making.
 
-It uses an extended version of an SEIR model and contact and region specific
+It uses an extended version of an SEIR model with contact and region-specific
 matrices.
 
 """
@@ -25,62 +25,58 @@ import epimodels as em
 
 
 class PHELogLik(pints.LogPDF):
-    """
-    Constructs the log-likelihood needed for optimisation in a PINTS framework.
+    """PHELogLik Class:
+    Controller class to construct the log-likelihood needed for optimisation or
+    inference in a PINTS framework.
 
     Parameters
     ----------
-    model
-        (PheSEIRModel) The model for which we solve the optimisation
-        problem.
-    susceptibles_data
-        (list) List of regional age-structured lists of initial number of
+    model : PheSEIRModel
+        The model for which we solve the optimisation or inference problem.
+    susceptibles_data : list
+        List of regional age-structured lists of the initial number of
         susceptibles.
-    infectives_data
-        (list) List of regional age-structured lists of initial number of
+    infectives_data : list
+        List of regional age-structured lists of the initial number of
         infectives in the first infectives compartment.
-    times
-        (list) List of time points at which we have data for the
-        log-likelihood computation.
-    deaths_data
-        (numpy.array) List of regional numpy arrays of the daily number
-        of deaths, split by age category. Each column represents an age
-        group.
-    time_to_death
-        (list) List of probabilities of death of individual d days after
-        infection.
-    deaths_times
-        (numpy.array) List of timepoints for which deaths data is
-        available.
-    fatality_ratio
+    times : list
+        List of time points at which we have data for the log-likelihood
+        computation.
+    deaths_data : numpy.array
+        List of region-specific age-structured number of deaths as a matrix.
+        Each column represents an age group.
+    time_to_death : list
+        List of probabilities of death of individual d days after infection.
+    deaths_times : numpy.array
+        Matrix of timepoints for which deaths data is available.
+    fatality_ratio : list
         List of age-specific fatality ratios.
-    tests_data
-        (numpy.array) List of regional numpy arrays of the daily number
-        of tests conducted, split by age category. Each column represents
-        an age group.
-    positives_data
-        (numpy.array) List of regional numpy arrays of the daily number
-        of positive test results, split by age category. Each column
-        represents an age group.
-    serology_times
-        (numpy.array) List of timepoints for which serology data is
-        available.
-    sens
+    tests_data : list of numpy.array
+        List of region-specific age-structured number of tests conducted as a
+        matrix. Each column represents an age group.
+    positives_data : list of numpy.array
+        List of region-specific age-structured number of positive test results
+        as a matrix. Each column represents an age group.
+    serology_times : numpy.array
+        Matrix of timepoints for which serology data is available.
+    sens : float or int
         Sensitivity of the test (or ratio of true positives).
-    spec
+    spec : float or int
         Specificity of the test (or ratio of true negatives).
-    wd
-        Proportion of contribution of the deaths_data to the log-likelihood.
-    wp
-        Proportion of contribution of the poritives_data to the log-likelihood.
+    wd : float or int
+        Proportion of the contribution of the deaths data to the
+        log-likelihood.
+    wp : float or int
+        Proportion of the contribution of the serology data to the
+        log-likelihood.
 
     """
     def __init__(self, model, susceptibles_data, infectives_data, times,
                  deaths, time_to_death, deaths_times, fatality_ratio,
                  tests_data, positives_data, serology_times, sens, spec,
                  wd=1, wp=1):
-        # Set the prerequsites for the inference wrapper
-        # Model and its data
+        # Set the prerequisites for the inference wrapper
+        # Model and ICs data
         self._model = model
         self._times = times
 
@@ -110,6 +106,12 @@ class PHELogLik(pints.LogPDF):
     def n_parameters(self):
         """
         Returns number of parameters for log-likelihood object.
+
+        Returns
+        -------
+        int
+            Number of parameters for log-likelihood object.
+
         """
         return 2+len(np.arange(44, len(self._times), 7)) * len(
             self._model.regions)
@@ -121,16 +123,19 @@ class PHELogLik(pints.LogPDF):
 
         Parameters
         ----------
-        var_parameters
-            (list) List of varying parameters of the model for which
+        var_parameters : list
+            List of varying parameters of the model for which
             the log-likelihood is computed for.
+
+        Returns
+        -------
+        float
+            Value of the log-likelihood for the given choice of
+            free parameters.
 
         """
         # Update parameters
         self._parameters[0] = [var_parameters[0]] * len(self._model.regions)
-
-        # self._parameters[5] = [np.floor(var_parameters[-1])] * \
-        #    self._model._num_ages
 
         LEN = len(np.arange(44, len(self._times), 7))
 
@@ -143,6 +148,7 @@ class PHELogLik(pints.LogPDF):
 
         total_log_lik = 0
 
+        # Compute log-likelihood
         try:
             for r, _ in enumerate(self._model.regions):
                 self._parameters[1] = r+1
@@ -153,7 +159,7 @@ class PHELogLik(pints.LogPDF):
                     )
                 model_new_infections = self._model.new_infections(model_output)
 
-                # Check input of log-likelihoods fixed data
+                # Check the input of log-likelihoods fixed data
                 self._model.check_death_format(
                     model_new_infections,
                     self._fatality_ratio,
@@ -232,7 +238,6 @@ class PHELogLik(pints.LogPDF):
         dL = 4
         delta_t = 0.5
 
-        # [var_r] * reg
         self._parameters = [
             np.zeros(len(self._model.regions)).tolist(),
             0,
@@ -249,6 +254,17 @@ class PHELogLik(pints.LogPDF):
         """
         Evaluates the log-likelihood in a PINTS framework.
 
+        Parameters
+        ----------
+        x : list
+            List of free parameters used for computing the log-likelihood.
+
+        Returns
+        -------
+        float
+            Value of the log-likelihood at the given point in the free
+            parameter space.
+
         """
         return self._log_likelihood(x[:-1])
 
@@ -258,22 +274,22 @@ class PHELogLik(pints.LogPDF):
 
 
 class PHELogPrior(pints.LogPrior):
-    """
-    Constructs the log-prior needed for optimisation in a PINTS framework.
+    """PHELogPrior Class:
+    Controller class to construct the log-prior needed for optimisation or
+    inference in a PINTS framework.
 
     Parameters
     ----------
-    model
-        (PheSEIRModel) The model for which we solve the optimisation
-        problem.
-    times
-        (list) List of time points at which we have data for the
-        log-likelihood computation.
+    model : PheSEIRModel
+        The model for which we solve the optimisation or inference problem.
+    times : list
+        List of time points at which we have data for the log-likelihood
+        computation.
 
     """
     def __init__(self, model, times):
         super(PHELogPrior, self).__init__()
-        # Set the prerequsites for the inference wrapper
+        # Set the prerequisites for the inference wrapper
         # Model
         self._model = model
         self._times = times
@@ -281,6 +297,12 @@ class PHELogPrior(pints.LogPrior):
     def n_parameters(self):
         """
         Returns number of parameters for log-prior object.
+
+        Returns
+        -------
+        int
+            Number of parameters for log-prior object.
+
         """
         return 2+len(np.arange(44, len(self._times), 7)) * len(
             self._model.regions)
@@ -289,19 +311,27 @@ class PHELogPrior(pints.LogPrior):
         """
         Evaluates the log-prior in a PINTS framework.
 
-        """
-        # Prior contribution for initial R
-        log_prior = pints.UniformLogPrior([0], [5])(x[0])
+        Parameters
+        ----------
+        x : list
+            List of free parameters used for computing the log-prior.
 
-        # Prior contribution for ICs
-        # log_prior += pints.UniformLogPrior([0], [1000])(x[-1])
+        Returns
+        -------
+        float
+            Value of the log-prior at the given point in the free
+            parameter space.
+
+        """
+        # Prior contribution of initial R
+        log_prior = pints.UniformLogPrior([0], [5])(x[0])
 
         # Variance for betas
         sigma_b = x[-1]
 
         log_prior += gamma.logpdf(sigma_b, 1, scale=1/100)
 
-        # Prior contriubution for betas
+        # Prior contribution of betas
         LEN = len(np.arange(44, len(self._times), 7))
         for r in range(len(self._model.regions)):
             log_prior += norm.logpdf(
@@ -323,13 +353,19 @@ class PHELogPrior(pints.LogPrior):
 
 class PheSEIRInfer(object):
     """PheSEIRInfer Class:
-    Controller class for the inference of parameters of the PHE model.
+    Controller class for the optimisation or inference of parameters of the
+    PHE model in a PINTS framework.
+
+    Parameters
+    ----------
+    model : PheSEIRModel
+        The model for which we solve the optimisation or inference problem.
 
     """
     def __init__(self, model):
         super(PheSEIRInfer, self).__init__()
 
-        # Assign model for inference
+        # Assign model for inference or optimisation
         if not isinstance(model, em.PheSEIRModel):
             raise TypeError('Wrong model type for parameters inference.')
 
@@ -338,15 +374,16 @@ class PheSEIRInfer(object):
     def read_model_data(
             self, susceptibles_data, infectives_data):
         """
-        Sets the serology data used for the model's parameters inference.
+        Sets the serology data used for the model's parameters optimisation or
+        inference.
 
         Parameters
         ----------
-        susceptibles_data
-            (list) List of regional age-structured lists of initial number of
+        susceptibles_data : list
+            List of regional age-structured lists of the initial number of
             susceptibles.
-        infectives_data
-            (list) List of regional age-structured lists of initial number of
+        infectives_data : list
+            List of regional age-structured lists of the initial number of
             infectives in the first infectives compartment.
 
         """
@@ -360,20 +397,17 @@ class PheSEIRInfer(object):
 
         Parameters
         ----------
-        tests_data
-            (numpy.array) List of regional numpy arrays of the daily number
-            of tests conducted, split by age category. Each column represents
-            an age group.
-        positives_data
-            (numpy.array) List of regional numpy arrays of the daily number
-            of positive test results, split by age category. Each column
-            represents an age group.
-        serology_times
-            (numpy.array) List of timepoints for which serology data is
-            available.
-        sens
+        tests_data: list of numpy.array
+            List of region-specific age-structured number of tests conducted
+            as a matrix. Each column represents an age group.
+        positives_data : list of numpy.array
+            List of region-specific age-structured number of positive test
+            results as a matrix. Each column represents an age group.
+        serology_times : numpy.array
+            Matrix of timepoints for which serology data is available.
+        sens : float or int
             Sensitivity of the test (or ratio of true positives).
-        spec
+        spec : float or int
             Specificity of the test (or ratio of true negatives).
 
         """
@@ -390,17 +424,15 @@ class PheSEIRInfer(object):
 
         Parameters
         ----------
-        deaths_data
-            (numpy.array) List of regional numpy arrays of the daily number
-            of deaths, split by age category. Each column represents an age
-            group.
-        deaths_times
-            (numpy.array) List of timepoints for which deaths data is
-            available.
-        time_to_death
-            (list) List of probabilities of death of individual d days after
+        deaths_data : numpy.array
+            List of region-specific age-structured number of deaths as a
+            matrix. Each column represents an age group.
+        deaths_times : numpy.array
+            Matrix of timepoints for which deaths data is available.
+        time_to_death : list
+            List of probabilities of death of individual d days after
             infection.
-        fatality_ratio
+        fatality_ratio : list
             List of age-specific fatality ratios.
 
         """
@@ -411,7 +443,27 @@ class PheSEIRInfer(object):
 
     def return_loglikelihood(self, times, x, wd=1, wp=1):
         """
-        Return the log-likelihood used for the inference.
+        Return the log-likelihood used for the optimisation or inference.
+
+        Parameters
+        ----------
+        times : list
+            List of time points at which we have data for the log-likelihood
+            computation.
+        x : list
+            List of free parameters used for computing the log-likelihood.
+        wd : float or int
+            Proportion of the contribution of the deaths data to the
+            log-likelihood.
+        wp : float or int
+            Proportion of the contribution of the serology data to the
+            log-likelihood.
+
+        Returns
+        -------
+        float
+            Value of the log-likelihood at the given point in the free
+            parameter space.
 
         """
         loglikelihood = PHELogLik(
@@ -428,14 +480,14 @@ class PheSEIRInfer(object):
 
         Parameters
         ----------
-        times
-            (list) List of time points at which we have data for the
-            log-likelihood computation.
-        wd
-            Proportion of contribution of the deaths_data to the
+        times : list
+            List of time points at which we have data for the log-likelihood
+            computation.
+        wd : float or int
+            Proportion of the contribution of the deaths data to the
             log-likelihood.
-        wp
-            Proportion of contribution of the poritives_data to the
+        wp : float or int
+            Proportion of the contribution of the serology data to the
             log-likelihood.
 
         """
@@ -459,17 +511,23 @@ class PheSEIRInfer(object):
 
         Parameters
         ----------
-        times
-            (list) List of time points at which we have data for the
-            log-likelihood computation.
-        num_iter
+        times : list
+            List of time points at which we have data for the log-likelihood
+            computation.
+        num_iter : integer
             Number of iterations the MCMC sampler algorithm is run for.
-        wd
-            Proportion of contribution of the deaths_data to the
+        wd : float or int
+            Proportion of the contribution of the deaths data to the
             log-likelihood.
-        wp
-            Proportion of contribution of the poritives_data to the
+        wp : float or int
+            Proportion of the contribution of the serology data to the
             log-likelihood.
+
+        Returns
+        -------
+        numpy.array
+            3D-matrix of the proposed parameters for each iteration for
+            each of the chains of the MCMC sampler.
 
         """
         # Starting points using optimisation object
@@ -507,15 +565,24 @@ class PheSEIRInfer(object):
 
         Parameters
         ----------
-        times
-            (list) List of time points at which we have data for the
-            log-likelihood computation.
-        wd
-            Proportion of contribution of the deaths_data to the
+        times : list
+            List of time points at which we have data for the log-likelihood
+            computation.
+        wd : float or int
+            Proportion of the contribution of the deaths data to the
             log-likelihood.
-        wp
-            Proportion of contribution of the poritives_data to the
+        wp : float or int
+            Proportion of the contribution of the serology data to the
             log-likelihood.
+
+        Returns
+        -------
+        numpy.array
+            Matrix of the optimised parameters at the end of the optimisation
+            procedure.
+        float
+            Value of the log-posterior at the optimised point in the free
+            parameter space.
 
         """
         self._create_posterior(times, wd, wp)
@@ -526,7 +593,7 @@ class PheSEIRInfer(object):
             self._model.regions)))
         x0.extend([0.1])
 
-        # Create Optimisation routine
+        # Create optimisation routine
         optimiser = pints.OptimisationController(
             self._log_posterior, x0, method=pints.CMAES)
 
