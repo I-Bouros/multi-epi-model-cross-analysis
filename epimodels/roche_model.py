@@ -92,14 +92,16 @@ class RocheSEIRModel(pints.ForwardModel):
         :nowrap:
 
         \begin{eqnarray}
-            \beta_a = \frac{\beta_s}{2} \\
-            \beta_{aa} = \frac{\beta_{ss}}{2} \\
+            \beta_a = \beta_{aa} = \frac{\beta_s}{2} \\
+            \beta_{as} = \beta_{aas} = \frac{\beta_{ss}}{2} \\
             \beta_{s} = \beta_{max} - (\beta_{max} - \beta_{min})\frac{
                 SI^\gamma}{SI^\gamma + SI_50^\gamma} \\
             \beta_{as} = (1 + b_{ss})\beta_a \\
             \beta_{aas} = (1 + b_{ss})\beta_{aa} \\
             \beta_{ss} = (1 + b_{ss})\beta_s \\
         \end{eqnarray}
+
+    where :math:`b_{ss}` represents ... and :math:`\gamma` is the ... .
 
     The :math:`P_a`, :math:`P_{ss}` and :math:`P_d` parameters represent the
     propotions of people that go on to become asymptomatic, super-spreaders
@@ -145,13 +147,13 @@ class RocheSEIRModel(pints.ForwardModel):
         # Assign default values
         self._output_names = [
             'S', 'E', 'Ia', 'Iaa', 'Is', 'Ias', 'Iaas', 'Iss', 'Iq', 'R', 'Ra',
-            'Incidence']
+            'D', 'Incidence']
         self._parameter_names = [
             'S0', 'E0', 'Ia0', 'Iaa0', 'Is0', 'Ias0', 'Iaas0', 'Iss0', 'Iq0',
             'R0', 'Ra0', 'beta', 'kappa', 'gamma']
 
-        # The default number of outputs is 12,
-        # i.e. S, E, Ia, Iaa, Is, Ias, Iaas, Iss, Iq, R, Ra and Incidence
+        # The default number of outputs is 13,
+        # i.e. S, E, Ia, Iaa, Is, Ias, Iaas, Iss, Iq, R, Ra, D and Incidence
         self._n_outputs = len(self._output_names)
         # The default number of parameters is 12,
         # i.e. 11 initial conditions and 3 parameters
@@ -163,6 +165,11 @@ class RocheSEIRModel(pints.ForwardModel):
         """
         Returns the number of outputs.
 
+        Returns
+        -------
+        int
+            Number of outputs.
+
         """
         return self._n_outputs
 
@@ -170,12 +177,22 @@ class RocheSEIRModel(pints.ForwardModel):
         """
         Returns the number of parameters.
 
+        Returns
+        -------
+        int
+            Number of parameters.
+
         """
         return self._n_parameters
 
     def output_names(self):
         """
         Returns the (selected) output names.
+
+        Returns
+        -------
+        list
+            List of the (selected) output names.
 
         """
         names = [self._output_names[x] for x in self._output_indices]
@@ -185,6 +202,11 @@ class RocheSEIRModel(pints.ForwardModel):
         """
         Returns the parameter names.
 
+        Returns
+        -------
+        list
+            List of the parameter names.
+
         """
         return self._parameter_names
 
@@ -192,12 +214,22 @@ class RocheSEIRModel(pints.ForwardModel):
         """
         Sets region names.
 
+        Parameters
+        ----------
+        regions : list
+            List of region names considered by the model.
+
         """
         self.regions = regions
 
     def set_age_groups(self, age_groups):
         """
-        Sets age group names.
+        Sets age group names and counts their number.
+
+        Parameters
+        ----------
+        age_groups : list
+            List of age group names considered by the model.
 
         """
         self.age_groups = age_groups
@@ -207,6 +239,11 @@ class RocheSEIRModel(pints.ForwardModel):
         """
         Returns the regions names.
 
+        Returns
+        -------
+        list
+            List of the regions names.
+
         """
         return self.regions
 
@@ -214,12 +251,22 @@ class RocheSEIRModel(pints.ForwardModel):
         """
         Returns the age group names.
 
+        Returns
+        -------
+        list
+            List of the age group names.
+
         """
         return self.age_groups
 
     def set_outputs(self, outputs):
         """
-        Checks existence of outputs.
+        Checks existence of outputs and selects only those remaining.
+
+        Parameters
+        ----------
+        outputs : list
+            List of output names that are selected.
 
         """
         for output in outputs:
@@ -236,54 +283,45 @@ class RocheSEIRModel(pints.ForwardModel):
         self._output_indices = output_indices
         self._n_outputs = len(outputs)
 
-    def _compute_lambda(self, s, i1, i2, b):
+    def _compute_betas(self, beta_min, beta_max, bss, gamma, SI, S50=0.353):
         """
-        Computes the current time, age and region-varying rate with which
-        susceptible individuals become infected.
+        Computes the current time, age and region-varying rates with which
+        susceptible individuals become infected, depending on the type of
+        infective vector.
 
         Parameters
         ----------
-        s
-            vector of susceptibles by age group.
-        i1
-            vector of 1st infective by age group.
-        i2
-            vector of 2nd infective by age group.
-        b
-            probability matrix of infectivity.
+        beta_min : int of float
+            Minimum transmission rate of the virus when all non-pharmaceutical
+            interventions are turned-on to the maximum level.
+        beta_max : int of float
+            Maximum transmission rate of the virus when all non-pharmaceutical
+            interventions are turned-off.
+        bss : int or float
+            Addistional increase in transmission due to the infective vector
+            being a super-spreader.
+        gamma : int or float
+            Sharpness of the intervention wave used for function
+            continuity purposes. Larger values of this parameter cause
+            the curve to more closely approach the step function.
+        SI : int or float
+            Stringency index representing the effect of all the
+            non-pharmaceutical interventions put in place at the time point.
+        S50 : int or float
+            Stringency index needed to reach 50% of the maximum effect on the
+            infection rate.
 
         """
-        lam = np.empty_like(s)
-        for i, l in enumerate(lam):
-            prod = 1
-            for j, _ in enumerate(lam):
-                prod *= (1-b[i, j])**(i1[j]+i2[j])
-            lam[i] = 1-prod
+        bS = beta_max - (beta_max - beta_min) * (SI ** gamma) / \
+            (SI ** gamma + S50 ** gamma)
 
-        return lam
+        bA = bS / 2
+        bAA = bA
+        bSS = (1 + bss) * bS
+        bAS = bSS / 2
+        bAAS = bAS
 
-    def _compute_evaluation_moments(self, times):
-        """
-        Returns the points at which we keep the evaluations of the ODE system.
-
-        """
-        eval_times = np.around(
-            np.arange(
-                times[0], times[-1]+self._delta_t, self._delta_t,
-                dtype=np.float64),
-            5)
-
-        eval_indices = np.where(
-            np.array([(t in times) for t in eval_times]))[0].tolist()
-
-        ind_in_times = []
-        j = 0
-        for i, t in enumerate(eval_times):
-            if i >= eval_indices[j+1]:
-                j += 1
-            ind_in_times.append(j)
-
-        return eval_times, ind_in_times
+        return bA, bS, bAA, bAS, bSS, bAAS
 
     def _right_hand_side(self, t, r, y, c, num_a_groups):
         r"""
@@ -299,119 +337,82 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        t
-            (float) Time point at which we compute the evaluation.
-        r
-            (int) The index of the region to which the current instance of the
-            ODEs system refers.
-        y
-            (array) Array of all the compartments of the ODE system, segregated
-            by age-group. It assumes y = [S, E1, E2, I1, I2, R] where each
-            letter actually refers to all compartment of that type. (e.g. S
-            refers to the compartments of all ages of susceptibles).
-        c
-            (list) List values used to compute the parameters of the ODEs
-            system. It assumes c = [beta, kappa, gamma], where :math:`beta`
-            encaplsulates temporal fluctuations in transmission for all ages.
-        num_a_groups
-            (int) Number of age groups in which the population is split. It
+        t : float
+            Time point at which we compute the evaluation.
+        r : int
+            The index of the region to which the current instance of the ODEs
+            system refers.
+        y : numpy.array
+            Array of all the compartments of the ODE system, segregated
+            by age-group. It assumes y = [S, E, Ia, Iaa, Is, Ias, Iaas, Iss,
+            Iq, R, Ra, D] where each letter actually refers to all compartment
+            of that type. (e.g. S refers to the compartments of all ages of
+            susceptibles).
+        c : list
+            List of values used to compute the parameters of the ODEs
+            system. It assumes c = [k, kS, kQ, kR, kRI, Pa, Pss, Pd, beta_min,
+            beta_max, bss, gamma], where :math:`k, kS, kQ, kR, kRI` represent
+            the average time spent in the different stages of the illness,
+            :math:`Pa, Pss, Pd` are the propotion of people that go on to be
+            asymptomatic, super-spreaders or dead, :math:`beta_min, beta_max`
+            encaplsulates the minimum and maximum possible transmission rate
+            of the virus, :math:`bss` is the relative increase in transmission
+            of a superspreader case and :math:`gamma` represents the sharpness
+            of the intervention wave.
+        num_a_groups : int
+            Number of age groups in which the population is split. It
             refers to the number of compartments of each type.
+
+        Returns
+        -------
+        numpy.array
+            Age-strictured matrix representation of the RHS of the ODEs system.
 
         """
         # Read in the number of age-groups
         a = num_a_groups
 
         # Split compartments into their types
-        s, e1, e2, i1, i2, _ = (
+        s, e, iA, iAA, iS, iAS, iAAS, iSS, iQ, _, rA, d = (  # noqa
             y[:a], y[a:(2*a)], y[(2*a):(3*a)],
-            y[(3*a):(4*a)], y[(4*a):(5*a)], y[(5*a):])
+            y[(3*a):(4*a)], y[(4*a):(5*a)], y[(5*a):(6*a)],
+            y[(6*a):(7*a)], y[(7*a):(8*a)], y[(8*a):(9*a)],
+            y[(9*a):(10*a)], y[(10*a):(11*a)], y[(11*a):])
 
         # Read parameters of the system
-        beta, dL, dI = c
-        kappa = 2/dL
-        gamma = 2/dI
+        k, kS, kQ, kR, kRI, Pa, Pss, Pd = c[:8]
+        beta_min, beta_max, bss, gamma = c[8:]
 
-        # And identify the appropriate MultiTimesInfectivity matrix for the
-        # ODE system
-        pos = np.where(self._times <= t)
-        ind = pos[-1][-1]
-        b = self.infectivity_timeline.compute_prob_infectivity_matrix(
-            r, t, s, beta[self._region-1][ind])
+        s_index, s50 = 4
 
-        # Compute the current time, age and region-varying
-        # rate with which susceptible individuals become infected
-        lam = self._compute_lambda(s, i1, i2, b)
+        # Compute transmission rates of the system
+        bA, bS, bAA, bAS, bSS, bAAS = \
+            self._compute_betas(beta_min, beta_max, bss, gamma, s_index, s50)
+        gE, gS, gQ, gR, gRA = 1/k, 1/kS, 1/kQ, 1/kR, 1/kRI
+
+        # Identify the appropriate contact matrix for the ODE system
+        cont_mat = self.contacts_timeline.identify_current_contacts(r, t)
 
         # Write actual RHS
-        lam_times_s = np.multiply(lam, np.asarray(s))
+        lam = bA * iA + bAA * iAA + bS * iS + bAS * iAS + bAAS * iAAS \
+            + bSS * iSS
+        lam_times_s = np.multiply(s, (1 / self._N) * np.dot(cont_mat, lam))
+
         dydt = np.concatenate((
-            -lam_times_s, lam_times_s - kappa * np.asarray(e1),
-            kappa * np.asarray(e1) - kappa * np.asarray(e2),
-            kappa * np.asarray(e2) - gamma * np.asarray(i1),
-            gamma * np.asarray(i1) - gamma * np.asarray(i2),
-            gamma * np.asarray(i2)))
+            -lam_times_s, lam_times_s - gE * np.asarray(e),
+            (1 - Pss) * gE * np.asarray(e) - gS * np.asarray(iA),
+            Pa * gS * np.asarray(iA) - gRA * np.asarray(iAA),
+            (1 - Pa) * gS * np.asarray(iA) - gQ * np.asarray(iS),
+            Pss * gE * np.asarray(e) - gS * np.asarray(iAS),
+            Pa * gS * np.asarray(iAS) - gRA * np.asarray(iAAS),
+            (1 - Pa) * gS * np.asarray(iAS) - gQ * np.asarray(iSS),
+            gQ * (np.asarray(iS) + np.asarray(iSS)) - gR * np.asarray(iQ),
+            (1 - Pd) * gR * np.asarray(iQ),
+            gRA * (np.asarray(iAA) + np.asarray(iAAS)),
+            Pd * gR * np.asarray(iQ)
+            ))
 
         return dydt
-
-    def _my_solver(self, times, num_a_groups):
-        """
-        Computes the values in each compartment of the PHE ODEs system using
-        a 'homemade' solver in the context of the discretised time step version
-        of the model, as suggested in the paper in which it is referenced.
-
-        Parameters
-        ----------
-        times
-            (list) List of time points at which we wish to evaluate the ODEs
-            system.
-        num_a_groups
-            (int) Number of age groups in which the population is split. It
-            refers to the number of compartments of each type.
-
-        """
-        # Split compartments into their types
-        s, e1, e2, i1, i2, r = np.asarray(self._y_init)[:, self._region-1]
-
-        # Read parameters of the system
-        beta, dL, dI = self._c
-        kappa = self._delta_t * 2/dL
-        gamma = self._delta_t * 2/dI
-
-        eval_times, ind_in_times = \
-            self._compute_evaluation_moments(times)
-
-        solution = np.ones((len(times), num_a_groups*6))
-
-        for ind, t in enumerate(eval_times):
-            # Add present vlaues of the compartments to the solutions
-            if t in times:
-                solution[ind_in_times[ind]] = tuple(
-                    chain(s, e1, e2, i1, i2, r))
-
-            # And identify the appropriate MultiTimesInfectivity matrix for the
-            # ODE system
-            b = self.infectivity_timeline.compute_prob_infectivity_matrix(
-                self._region, t, s, beta[self._region-1][ind_in_times[ind]])
-
-            # Compute the current time, age and region-varying
-            # rate with which susceptible individuals become infected
-            lam = self._compute_lambda(s, i1, i2, b)
-
-            # Write down ODE system and compute new values for all compartments
-            s_ = np.multiply(
-                np.asarray(s), (np.ones_like(lam) - self._delta_t * lam))
-            e1_ = (1 - kappa) * np.asarray(e1) + np.multiply(
-                np.asarray(s), self._delta_t * lam)
-            e2_ = (1 - kappa) * np.asarray(e2) + kappa * np.asarray(e1)
-            i1_ = (1 - gamma) * np.asarray(i1) + kappa * np.asarray(e2)
-            i2_ = (1 - gamma) * np.asarray(i2) + gamma * np.asarray(i1)
-            r_ = gamma * np.asarray(i2) + r
-
-            s, e1, e2, i1, i2, r = (
-                s_.tolist(), e1_.tolist(), e2_.tolist(),
-                i1_.tolist(), i2_.tolist(), r_.tolist())
-
-        return({'y': np.transpose(solution)})
 
     def _scipy_solver(self, times, num_a_groups, method):
         """
@@ -420,24 +421,29 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        times
-            (list) List of time points at which we wish to evaluate the ODEs
-            system.
-        num_a_groups
-            (int) Number of age groups in which the population is split. It
+        times : list
+            List of time points at which we wish to evaluate the ODEs system.
+        num_a_groups : int
+            Number of age groups in which the population is split. It
             refers to the number of compartments of each type.
-        method
-            (string) The type of solver implemented by the
-            :meth:`scipy.solve_ivp`.
+        method : str
+            The type of solver implemented by the :meth:`scipy.solve_ivp`.
+
+        Returns
+        -------
+        dict
+            Solution of the ODE system at the time points provided.
 
         """
         # Initial conditions
-        si, e1i, e2i, i1i, i2i, _i = np.asarray(
-            self._y_init)[:, self._region-1]
+        si, ei, iAi, iAAi, iSi, iASi, iAASi, iSSi, iQi, _i, rAi, di \
+            = np.asarray(self._y_init)[:, self._region-1]
         init_cond = list(
             chain(
-                si.tolist(), e1i.tolist(), e2i.tolist(),
-                i1i.tolist(), i2i.tolist(), _i.tolist()))
+                si.tolist(), ei.tolist(), iAi.tolist(),
+                iAAi.tolist(), iSi.tolist(), iASi.tolist(),
+                iAASi.tolist(), iSSi.tolist(), iQi.tolist(),
+                _i.tolist(), rAi.tolist(), di.tolist()))
 
         # Solve the system of ODEs
         sol = solve_ivp(
@@ -447,55 +453,56 @@ class RocheSEIRModel(pints.ForwardModel):
         return sol
 
     def _simulate(
-            self, parameters, times, initial_r, method):
+            self, parameters, times, gamma, method):
         r"""
         Computes the number of individuals in each compartment at the given
         time points and specified region.
 
         Parameters
         ----------
-        parameters
-            (list) List of quantities that characterise the PHE SEIR model in
+        parameters : list
+            List of quantities that characterise the PHE SEIR model in
             this order: index of region for which we wish to simulate,
             initial conditions matrices classifed by age (column name) and
-            region (row name) for each type of compartment (s, e1, e2, i1, i2,
-            r), temporal and regional fluctuation matrix :math:`\beta`,
-            mean latent period :math:`d_L`, mean infection period :math:`d_I`
-            and time step for the 'homemade' solver.
-        times
-            (list) List of time points at which we wish to evaluate the ODEs
-            system.
-        regions
-            (list) List of region names for the region-specific relative
-            susceptibility matrices.
-        initial_r
-            (list) List of initial values of the reproduction number by region.
-        method
-            (string) The type of solver implemented by the simulator.
+            region (row name) for each type of compartment (s, e, iA, iAA, iS,
+            iAS, iAAS, iSS, iQ, r, rA, d), the average times spent in the
+            different stages of the illness (k, kS, kQ, kR, kRI), the
+            propotions of people that go on to be asymptomatic, super-spreaders
+            or dead (Pa, Pss, Pd), the minimum (beta_min) and maximum
+            (beta_max) possible transmission rate of the virus and the relative
+            increase in transmission of a super-spreader case (bss).
+        times : list
+            List of time points at which we wish to evaluate the ODEs system.
+        gamma
+            Sharpness of the intervention wave used for function
+            continuity purposes. Larger values of this parameter cause
+            the curve to more closely approach the step function.
+        method : str
+            The type of solver implemented by the :meth:`scipy.solve_ivp`.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured output matrix of the simulation for the specified
+            region.
 
         """
         # Split parameters into the features of the model
         self._region = parameters[0]
-        self._y_init = parameters[1:7]
-        self._c = parameters[7:10]
-        self._delta_t = parameters[10]
-        self.infectivity_timeline = em.MultiTimesInfectivity(
+        self._y_init = parameters[1:13]
+        self._N = np.sum(np.asarray(self._y_init))
+        self._c = parameters[13:25]
+        self.contacts_timeline = em.MultiTimesContacts(
             self.matrices_contact,
             self.time_changes_contact,
             self.regions,
             self.matrices_region,
-            self.time_changes_region,
-            initial_r,
-            self._c[2],
-            self._y_init[0])
+            self.time_changes_region)
 
         self._times = np.asarray(times)
 
-        # Select method of simulation
-        if method == 'my-solver':
-            sol = self._my_solver(times, self._num_ages)
-        else:
-            sol = self._scipy_solver(times, self._num_ages, method)
+        # Simulation using the scipy solver
+        sol = self._scipy_solver(times, self._num_ages, method)
 
         output = sol['y']
 
@@ -534,12 +541,11 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        matrices_contact
-            (list of ContactMatrix) Time-dependent contact matrices used for
-            the modelling.
-        time_changes_contact
-            (list) Times at which the next contact matrix recorded starts to be
-            used. In increasing order.
+        matrices_contact : list of ContactMatrix
+            List of time-dependent contact matrices used for the modelling.
+        time_changes_contact : list
+            List of times at which the next contact matrix recorded starts to
+            be used. In increasing order.
 
         """
         self.matrices_contact = matrices_contact
@@ -551,11 +557,11 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        matrices_region
-            (list of lists of RegionMatrix)) Time-dependent and region-specific
-            relative susceptibility matrices used for the modelling.
-        time_changes_region
-            (list) Times at which the next instances of region-specific
+        matrices_region : lists of RegionMatrix
+            List of ime-dependent and region-specific relative susceptibility
+            matrices used for the modelling.
+        time_changes_region : list
+            List of times at which the next instances of region-specific
             relative susceptibility matrices recorded start to be used. In
             increasing order.
 
@@ -574,25 +580,33 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        parameters
+        parameters : list
             Long vector format of the quantities that characterise the PHE
             SEIR model in this order:
-            (1) initial values of the reproduction number
-            by region,
-            (2) index of region for which we wish to simulate,
-            (3) initial conditions matrices classifed by age (column name) and
-            region (row name) for each type of compartment (s, e1, e2, i1, i2,
-            r),
-            (4) temporal and regional fluctuation matrix :math:`\beta`,
-            (5) mean latent period :math:`d_L`,
-            (6) mean infection period :math:`d_I`,
-            (7) time step for the 'homemade' solver and
-            (8) (string) the type of solver implemented by the simulator.
+            (1) index of region for which we wish to simulate,
+            (2) initial conditions matrices classifed by age (column name) and
+            region (row name) for each type of compartment (s, e, iA, iAA, iS,
+            iAS, iAAS, iSS, iQ, r, rA, d),
+            (3) the average times spent in the different stages of the illness
+            (k, kS, kQ, kR, kRI),
+            (4) the propotions of people that go on to be asymptomatic, super-
+            spreaders or dead (Pa, Pss, Pd),
+            (5) the minimum (beta_min) and maximum (beta_max) possible
+            transmission rate of the virus,
+            (6) the relative increase in transmission of a super-spreader case
+            (bss) and
+            (7) the type of solver implemented by the :meth:`scipy.solve_ivp`.
             Splited into the formats necessary for the :meth:`_simulate`
             method.
-        times
-            (list) List of time points at which we wish to evaluate the ODEs
+        times : list
+            List of time points at which we wish to evaluate the ODEs
             system.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured output matrix of the simulation for the specified
+            region.
 
         """
         # Number of regions and age groups
@@ -601,52 +615,73 @@ class RocheSEIRModel(pints.ForwardModel):
         n_ages = self._num_ages
         n_reg = len(self.regions)
 
-        start_index = n_reg * (1 + (len(self._output_names)-1) * n_ages) + 1
-        finish_index = start_index + n_reg * len(times)
+        start_index = n_reg * ((len(self._output_names)-1) * n_ages) + 1
 
         self._check_input_simulate(
-            parameters, times, finish_index + 4, n_reg)
-
-        # Read initial reproduction numbers
-        initial_r = parameters[:n_reg]
+            parameters, times, start_index + 13, n_reg)
 
         # Separate list of parameters into the structures needed for the
         # simulation
         my_parameters = []
 
         # Add index of region
-        my_parameters.append(parameters[n_reg])
+        my_parameters.append(parameters[0])
 
         # Add initial conditions for the s, e1, e2, i1, i2, r compartments
         for c in range(len(self._output_names)-1):
             initial_cond_comp = []
             for r in range(n_reg):
-                ind = n_reg + r * n_ages + n_reg * c * n_ages + 1
+                ind = r * n_ages + n_reg * c * n_ages + 1
                 initial_cond_comp.append(
                     parameters[ind:(ind + n_ages)])
             my_parameters.append(initial_cond_comp)
 
-        # Add beta parameters
-        beta_param = np.array(
-            parameters[start_index:finish_index]).reshape(n_reg, -1)
+        # Add other parameters
+        my_parameters.extend(parameters[start_index:(start_index + 11)])
 
-        my_parameters.append(beta_param.tolist())
-
-        # Add mean latent period, mean infection period and delta_t
-        my_parameters.extend(parameters[finish_index:(finish_index + 3)])
+        # Add gamma
+        gamma = parameters[start_index + 11]
 
         # Add method
-        method = parameters[finish_index + 3]
+        method = parameters[start_index + 12]
 
         return self._simulate(my_parameters,
                               times,
-                              initial_r,
+                              gamma,
                               method)
 
     def _check_input_simulate(
             self, parameters, times, L, n_reg):
         """
         Check correct format of input of simulate method.
+
+        Parameters
+        ----------
+        parameters : list
+            Long vector format of the quantities that characterise the PHE
+            SEIR model in this order:
+            (1) index of region for which we wish to simulate,
+            (2) initial conditions matrices classifed by age (column name) and
+            region (row name) for each type of compartment (s, e, iA, iAA, iS,
+            iAS, iAAS, iSS, iQ, r, rA, d),
+            (3) the average times spent in the different stages of the illness
+            (k, kS, kQ, kR, kRI),
+            (4) the propotions of people that go on to be asymptomatic, super-
+            spreaders or dead (Pa, Pss, Pd),
+            (5) the minimum (beta_min) and maximum (beta_max) possible
+            transmission rate of the virus,
+            (6) the relative increase in transmission of a super-spreader case
+            (bss) and
+            (7) the type of solver implemented by the :meth:`scipy.solve_ivp`.
+            Splited into the formats necessary for the :meth:`_simulate`
+            method.
+        times : list
+            List of time points at which we wish to evaluate the ODEs
+            system.
+        L : int
+            Number of parameters considered in the model.
+        n_reg : int
+            Number of regions considered in the model.
 
         """
         if not isinstance(times, list):
@@ -663,35 +698,62 @@ class RocheSEIRModel(pints.ForwardModel):
             raise TypeError('Parameters must be given in a list format.')
         if len(parameters) != L:
             raise ValueError('List of parameters has wrong length.')
-        if not isinstance(parameters[n_reg], int):
+        if not isinstance(parameters[0], int):
             raise TypeError('Index of region to evaluate must be integer.')
-        if parameters[n_reg] <= 0:
+        if parameters[0] <= 0:
             raise ValueError('Index of region to evaluate must be >= 1.')
-        if parameters[n_reg] > n_reg:
+        if parameters[0] > n_reg:
             raise ValueError('Index of region to evaluate is out of bounds.')
-        if not isinstance(parameters[-4], (float, int)):
-            raise TypeError('Mean latent period must be float or integer.')
-        if parameters[-4] <= 0:
-            raise ValueError('Mean latent period must be > 0.')
+        for param in parameters[-13:(-8)]:
+            if not isinstance(param, (float, int)):
+                raise TypeError('The average times spent in the different stages \
+                    of the illness must be float or integer.')
+            if param <= 0:
+                raise ValueError('The average times spent in the different stages \
+                    of the illness must be > 0.')
+        for param in parameters[-8:(-5)]:
+            if not isinstance(param, (float, int)):
+                raise TypeError('The propotions of people that go on to be \
+                    asymptomatic, super-spreaders or dead must be float or \
+                        integer.')
+            if param <= 0:
+                raise ValueError('The propotions of people that go on to be \
+                    asymptomatic, super-spreaders or dead must be > 0.')
+        for param in parameters[-5:(-3)]:
+            if not isinstance(param, (float, int)):
+                raise TypeError('The minimum and maximum possible transmission \
+                    rate must be float or integer.')
+            if param <= 0:
+                raise ValueError('The minimum and maximum possible transmission \
+                    rate must be > 0.')
         if not isinstance(parameters[-3], (float, int)):
-            raise TypeError('Mean infection period must be float or integer.')
+            raise TypeError('The relative increase in transmission of a \
+                super-spreader must be float or integer.')
         if parameters[-3] <= 0:
-            raise ValueError('Mean infection period must be > 0.')
+            raise ValueError('The relative increase in transmission of a \
+                super-spreader must be > 0.')
         if not isinstance(parameters[-2], (float, int)):
             raise TypeError(
-                'Time step for ODE solver must be float or integer.')
+                'The sharpness of the intervention wave must be float or \
+                    integer.')
         if parameters[-2] <= 0:
-            raise ValueError('Time step for ODE solver must be > 0.')
+            raise ValueError('The sharpness of the intervention wave must be \
+                > 0.')
         if not isinstance(parameters[-1], str):
             raise TypeError('Simulation method must be a string.')
         if parameters[-1] not in (
-                'my-solver', 'RK45', 'RK23', 'Radau',
-                'BDF', 'LSODA', 'DOP853'):
+                'RK45', 'RK23', 'Radau', 'BDF', 'LSODA', 'DOP853'):
             raise ValueError('Simulation method not available.')
 
     def _check_output_format(self, output):
         """
         Checks correct format of the output matrix.
+
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the PheSEIRModel.
 
         """
         if np.asarray(output).ndim != 2:
@@ -712,6 +774,12 @@ class RocheSEIRModel(pints.ForwardModel):
     def _check_new_infections_format(self, new_infections):
         """
         Checks correct format of the new infections matrix.
+
+        Parameters
+        ----------
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
 
         """
         if np.asarray(new_infections).ndim != 2:
@@ -742,8 +810,15 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
+        output : numpy.array
+            Age-structured output of the simulation method for the
+            PheSEIRModel.
+
+        Returns
+        -------
+        nunmpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
 
         Notes
         -----
@@ -803,26 +878,27 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        obs_death
+        obs_death : list
             List of number of observed deaths by age group at time point k.
-        new_infections
-            (numpy.array) Number of new infections from the simulation method
-            for the PheSEIRModel.
-        fatality_ratio
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
+        fatality_ratio : list
             List of age-specific fatality ratios.
-        time_to_death
+        time_to_death : list
             List of probabilities of death of individual k days after
             infection.
-        niu
+        niu : float
             Dispersion factor for the negative binomial distribution.
-        k
+        k : int
             Index of day for which we intend to sample the number of deaths for
             by age group.
 
         Returns
         -------
-        Array of log-likelihoods for the obsereved number of deaths for
-        each age group in specified region at time :math:`t_k`.
+        numpy.array
+            Age-structured matrix of log-likelihoods for the observed number
+            of deaths in specified region at time :math:`t_k`.
 
         Notes
         -----
@@ -859,15 +935,15 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        new_infections
-            (numpy.array) Number of new infections from the simulation method
-            for the PheSEIRModel.
-        fatality_ratio
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
+        fatality_ratio : list
             List of age-specific fatality ratios.
-        time_to_death
+        time_to_death : list
             List of probabilities of death of individual k days after
             infection.
-        niu
+        niu : float
             Dispersion factor for the negative binomial distribution.
 
         """
@@ -906,6 +982,26 @@ class RocheSEIRModel(pints.ForwardModel):
         Computes the mean of the negative binomial distribution used to
         calculate number of deaths for specified age group.
 
+        Parameters
+        ----------
+        fatality_ratio : list
+            List of age-specific fatality ratios.
+        time_to_death : list
+            List of probabilities of death of individual k days after
+            infection.
+        k : int
+            Index of day for which we intend to sample the number of deaths for
+            by age group.
+        d_infec : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured matrix of the expected number of deaths to be
+            observed in specified region at time :math:`t_k`.
+
         """
         if k >= 30:
             return np.array(fatality_ratio) * np.sum(np.matmul(
@@ -941,24 +1037,25 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        new_infections
-            (numpy.array) Number of new infections from the simulation method
-            for the PheSEIRModel.
-        fatality_ratio
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the PheSEIRModel.
+        fatality_ratio : list
             List of age-specific fatality ratios.
-        time_to_death
-            List of probabilities of death of individual d days after
+        time_to_death : list
+            List of probabilities of death of individual k days after
             infection.
-        niu
-            Dispesion factor for the negative binomial distribution.
-        k
+        niu : float
+            Dispersion factor for the negative binomial distribution.
+        k : int
             Index of day for which we intend to sample the number of deaths for
             by age group.
 
         Returns
         -------
-        Array of log-likelihoods for the obsereved number of deaths for
-        each age group in specified region at time :math:`t_k`.
+        numpy.array
+            Age-structured matrix of sampled number of deaths in specified
+            region at time :math:`t_k`.
 
         Notes
         -----
@@ -1001,26 +1098,29 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        obs_pos
+        obs_pos : list
             List of number of observed positive test results by age group at
             time point k.
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
-        tests
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the PheSEIRModel.
+        tests : list
             List of conducted tests in specified region and at time point k
             classifed by age groups.
-        sens
+        sens : float or int
             Sensitivity of the test (or ratio of true positives).
-        spec
+        spec : float or int
             Specificity of the test (or ratio of true negatives).
-        k
-            Index of day for which we intend to sample the number of deaths for
-            by age group.
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
 
         Returns
         -------
-        Array of log-likelihoods for the obsereved number of positive test
-        results for each age group in specified region at time :math:`t_k`.
+        numpy.array
+            Age-structured matrix of log-likelihoods for the obsereved number
+            of positive test results for each age group in specified region at
+            time :math:`t_k`.
 
         Notes
         -----
@@ -1077,19 +1177,20 @@ class RocheSEIRModel(pints.ForwardModel):
 
     def check_positives_format(self, output, tests, sens, spec):
         """
-        Checks correct format of the inputs of number of positie test results
+        Checks correct format of the inputs of number of positive test results
         calculation.
 
         Parameters
         ----------
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
-        tests
-            (numpy.array) Numpy arrays of the daily number of tests conducted,
-            split by age category. Each column represents an age group.
-        sens
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the PheSEIRModel.
+        tests : list
+            List of conducted tests in specified region and at time point k
+            classifed by age groups.
+        sens : float or int
             Sensitivity of the test (or ratio of true positives).
-        spec
+        spec : float or int
             Specificity of the test (or ratio of true negatives).
 
         """
@@ -1122,6 +1223,25 @@ class RocheSEIRModel(pints.ForwardModel):
         Computes the mean of the binomial distribution used to
         calculate number of positive test results for specified age group.
 
+        Parameters
+        ----------
+        sens : float or int
+            Sensitivity of the test (or ratio of true positives).
+        spec : float or int
+            Specificity of the test (or ratio of true negatives).
+        suscep : numpy.array
+            Age-structured matrix of the current number of susceptibles
+            in the population.
+        pop : numpy.array
+            Age-structured matrix of the current number of individuals
+            in the population.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured matrix of the expected number of positive test
+            results to be observed in specified region at time :math:`t_k`.
+
         """
         return sens * (1-np.divide(suscep, pop)) + (1-spec) * np.divide(
             suscep, pop)
@@ -1153,23 +1273,25 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        output
-            (numpy.array) Output of the simulation method for the PheSEIRModel.
-        tests
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the PheSEIRModel.
+        tests : list
             List of conducted tests in specified region and at time point k
             classifed by age groups.
-        sens
+        sens : float or int
             Sensitivity of the test (or ratio of true positives).
-        spec
+        spec : float or int
             Specificity of the test (or ratio of true negatives).
-        k
-            Index of day for which we intend to sample the number of deaths for
-            by age group.
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
 
         Returns
         -------
-        Array of log-likelihoods for the obsereved number of positive test
-        results for each age group in specified region at time :math:`t_k`.
+        numpy.array
+            Age-structured matrix of sampled number of positive test results
+            in specified region at time :math:`t_k`.
 
         Notes
         -----

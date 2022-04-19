@@ -24,5 +24,7 @@ from .version_info import VERSION_INT, VERSION  # noqa
 from . import inference  # noqa
 
 # Import main classes
-from ._setup_matrices import ContactMatrix, RegionMatrix, UniNextGenMatrix, UniInfectivityMatrix, MultiTimesInfectivity  # noqa
+from ._setup_matrices import (  # noqa
+    ContactMatrix, RegionMatrix, UniNextGenMatrix,  # noqa
+    MultiTimesContacts, UniInfectivityMatrix, MultiTimesInfectivity)  # noqa
 from .phe_model import PheSEIRModel  # noqa

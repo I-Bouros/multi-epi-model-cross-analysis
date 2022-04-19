@@ -155,7 +155,7 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        regions
+        regions : list
             List of region names considered by the model.
 
         """
@@ -167,7 +167,7 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        age_groups
+        age_groups : list
             List of age group names considered by the model.
 
         """
@@ -204,7 +204,7 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        outputs
+        outputs : list
             List of output names that are selected.
 
         """
