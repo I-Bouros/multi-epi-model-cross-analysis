@@ -547,7 +547,7 @@ class PheSEIRModel(pints.ForwardModel):
 
     def read_contact_data(self, matrices_contact, time_changes_contact):
         """
-        Reads in tthe timelines of contact data used for the modelling.
+        Reads in the timelines of contact data used for the modelling.
 
         Parameters
         ----------
@@ -563,7 +563,7 @@ class PheSEIRModel(pints.ForwardModel):
 
     def read_regional_data(self, matrices_region, time_changes_region):
         """
-        Reads in tthe timelines of regional data used for the modelling.
+        Reads in the timelines of regional data used for the modelling.
 
         Parameters
         ----------
