@@ -323,17 +323,57 @@ class RocheSEIRModel(pints.ForwardModel):
 
         return bA, bS, bAA, bAS, bSS, bAAS
 
+    def _compute_SI(self, r, t):
+        """
+        Computes the stringency index depending on the present state of
+        non-pharmaceutical intervention levels in a given region and at a
+        specified timepoint.
+
+        Parameters
+        ----------
+        t : float
+            Time point at which we compute the evaluation.
+        r : int
+            The index of the region to which the current instance of the ODEs
+            system refers.
+
+        Returns
+        -------
+        int or float
+            Stringency index in the given region and at the specified
+            timepoint.
+
+        """
+        # Identify the current time and region NPIs levels
+        pos = np.where(self.time_changes_npi <= t)
+        current_npis = self.reg_levels_npi[r][pos[-1][-1]]
+
+        # Compute the sub-indices of each of the different NPIs
+        sub_indeces = [100 * (current_npis[j] * (1 - self._w *
+                       self.targeted_npi[j]) / self.max_levels_npi[j] +
+                       self._w * self.targeted_npi[j] * self.general_npi[j])
+                       for j in range(len(current_npis))]
+
+        return self.formula_SI(sub_indeces)
+
+    def formula_SI(self, sub_indeces):
+        """
+        Formula for computing the stringency index using the sub-indeces
+        computed using the levels prescribed for the non-pharmaceutical
+        interventions.
+
+        In the case of the Roche model the stringency index is computed
+        according to
+
+        """
+        ############
+        pass
+        ##########
+
     def _right_hand_side(self, t, r, y, c, num_a_groups):
         r"""
         Constructs the RHS of the equations of the system of ODEs for given a
-        region and time point. The :math:`\lambda` parameter that accompanies
-        the susceptible numbers is dependent on the current number of
-        infectives and is computed using the updated multi-step infectivity
-        matrix of the system according to the following formula
-
-        .. math::
-            \lambda_{r, t, i} = 1 - \prod_{j=1}^{n_A}[
-                (1-b_{r,ij}^{t})^{I1(r,t,j)+I2(r,t,j)}]
+        region and time point.
 
         Parameters
         ----------
@@ -381,9 +421,9 @@ class RocheSEIRModel(pints.ForwardModel):
 
         # Read parameters of the system
         k, kS, kQ, kR, kRI, Pa, Pss, Pd = c[:8]
-        beta_min, beta_max, bss, gamma = c[8:]
+        beta_min, beta_max, bss, gamma, s50 = c[8:]
 
-        s_index, s50 = 4
+        s_index = self._compute_SI(r, t)
 
         # Compute transmission rates of the system
         bA, bS, bAA, bAS, bSS, bAAS = \
@@ -453,7 +493,7 @@ class RocheSEIRModel(pints.ForwardModel):
         return sol
 
     def _simulate(
-            self, parameters, times, gamma, method):
+            self, parameters, times, method):
         r"""
         Computes the number of individuals in each compartment at the given
         time points and specified region.
@@ -470,10 +510,13 @@ class RocheSEIRModel(pints.ForwardModel):
             propotions of people that go on to be asymptomatic, super-spreaders
             or dead (Pa, Pss, Pd), the minimum (beta_min) and maximum
             (beta_max) possible transmission rate of the virus and the relative
-            increase in transmission of a super-spreader case (bss).
+            increase in transmission of a super-spreader case (bss), the
+            sharpness of the intervention wave used for function continuity
+            purposes (gamma) and the stringency index needed to reach 50% of
+            the maximum effect on the infection rate (s50).
         times : list
             List of time points at which we wish to evaluate the ODEs system.
-        gamma
+        gamma :float
             Sharpness of the intervention wave used for function
             continuity purposes. Larger values of this parameter cause
             the curve to more closely approach the step function.
@@ -491,7 +534,7 @@ class RocheSEIRModel(pints.ForwardModel):
         self._region = parameters[0]
         self._y_init = parameters[1:13]
         self._N = np.sum(np.asarray(self._y_init))
-        self._c = parameters[13:25]
+        self._c = parameters[13:27]
         self.contacts_timeline = em.MultiTimesContacts(
             self.matrices_contact,
             self.time_changes_contact,
@@ -537,7 +580,7 @@ class RocheSEIRModel(pints.ForwardModel):
 
     def read_contact_data(self, matrices_contact, time_changes_contact):
         """
-        Reads in tthe timelines of contact data used for the modelling.
+        Reads in the timelines of contact data used for the modelling.
 
         Parameters
         ----------
@@ -553,7 +596,7 @@ class RocheSEIRModel(pints.ForwardModel):
 
     def read_regional_data(self, matrices_region, time_changes_region):
         """
-        Reads in tthe timelines of regional data used for the modelling.
+        Reads in the timelines of regional data used for the modelling.
 
         Parameters
         ----------
@@ -568,6 +611,186 @@ class RocheSEIRModel(pints.ForwardModel):
         """
         self.matrices_region = matrices_region
         self.time_changes_region = time_changes_region
+
+    def read_npis_data(self, max_levels_npi, targeted_npi, general_npi,
+                       reg_levels_npi, time_changes_npi):
+        """
+        Reads in the timelines of non-pharmaceutical interventions used for
+        the modelling. These are expressed as levels of severity for each
+        different type of NPI, e.g. for a "school closer" measure implemented
+        we can assign it a value for 0, 1, 2 or 3 with 3 for the case with most
+        restrictions in place.
+
+        Parameters
+        ----------
+        max_levels_npi : list of int
+            List of maximum levels the non-pharmaceutical interventions can
+            reach.
+        targeted_npi : list of bool
+            List of the targeted non-pharmaceutical interventions.
+        general_npi : list of bool
+            List of the general values of the targeted non-pharmaceutical
+            interventions.
+        reg_levels_npi : list of list of int
+            List of region-specific levels the non-pharmaceutical interventions
+            changes. In chronological order.
+        time_changes_npi : list
+            List of times at which the next instances of region-specific
+            non-pharmaceutical interventions start to be used. In
+            increasing order.
+
+        """
+        # Check the data for the NPIs is in the correct format
+        self._check_npis_data(max_levels_npi, targeted_npi, general_npi,
+                              reg_levels_npi, time_changes_npi)
+
+        self.max_levels_npi = max_levels_npi
+        self.targeted_npi = targeted_npi
+        self.general_npi = general_npi
+        self.reg_levels_npi = reg_levels_npi
+        self.time_changes_npi = time_changes_npi
+
+        # Compute the additional weight for a policy of general scope
+        self._w = self._compute_add_pol_weight(max_levels_npi, targeted_npi)
+
+    def _check_npis_data(self, max_levels_npi, targeted_npi, general_npi,
+                         reg_levels_npi, time_changes_npi):
+        """
+        Check correct format of input of non-pharmaceutical interventions data.
+
+        Parameters
+        ----------
+        max_levels_npi : list of int
+            List of maximum levels the non-pharmaceutical interventions can
+            reach.
+        targeted_npi : list of bool
+            List of the targeted non-pharmaceutical interventions.
+        general_npi : list of bool
+            List of the general values of the targeted non-pharmaceutical
+            interventions.
+        reg_levels_npi : list of list of int
+            List of region-specific levels the non-pharmaceutical interventions
+            changes. In chronological order.
+        time_changes_npi : list
+            List of times at which the next instances of region-specific
+            non-pharmaceutical interventions start to be used. In
+            increasing order.
+
+        """
+        # Maximum Levels NPIs
+        if not isinstance(max_levels_npi, list):
+            raise TypeError('Maximum levels the non-pharmaceutical \
+                    interventions must be given in a list format.')
+        for _ in max_levels_npi:
+            if not isinstance(_, int):
+                raise TypeError('Maximum levels the non-pharmaceutical \
+                    interventions must be integer.')
+            if _ <= 0:
+                raise ValueError('Maximum levels the non-pharmaceutical \
+                    interventions must be > 0.')
+
+        # Targeted NPIs
+        if not isinstance(targeted_npi, list):
+            raise TypeError('The targeted non-pharmaceutical \
+                    interventions must be given in a list format.')
+        if len(targeted_npi) != len(max_levels_npi):
+            raise ValueError('Wrong number of targeted interventions.')
+        for _ in targeted_npi:
+            if not isinstance(_, bool):
+                raise TypeError('The targeted non-pharmaceutical \
+                    interventions must be boolean.')
+
+        # General value of targeted NPIs
+        if not isinstance(general_npi, list):
+            raise TypeError('The general value of non-pharmaceutical \
+                    interventions must be given in a list format.')
+        if len(general_npi) != len(max_levels_npi):
+            raise ValueError('Wrong number of the general value of \
+                interventions.')
+        for ind, _ in enumerate(general_npi):
+            if not isinstance(_, bool):
+                raise TypeError('The general value of the non-pharmaceutical \
+                    interventions must be boolean.')
+            # If targeted (1) can be both 0 or 1, if not it can only be 0
+            if _ > targeted_npi[ind]:
+                raise ValueError('The general value of the non-pharmaceutical \
+                    interventions must match type of targeted status.')
+
+        # Times of changes NPIs
+        if not isinstance(time_changes_npi, list):
+            raise TypeError('Time points of changes in non-pharmaceutical \
+                    interventions must be given in a list format.')
+        for _ in time_changes_npi:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of changes in non-pharmaceutical \
+                    interventions must be integer or float.')
+            if _ <= 0:
+                raise ValueError('Time points of changes in non-pharmaceutical \
+                    interventions must be > 0.')
+
+        # Regional time-dependent NPIs
+        if not isinstance(reg_levels_npi, list):
+            raise TypeError('Regional changes in levels the non-pharmaceutical \
+                    interventions must be given in a list format.')
+        if len(reg_levels_npi) != len(self.regions):
+            raise ValueError('Wrong number of regions for the regional changes \
+                in levels the non-pharmaceutical interventions.')
+        for levels_npi in reg_levels_npi:
+            if not isinstance(levels_npi, list):
+                raise TypeError('Each change in levels the non-pharmaceutical \
+                    interventions must be given in a list format.')
+            if len(levels_npi) != len(time_changes_npi):
+                raise ValueError('Wrong number of time changes for the regional \
+                    changes in levels the non-pharmaceutical interventions.')
+            for inst_npis in levels_npi:
+                if len(inst_npis) != len(max_levels_npi):
+                    raise ValueError('Wrong number of interventions for the \
+                        regional changes in levels the non-pharmaceutical \
+                            interventions.')
+                for ind, _ in enumerate(inst_npis):
+                    if not isinstance(_, int):
+                        raise TypeError('Levels the non-pharmaceutical \
+                            interventions must be integer.')
+                    if _ <= 0:
+                        raise ValueError('Levels the non-pharmaceutical \
+                            interventions must be > 0.')
+                    if _ > max_levels_npi[ind]:
+                        raise ValueError('Levels the non-pharmaceutical \
+                            interventions cannot exceed maximum threshold.')
+
+    def _compute_add_pol_weight(self, max_levels_npi, targeted_npi):
+        r"""
+        Computes the additional weight for a policy of general scope is
+        defined in relation to the number of ordinal points of all the
+        indicators that have the targeted/general flags, that is
+
+        .. math::
+            w = frac{1}{\sum_{j=1}^{n} \delta_j} \sum_{j=1}^{n} \frac{1}{
+                N_j+1} \delta_j
+
+        where :math:`N_j` and :math:`\delta_j` represents the maximum severity
+        level and indicator function of the targeted status of the:math:`j`th
+        intevention and :math:`n` is the total number of interventions
+        considered.
+
+        Parameters
+        ----------
+        max_levels_npi : list of int
+            List of maximum levels the non-pharmaceutical interventions can
+            reach.
+        targeted_npi : list of bool
+            List of the targeted non-pharmaceutical interventions.
+
+        Returns
+        -------
+        float
+            The additional weight for a targeted policy.
+
+        """
+        inverse_vals = [1 / (1 + lev) for lev in max_levels_npi]
+        inverse_sumand = np.multiply(targeted_npi, inverse_vals)
+
+        return np.sum(inverse_sumand) / np.sum(targeted_npi)
 
     def simulate(self, parameters, times):
         r"""
@@ -594,8 +817,12 @@ class RocheSEIRModel(pints.ForwardModel):
             (5) the minimum (beta_min) and maximum (beta_max) possible
             transmission rate of the virus,
             (6) the relative increase in transmission of a super-spreader case
-            (bss) and
-            (7) the type of solver implemented by the :meth:`scipy.solve_ivp`.
+            (bss),
+            (7) the sharpness of the intervention wave used for function
+            continuity purposes (gamma),
+            (8) the stringency index needed to reach 50% of the maximum effect
+            on the infection rate (s50) and
+            (9) the type of solver implemented by the :meth:`scipy.solve_ivp`.
             Splited into the formats necessary for the :meth:`_simulate`
             method.
         times : list
@@ -637,17 +864,13 @@ class RocheSEIRModel(pints.ForwardModel):
             my_parameters.append(initial_cond_comp)
 
         # Add other parameters
-        my_parameters.extend(parameters[start_index:(start_index + 11)])
-
-        # Add gamma
-        gamma = parameters[start_index + 11]
+        my_parameters.extend(parameters[start_index:(start_index + 12)])
 
         # Add method
         method = parameters[start_index + 12]
 
         return self._simulate(my_parameters,
                               times,
-                              gamma,
                               method)
 
     def _check_input_simulate(
@@ -671,8 +894,12 @@ class RocheSEIRModel(pints.ForwardModel):
             (5) the minimum (beta_min) and maximum (beta_max) possible
             transmission rate of the virus,
             (6) the relative increase in transmission of a super-spreader case
-            (bss) and
-            (7) the type of solver implemented by the :meth:`scipy.solve_ivp`.
+            (bss),
+            (7) the sharpness of the intervention wave used for function
+            continuity purposes (gamma),
+            (8) the stringency index needed to reach 50% of the maximum effect
+            on the infection rate (s50) and
+            (9) the type of solver implemented by the :meth:`scipy.solve_ivp`.
             Splited into the formats necessary for the :meth:`_simulate`
             method.
         times : list
@@ -739,6 +966,11 @@ class RocheSEIRModel(pints.ForwardModel):
         if parameters[-2] <= 0:
             raise ValueError('The sharpness of the intervention wave must be \
                 > 0.')
+        if not isinstance(parameters[-2], (float, int)):
+            raise TypeError(
+                'The half-effect stringency index must be float or integer.')
+        if parameters[-2] <= 0:
+            raise ValueError('The half-effect stringency index must be > 0.')
         if not isinstance(parameters[-1], str):
             raise TypeError('Simulation method must be a string.')
         if parameters[-1] not in (
