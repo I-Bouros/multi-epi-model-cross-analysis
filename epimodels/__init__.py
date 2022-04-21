@@ -28,3 +28,4 @@ from ._setup_matrices import (  # noqa
     ContactMatrix, RegionMatrix, UniNextGenMatrix,  # noqa
     MultiTimesContacts, UniInfectivityMatrix, MultiTimesInfectivity)  # noqa
 from .phe_model import PheSEIRModel  # noqa
+from .roche_model import RocheSEIRModel  # noqa

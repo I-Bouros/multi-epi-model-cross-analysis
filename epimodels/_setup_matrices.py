@@ -751,7 +751,7 @@ class MultiTimesContacts(UniNextGenMatrix):
         pos = np.where(self.times_region <= t_k)
         current_rel_susc = self.region_matrices[pos[-1][-1]][r-1]
 
-        return np.multiply(current_contacts, current_rel_susc)
+        return np.multiply(current_contacts._data, current_rel_susc._data)
 
 #
 # MultiTimesInfectivity Class
