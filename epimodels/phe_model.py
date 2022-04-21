@@ -46,16 +46,16 @@ class PheSEIRModel(pints.ForwardModel):
        :nowrap:
 
         \begin{eqnarray}
-            \frac{dS(r, t, i)}{dt} = -\lambda_{r, t, i} S(r, t, i) \\
-            \frac{dE_1(r, t, i)}{dt} = \lambda_{r, t, i} S(
+            \frac{dS(r, t, i)}{dt} &=& -\lambda_{r, t, i} S(r, t, i) \\
+            \frac{dE_1(r, t, i)}{dt} &=& \lambda_{r, t, i} S(
                 r, t, i) - \kappa E_1(r, t, i) \\
-            \frac{dE_2(r, t, i)}{dt} = \kappa E_1(r, t, i) - \kappa E_2(
+            \frac{dE_2(r, t, i)}{dt} &=& \kappa E_1(r, t, i) - \kappa E_2(
                 r, t, i) \\
-            \frac{dI_1(r, t, i)}{dt} = \kappa E_2(r, t, i) - \gamma I_1(
+            \frac{dI_1(r, t, i)}{dt} &=& \kappa E_2(r, t, i) - \gamma I_1(
                 r, t, i) \\
-            \frac{dI_2(r, t, i)}{dt} = \gamma I_1(r, t, i) - \gamma I_2(
+            \frac{dI_2(r, t, i)}{dt} &=& \gamma I_1(r, t, i) - \gamma I_2(
                 r, t, i) \\
-            \frac{dR(r, t, i)}{dt} = \gamma I_2(r, t, i)
+            \frac{dR(r, t, i)}{dt} &=& \gamma I_2(r, t, i)
         \end{eqnarray}
 
     where :math:`S(0) = S_0, E(0) = E_0, I(O) = I_0, R(0) = R_0` are also
@@ -73,8 +73,8 @@ class PheSEIRModel(pints.ForwardModel):
         :nowrap:
 
         \begin{eqnarray}
-            \kappa = \frac{2}{d_L} \\
-            \gamma = \frac{2}{d_I}
+            \kappa &=& \frac{2}{d_L} \\
+            \gamma &=& \frac{2}{d_I}
         \end{eqnarray}
 
     where :math:`d_L` refers to mean latent period until disease onset and
