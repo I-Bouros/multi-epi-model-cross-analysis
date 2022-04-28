@@ -613,7 +613,7 @@ class UniInfectivityMatrix(object):
 
 
 class MultiTimesContacts(UniNextGenMatrix):
-    """MultiTimesContacts
+    """MultiTimesContacts Class:
     Base class for storing the contact matrices for the population at multiple
     time points.
 
@@ -729,7 +729,7 @@ class MultiTimesContacts(UniNextGenMatrix):
         of new infections in age group :math:`i` caused by an infectious in age
         group :math:`j`.
 
-        Paramaters
+        Parameters
         ----------
         r : int
             Index of the region at which the regional contact matrix
