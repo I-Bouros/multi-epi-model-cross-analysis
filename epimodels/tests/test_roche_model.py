@@ -84,6 +84,182 @@ class TestRocheSEIRModel(unittest.TestCase):
             outputs1 = ['S', 'E', 'Ia', 'I2', 'Incidence']
             model.set_outputs(outputs1)
 
+    def test_read_npis_data(self):
+        model = em.RocheSEIRModel()
+
+        # Populate the model
+        regions = ['London', 'Cornwall']
+        age_groups = ['0-10', '10-25']
+
+        # NPIs data
+        max_levels_npi = [3, 3, 2, 4, 2, 3, 2, 4, 2]
+        targeted_npi = [True, True, True, True, True, True, True, False, True]
+        general_npi = [
+            True, False, True, True, False, False, False, False, False]
+        reg_levels_npi = [
+            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
+            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]]]
+        time_changes_npi = [1, 14]
+
+        model.set_regions(regions)
+        model.set_age_groups(age_groups)
+        model.read_npis_data(
+            max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
+            time_changes_npi)
+
+        self.assertEqual(model.max_levels_npi, [
+            3, 3, 2, 4, 2, 3, 2, 4, 2])
+        self.assertEqual(model.targeted_npi, [
+            True, True, True, True, True, True, True, False, True])
+        self.assertEqual(model.general_npi, [
+            True, False, True, True, False, False, False, False, False])
+        npt.assert_array_equal(np.asarray(model.reg_levels_npi), np.array([
+            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
+            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]]]))
+
+        with self.assertRaises(TypeError):
+            model.read_npis_data(
+                0, targeted_npi, general_npi, reg_levels_npi,
+                time_changes_npi)
+
+        with self.assertRaises(TypeError):
+            max_levels_npi1 = [3, 3, 2, 4, 2.0, 3, 2, 4, 2]
+
+            model.read_npis_data(
+                max_levels_npi1, targeted_npi, general_npi, reg_levels_npi,
+                time_changes_npi)
+
+        with self.assertRaises(ValueError):
+            max_levels_npi1 = [3, 3, 2, 4, 2, 3, 2, 0, 2]
+
+            model.read_npis_data(
+                max_levels_npi1, targeted_npi, general_npi, reg_levels_npi,
+                time_changes_npi)
+
+        with self.assertRaises(TypeError):
+            model.read_npis_data(
+                max_levels_npi, '0', general_npi, reg_levels_npi,
+                time_changes_npi)
+
+        with self.assertRaises(ValueError):
+            targeted_npi1 = [True, True, True, True, True, True, True]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi1, general_npi, reg_levels_npi,
+                time_changes_npi)
+
+        with self.assertRaises(TypeError):
+            targeted_npi1 = [
+                True, True, True, True, True, 1, True, False, True]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi1, general_npi, reg_levels_npi,
+                time_changes_npi)
+
+        with self.assertRaises(TypeError):
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, '0', reg_levels_npi,
+                time_changes_npi)
+
+        with self.assertRaises(ValueError):
+            general_npi1 = [True, True, True, True, True, True, True]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi1, reg_levels_npi,
+                time_changes_npi)
+
+        with self.assertRaises(TypeError):
+            general_npi1 = [
+                True, True, True, True, True, 1, True, False, True]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi1, reg_levels_npi,
+                time_changes_npi)
+
+        with self.assertRaises(ValueError):
+            general_npi1 = [
+                True, True, True, True, True, True, True, True, True]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi1, reg_levels_npi,
+                time_changes_npi)
+
+        with self.assertRaises(TypeError):
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi, 0,
+                time_changes_npi)
+
+        with self.assertRaises(ValueError):
+            reg_levels_npi1 = [
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]]]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi, reg_levels_npi1,
+                time_changes_npi)
+
+        with self.assertRaises(TypeError):
+            reg_levels_npi1 = [
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
+                0]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi, reg_levels_npi1,
+                time_changes_npi)
+
+        with self.assertRaises(ValueError):
+            reg_levels_npi1 = [
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                 [3, 3, 2, 4, 2, 3, 2, 4, 2]]]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi, reg_levels_npi1,
+                time_changes_npi)
+
+        with self.assertRaises(ValueError):
+            reg_levels_npi1 = [
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
+                [[0, 0, 0, 0, 0, 0], [3, 3, 2, 2, 4, 2]]]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi, reg_levels_npi1,
+                time_changes_npi)
+
+        with self.assertRaises(TypeError):
+            reg_levels_npi1 = [
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4.0, 2, 3, 2, 4, 2]]]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi, reg_levels_npi1,
+                time_changes_npi)
+
+        with self.assertRaises(ValueError):
+            reg_levels_npi1 = [
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, -1, 2, 3, 2, 4, 2]]]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi, reg_levels_npi1,
+                time_changes_npi)
+
+        with self.assertRaises(TypeError):
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
+                0)
+
+        with self.assertRaises(TypeError):
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
+                [1, '14'])
+
+        with self.assertRaises(ValueError):
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
+                [-1, 14])
+
     def test_simulate(self):
         model = em.RocheSEIRModel()
 
