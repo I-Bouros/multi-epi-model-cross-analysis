@@ -282,6 +282,221 @@ class TestUniNextGenMatrixClass(unittest.TestCase):
 #
 
 
+class TestMultiTimesContacts(unittest.TestCase):
+    """
+    Test the 'MultiTimesContacts' class.
+    """
+    def test__init__(self):
+        # Populate the model
+        regions = ['London', 'Cornwall']
+        age_groups = ['0-10', '10-25']
+
+        # Initial state of the system
+        contact_data_matrix_0 = np.array([[10, 5.2], [0, 3]])
+        contact_data_matrix_1 = np.array([[1, 0], [0, 3]])
+
+        region_data_matrix_0_0 = np.array([[1, 10], [1, 6]])
+        region_data_matrix_0_1 = np.array([[0.5, 3], [0.3, 3]])
+        region_data_matrix_1_0 = np.array([[0.85, 1], [0.9, 6]])
+        region_data_matrix_1_1 = np.array([[0.5, 0.2], [0.29, 4.6]])
+
+        contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
+        contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
+        regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_0_0)
+        regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_0_1)
+        regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_1_0)
+        regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_1_1)
+
+        # Matrices contact
+        matrices_contact = [contacts_0, contacts_1]
+        time_changes_contact = [1, 14]
+        matrices_region = [
+            [regional_0_0, regional_0_1],
+            [regional_1_0, regional_1_1]]
+        time_changes_region = [1, 14]
+
+        multi_time_contacts = em.MultiTimesContacts(
+            matrices_contact, time_changes_contact, regions,
+            matrices_region, time_changes_region)
+
+        npt.assert_almost_equal(
+            multi_time_contacts.times_contact, np.array([1, 14]))
+        npt.assert_almost_equal(
+            multi_time_contacts.times_region, np.array([1, 14]))
+        self.assertEqual(
+            multi_time_contacts.contact_matrices, matrices_contact)
+        self.assertEqual(
+            multi_time_contacts.region_matrices, matrices_region)
+
+        with self.assertRaises(ValueError):
+            matrices_contact1 = [[contacts_0], [contacts_1]]
+
+            em.MultiTimesContacts(
+                matrices_contact1, time_changes_contact, regions,
+                matrices_region, time_changes_region)
+
+        with self.assertRaises(TypeError):
+            matrices_contact1 = [contacts_0, '0']
+
+            em.MultiTimesContacts(
+                matrices_contact1, time_changes_contact, regions,
+                matrices_region, time_changes_region)
+
+        with self.assertRaises(ValueError):
+            time_changes_contact1 = [[1], [14]]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact1, regions,
+                matrices_region, time_changes_region)
+
+        with self.assertRaises(ValueError):
+            time_changes_contact1 = [1, 14, 26]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact1, regions,
+                matrices_region, time_changes_region)
+
+        with self.assertRaises(TypeError):
+            time_changes_contact1 = [1.0, 14]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact1, regions,
+                matrices_region, time_changes_region)
+
+        with self.assertRaises(ValueError):
+            time_changes_contact1 = [-1, 14]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact1, regions,
+                matrices_region, time_changes_region)
+
+        with self.assertRaises(ValueError):
+            regions1 = [['London'], ['Cornwall']]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact, regions1,
+                matrices_region, time_changes_region)
+
+        with self.assertRaises(TypeError):
+            regions1 = ['London', 0]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact, regions1,
+                matrices_region, time_changes_region)
+
+        with self.assertRaises(ValueError):
+            matrices_region1 = [
+                regional_0_0, regional_0_1,
+                regional_1_0, regional_1_1]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact, regions,
+                matrices_region1, time_changes_region)
+
+        with self.assertRaises(ValueError):
+            matrices_region1 = [
+                [regional_0_0, regional_0_1]]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact, regions,
+                matrices_region1, time_changes_region)
+
+        with self.assertRaises(TypeError):
+            matrices_region1 = [
+                [regional_0_0, 'regional_0_1'],
+                [regional_1_0, regional_1_1]]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact, regions,
+                matrices_region1, time_changes_region)
+
+        with self.assertRaises(ValueError):
+            matrices_region1 = [
+                regional_0_0, regional_0_1,
+                regional_1_0, regional_0_1]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact, regions,
+                matrices_region1, time_changes_region)
+
+        with self.assertRaises(ValueError):
+            time_changes_region1 = [[1], [14]]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact, regions,
+                matrices_region, time_changes_region1)
+
+        with self.assertRaises(ValueError):
+            time_changes_region1 = [1, 14, 26]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact, regions,
+                matrices_region, time_changes_region1)
+
+        with self.assertRaises(TypeError):
+            time_changes_region1 = [1, 14.0]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact, regions,
+                matrices_region, time_changes_region1)
+
+        with self.assertRaises(ValueError):
+            time_changes_region1 = [-1, 14]
+
+            em.MultiTimesContacts(
+                matrices_contact, time_changes_contact, regions,
+                matrices_region, time_changes_region1)
+
+    def test_identify_current_contacts(self):
+        # Populate the model
+        regions = ['London', 'Cornwall']
+        age_groups = ['0-10', '10-25']
+
+        # Initial state of the system
+        contact_data_matrix_0 = np.array([[10, 5.2], [0, 3]])
+        contact_data_matrix_1 = np.array([[1, 0], [0, 3]])
+
+        region_data_matrix_0_0 = np.array([[1, 10], [1, 6]])
+        region_data_matrix_0_1 = np.array([[0.5, 3], [0.3, 3]])
+        region_data_matrix_1_0 = np.array([[0.85, 1], [0.9, 6]])
+        region_data_matrix_1_1 = np.array([[0.5, 0.2], [0.29, 4.6]])
+
+        contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
+        contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
+        regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_0_0)
+        regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_0_1)
+        regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, region_data_matrix_1_0)
+        regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, region_data_matrix_1_1)
+
+        # Matrices contact
+        matrices_contact = [contacts_0, contacts_1]
+        time_changes_contact = [1, 14]
+        matrices_region = [
+            [regional_0_0, regional_0_1],
+            [regional_1_0, regional_1_1]]
+        time_changes_region = [1, 14]
+
+        multi_time_contacts = em.MultiTimesContacts(
+            matrices_contact, time_changes_contact, regions,
+            matrices_region, time_changes_region)
+
+        npt.assert_almost_equal(
+            multi_time_contacts.identify_current_contacts(2, 15),
+            np.array([[0.5, 0], [0, 13.8]]))
+
+#
+# Test UniInfectivityMatrix Class
+#
+
+
 class TestUniInfectivityMatrixClass(unittest.TestCase):
     """
     Test the 'UniInfectivityMatrix' class.
