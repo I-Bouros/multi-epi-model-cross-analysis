@@ -245,6 +245,15 @@ class TestRocheSEIRModel(unittest.TestCase):
                 max_levels_npi, targeted_npi, general_npi, reg_levels_npi1,
                 time_changes_npi)
 
+        with self.assertRaises(ValueError):
+            reg_levels_npi1 = [
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
+                [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 6, 2, 3, 2, 4, 2]]]
+
+            model.read_npis_data(
+                max_levels_npi, targeted_npi, general_npi, reg_levels_npi1,
+                time_changes_npi)
+
         with self.assertRaises(TypeError):
             model.read_npis_data(
                 max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
