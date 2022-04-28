@@ -684,16 +684,16 @@ class MultiTimesContacts(UniNextGenMatrix):
                 'Storage format for the multiple regional relative \
                     susceptibility matrices must be 2-dimensional.')
 
-        for _ in range(len(matrices_region)):
-            if len(regions) != len(matrices_region[_]):
+        for all_reg_one_time in matrices_region:
+            if len(all_reg_one_time) != len(regions):
                 raise ValueError('Wrong number of matrices for the \
                     number of regions registered.')
-            for r in range(len(matrices_region[_])):
-                if not isinstance(matrices_region[_][r], RegionMatrix):
+            for r, _ in enumerate(all_reg_one_time):
+                if not isinstance(_, RegionMatrix):
                     raise TypeError(
                         'Regional relative susceptibility matrices must \
                             be in the RegionMatrix format.')
-                if matrices_region[_][r].region != regions[r]:
+                if _.region != regions[r]:
                     raise ValueError(
                         'Incorrect region name used for this regional relative \
                             susceptibility matrix.')
