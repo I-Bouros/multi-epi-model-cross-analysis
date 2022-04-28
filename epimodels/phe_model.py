@@ -28,7 +28,7 @@ import epimodels as em
 
 class PheSEIRModel(pints.ForwardModel):
     r"""PheSEIRModel Class:
-    Base class for constructing the ODE model: a deterministic SEIR used by the
+    Base class for constructing the PHE model: a deterministic SEIR used by the
     Public Health England to model the Covid-19 epidemic in UK based on region.
 
     The population is structured according to their age-group (:math:`i`) and
