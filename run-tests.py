@@ -145,6 +145,7 @@ def doctest_rst_and_public_interface():
         'epimodels.version_info',
         'epimodels._setup_matrices',
         'epimodels.phe_model',
+        'epimodels.roche_model',
         'epimodels.inference'
         ]
 
