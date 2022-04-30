@@ -144,6 +144,7 @@ def doctest_rst_and_public_interface():
     epimodels_submodules = [
         'epimodels.version_info',
         'epimodels._setup_matrices',
+        'epimodels._parameters',
         'epimodels.phe_model',
         'epimodels.roche_model',
         'epimodels.inference'
