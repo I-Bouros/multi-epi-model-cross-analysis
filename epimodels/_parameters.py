@@ -249,7 +249,7 @@ class PheRegParameters(object):
 
     """
     def __init__(self, model, initial_r, region_index, betas, times):
-        super(PheICs, self).__init__()
+        super(PheRegParameters, self).__init__()
 
         # Set model
         if not isinstance(model, em.PheSEIRModel):
@@ -264,6 +264,7 @@ class PheRegParameters(object):
         self.initial_r = initial_r
         self.region_index = region_index
         self.betas = betas
+        self.times = times
 
     def _check_parameters_input(self, initial_r, region_index, betas, times):
         """
@@ -283,6 +284,17 @@ class PheRegParameters(object):
             system.
 
         """
+        # Check times format
+        if not isinstance(times, list):
+            raise TypeError('Time points of evaluation must be given in a list \
+                format.')
+        for _ in times:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of evaluation must be integer or \
+                    float.')
+            if _ <= 0:
+                raise ValueError('Time points of evaluation must be > 0.')
+
         if np.asarray(initial_r).ndim != 1:
             raise ValueError('The inital reproduction numbers storage format \
                 must be 1-dimensional.')
@@ -295,10 +307,13 @@ class PheRegParameters(object):
                 raise TypeError(
                     'The inital reproduction numbers must be integer or \
                         float.')
+
         if not isinstance(region_index, int):
             raise TypeError('Index of region to evaluate must be integer.')
         if region_index <= 0:
             raise ValueError('Index of region to evaluate must be >= 1.')
+        if region_index > len(self.model.regions):
+            raise ValueError('Index of region to evaluate is out of bounds.')
 
         if np.asarray(betas).ndim != 2:
             raise ValueError('The temporal and regional fluctuations storage format \
@@ -307,17 +322,10 @@ class PheRegParameters(object):
             raise ValueError(
                     'Wrong number of rows for the temporal and regional \
                         fluctuation.')
-
-        # Check times format
-        if not isinstance(times, list):
-            raise TypeError('Time points of evaluation must be given in a list \
-                format.')
-        for _ in times:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Time points of evaluation must be integer or \
-                    float.')
-            if _ <= 0:
-                raise ValueError('Time points of evaluation must be > 0.')
+        if np.asarray(betas).shape[1] != len(times):
+            raise ValueError(
+                    'Wrong number of columns for the temporal and regional \
+                        fluctuation.')
 
     def __call__(self):
         """
@@ -353,7 +361,7 @@ class PheDiseaseParameters(object):
 
     """
     def __init__(self, model, dL, dI):
-        super(PheICs, self).__init__()
+        super(PheDiseaseParameters, self).__init__()
 
         # Set model
         if not isinstance(model, em.PheSEIRModel):
@@ -423,7 +431,7 @@ class PheSimParameters(object):
 
     """
     def __init__(self, model, delta_t, method):
-        super(PheICs, self).__init__()
+        super(PheSimParameters, self).__init__()
 
         # Set model
         if not isinstance(model, em.PheSEIRModel):
@@ -609,9 +617,9 @@ class PheParametersController(object):
         parameters.extend(self.regional_parameters()[2])
 
         # Add disease-specific parameters
-        parameters.extend(self.disease_parameters)
+        parameters.extend(self.disease_parameters())
 
         # Add other simulation parameters
-        parameters.extend(self.simulation_parameters)
+        parameters.extend(self.simulation_parameters())
 
         return list(deepflatten(parameters, ignore=str))
