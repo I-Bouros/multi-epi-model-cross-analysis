@@ -28,7 +28,7 @@ import epimodels as em
 
 class PheSEIRModel(pints.ForwardModel):
     r"""PheSEIRModel Class:
-    Base class for constructing the ODE model: a deterministic SEIR used by the
+    Base class for constructing the PHE model: a deterministic SEIR used by the
     Public Health England to model the Covid-19 epidemic in UK based on region.
 
     The population is structured according to their age-group (:math:`i`) and
@@ -58,7 +58,7 @@ class PheSEIRModel(pints.ForwardModel):
             \frac{dR(r, t, i)}{dt} &=& \gamma I_2(r, t, i)
         \end{eqnarray}
 
-    where :math:`S(0) = S_0, E(0) = E_0, I(O) = I_0, R(0) = R_0` are also
+    where :math:`S(0) = S_0, E(0) = E_0, I(0) = I_0, R(0) = R_0` are also
     parameters of the model (evaluation at 0 refers to the compartments'
     structure at intial time.
 
@@ -458,7 +458,7 @@ class PheSEIRModel(pints.ForwardModel):
             [times[0], times[-1]], init_cond, method=method, t_eval=times)
         return sol
 
-    def _simulate(
+    def _split_simulate(
             self, parameters, times, initial_r, method):
         r"""
         Computes the number of individuals in each compartment at the given
@@ -579,13 +579,39 @@ class PheSEIRModel(pints.ForwardModel):
         self.matrices_region = matrices_region
         self.time_changes_region = time_changes_region
 
-    def simulate(self, parameters, times):
+    def simulate(self, parameters):
+        """
+        Simulates the PHE model using a :class:`PheParametersController`
+        for the model parameters.
+
+        Extends the :meth:`_split_simulate`. Always apply methods
+        :meth:`set_regions`, :meth:`set_age_groups`, :meth:`read_contact_data`
+        and :meth:`read_regional_data` before running the
+        :meth:`PheSEIRModel.simulate`.
+
+        Parameters
+        ----------
+        parameters : PheParametersController
+            Controller class for the parameters used by the forward simulation
+            of the model.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured output matrix of the simulation for the specified
+            region.
+
+        """
+        return self._simulate(
+            parameters(), parameters.regional_parameters.times)
+
+    def _simulate(self, parameters, times):
         r"""
         PINTS-configured wrapper for the simulation method of the PHE model.
 
-        Extends the :meth:`_simulation`. Always apply methods
-        :meth:`set_regions`, :meth:`read_contact_data` and
-        :meth:`read_regional_data` before running the
+        Extends the :meth:`_split_simulate`. Always apply methods
+        :meth:`set_regions`, :meth:`set_age_groups`, :meth:`read_contact_data`
+        and :meth:`read_regional_data` before running the
         :meth:`PheSEIRModel.simulate`.
 
         Parameters
@@ -626,9 +652,6 @@ class PheSEIRModel(pints.ForwardModel):
         start_index = n_reg * (1 + (len(self._output_names)-1) * n_ages) + 1
         finish_index = start_index + n_reg * len(times)
 
-        self._check_input_simulate(
-            parameters, times, finish_index + 4, n_reg)
-
         # Read initial reproduction numbers
         initial_r = parameters[:n_reg]
 
@@ -660,82 +683,8 @@ class PheSEIRModel(pints.ForwardModel):
         # Add method
         method = parameters[finish_index + 3]
 
-        return self._simulate(my_parameters,
-                              times,
-                              initial_r,
-                              method)
-
-    def _check_input_simulate(
-            self, parameters, times, L, n_reg):
-        """
-        Check correct format of input of simulate method.
-
-        Parameters
-        ----------
-        parameters : list
-            Long vector format of the quantities that characterise the PHE
-            SEIR model in this order:
-            (1) initial values of the reproduction number
-            by region,
-            (2) index of region for which we wish to simulate,
-            (3) initial conditions matrices classifed by age (column name) and
-            region (row name) for each type of compartment (s, e1, e2, i1, i2,
-            r),
-            (4) temporal and regional fluctuation matrix :math:`\beta`,
-            (5) mean latent period :math:`d_L`,
-            (6) mean infection period :math:`d_I`,
-            (7) time step for the 'homemade' solver and
-            (8) (str) the type of solver implemented by the simulator.
-            Splited into the formats necessary for the :meth:`_simulate`
-            method.
-        times : list
-            List of time points at which we wish to evaluate the ODEs
-            system.
-        L : int
-            Number of parameters considered in the model.
-        n_reg : int
-            Number of regions considered in the model.
-
-        """
-        if not isinstance(times, list):
-            raise TypeError('Time points of evaluation must be given in a list \
-                format.')
-        for _ in times:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Time points of evaluation must be integer or \
-                    float.')
-            if _ <= 0:
-                raise ValueError('Time points of evaluation must be > 0.')
-
-        if not isinstance(parameters, list):
-            raise TypeError('Parameters must be given in a list format.')
-        if len(parameters) != L:
-            raise ValueError('List of parameters has wrong length.')
-        if not isinstance(parameters[n_reg], int):
-            raise TypeError('Index of region to evaluate must be integer.')
-        if parameters[n_reg] <= 0:
-            raise ValueError('Index of region to evaluate must be >= 1.')
-        if parameters[n_reg] > n_reg:
-            raise ValueError('Index of region to evaluate is out of bounds.')
-        if not isinstance(parameters[-4], (float, int)):
-            raise TypeError('Mean latent period must be float or integer.')
-        if parameters[-4] <= 0:
-            raise ValueError('Mean latent period must be > 0.')
-        if not isinstance(parameters[-3], (float, int)):
-            raise TypeError('Mean infection period must be float or integer.')
-        if parameters[-3] <= 0:
-            raise ValueError('Mean infection period must be > 0.')
-        if not isinstance(parameters[-2], (float, int)):
-            raise TypeError(
-                'Time step for ODE solver must be float or integer.')
-        if parameters[-2] <= 0:
-            raise ValueError('Time step for ODE solver must be > 0.')
-        if not isinstance(parameters[-1], str):
-            raise TypeError('Simulation method must be a string.')
-        if parameters[-1] not in (
-                'my-solver', 'RK45', 'RK23', 'Radau',
-                'BDF', 'LSODA', 'DOP853'):
-            raise ValueError('Simulation method not available.')
+        return self._split_simulate(
+            my_parameters, times, initial_r, method)
 
     def _check_output_format(self, output):
         """

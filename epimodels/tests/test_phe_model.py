@@ -10,7 +10,6 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 from scipy.stats import gamma
-from iteration_utilities import deepflatten
 
 import epimodels as em
 
@@ -94,9 +93,6 @@ class TestPheSEIRModel(unittest.TestCase):
         region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
         region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
 
-        susceptibles = [[5, 6], [7, 8]]
-        dI = 4
-
         contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
         contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
         regional_0_0 = em.RegionMatrix(
@@ -117,20 +113,54 @@ class TestPheSEIRModel(unittest.TestCase):
         time_changes_region = [1, 2]
 
         model.set_regions(regions)
+        model.set_age_groups(age_groups)
         model.read_contact_data(matrices_contact, time_changes_contact)
         model.read_regional_data(matrices_region, time_changes_region)
 
-        initial_r = [0.5, 1]
+        # Set regional and time dependent parameters
+        regional_parameters = em.PheRegParameters(
+            model=model,
+            initial_r=[0.5, 1],
+            region_index=2,
+            betas=[[1]*2, [1]*2],
+            times=[1, 2]
+        )
 
-        parameters = [
-            initial_r, 2, susceptibles, [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5, 'RK45']
+        # Set ICs parameters
+        ICs = em.PheICs(
+            model=model,
+            susceptibles_IC=[[5, 6], [7, 8]],
+            exposed1_IC=[[0, 0], [0, 0]],
+            exposed2_IC=[[0, 0], [0, 0]],
+            infectives1_IC=[[0, 0], [0, 0]],
+            infectives2_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
+        )
 
-        times = [1, 2]
+        # Set disease-specific parameters
+        disease_parameters = em.PheDiseaseParameters(
+            model=model,
+            dL=4,
+            dI=4
+        )
 
-        output_my_solver = model.simulate(
-            list(deepflatten(parameters, ignore=str)), times)
+        # Set other simulation parameters
+        simulation_parameters = em.PheSimParameters(
+            model=model,
+            delta_t=0.5,
+            method='RK45'
+        )
+
+        # Set all parameters in the controller
+        parameters = em.PheParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            simulation_parameters=simulation_parameters
+        )
+
+        output_my_solver = model.simulate(parameters)
 
         npt.assert_almost_equal(
             output_my_solver,
@@ -139,10 +169,18 @@ class TestPheSEIRModel(unittest.TestCase):
                 [7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ]), decimal=3)
 
-        parameters[-1] = 'my-solver'
+        simulation_parameters.method = 'my-solver'
 
-        output_scipy_solver = model.simulate(
-            list(deepflatten(parameters, ignore=str)), times)
+        # Set all parameters in the controller
+        parameters = em.PheParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            simulation_parameters=simulation_parameters
+        )
+
+        output_scipy_solver = model.simulate(parameters)
 
         npt.assert_almost_equal(
             output_scipy_solver,
@@ -150,180 +188,6 @@ class TestPheSEIRModel(unittest.TestCase):
                 [7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 [7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ]), decimal=3)
-
-        parameters[-1] = 'my-solver'
-
-        with self.assertRaises(TypeError):
-            model.simulate(list(deepflatten(parameters, ignore=str)), '0')
-
-        with self.assertRaises(TypeError):
-            model.simulate(list(deepflatten(parameters, ignore=str)), ['1', 2])
-
-        with self.assertRaises(ValueError):
-            model.simulate(list(deepflatten(parameters, ignore=str)), [0, 1])
-
-        with self.assertRaises(TypeError):
-            model.simulate('parameters', times)
-
-        with self.assertRaises(ValueError):
-            model.simulate([0], times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                initial_r, 0.5, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
-
-            model.simulate(
-                list(deepflatten(parameters1, ignore=(str, float))),
-                times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                initial_r, 0, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                initial_r, 3, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            susceptibles1 = [5, 6]
-
-            parameters1 = [
-                initial_r, 1, susceptibles1,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0, 0], [0, 0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[[1]*2, [1]*2], [[1]*2, [1]*2]], 4, dI, 0.005, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2, [1]*2], 4, dI, 0.005, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*4, [1]*4], 4, dI, 0.005, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], '4', dI, 0.005, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], -1, dI, 0.005, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, '4', 0.005, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, 0, 0.005, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, '0.005', 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0, 'my-solver']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.5, 3]
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                initial_r, 1, susceptibles,
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver2']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
 
     def test_new_infections(self):
         model = em.PheSEIRModel()
@@ -341,9 +205,6 @@ class TestPheSEIRModel(unittest.TestCase):
         region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
         region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
 
-        susceptibles = [[5, 6], [7, 8]]
-        dI = 4
-
         contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
         contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
         regional_0_0 = em.RegionMatrix(
@@ -364,21 +225,54 @@ class TestPheSEIRModel(unittest.TestCase):
         time_changes_region = [1, 2]
 
         model.set_regions(regions)
+        model.set_age_groups(age_groups)
         model.read_contact_data(matrices_contact, time_changes_contact)
         model.read_regional_data(matrices_region, time_changes_region)
 
-        initial_r = [0.5, 1]
+        # Set regional and time dependent parameters
+        regional_parameters = em.PheRegParameters(
+            model=model,
+            initial_r=[0.5, 1],
+            region_index=2,
+            betas=[[1]*2, [1]*2],
+            times=[1, 2]
+        )
 
-        parameters = [
-            initial_r, 1, susceptibles,
-            [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
+        # Set ICs parameters
+        ICs = em.PheICs(
+            model=model,
+            susceptibles_IC=[[5, 6], [7, 8]],
+            exposed1_IC=[[0, 0], [0, 0]],
+            exposed2_IC=[[0, 0], [0, 0]],
+            infectives1_IC=[[0, 0], [0, 0]],
+            infectives2_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
+        )
 
-        times = [1, 2]
+        # Set disease-specific parameters
+        disease_parameters = em.PheDiseaseParameters(
+            model=model,
+            dL=4,
+            dI=4
+        )
 
-        output = model.simulate(
-            list(deepflatten(parameters, ignore=str)), times)
+        # Set other simulation parameters
+        simulation_parameters = em.PheSimParameters(
+            model=model,
+            delta_t=0.5,
+            method='my-solver'
+        )
+
+        # Set all parameters in the controller
+        parameters = em.PheParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            simulation_parameters=simulation_parameters
+        )
+
+        output = model.simulate(parameters)
 
         npt.assert_array_equal(
             model.new_infections(output),
@@ -423,9 +317,6 @@ class TestPheSEIRModel(unittest.TestCase):
         region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
         region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
 
-        susceptibles = [[5, 6], [7, 8]]
-        dI = 4
-
         contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
         contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
         regional_0_0 = em.RegionMatrix(
@@ -446,21 +337,54 @@ class TestPheSEIRModel(unittest.TestCase):
         time_changes_region = [1, 2]
 
         model.set_regions(regions)
+        model.set_age_groups(age_groups)
         model.read_contact_data(matrices_contact, time_changes_contact)
         model.read_regional_data(matrices_region, time_changes_region)
 
-        initial_r = [0.5, 1]
+        # Set regional and time dependent parameters
+        regional_parameters = em.PheRegParameters(
+            model=model,
+            initial_r=[0.5, 1],
+            region_index=2,
+            betas=[[1]*2, [1]*2],
+            times=[1, 2]
+        )
 
-        parameters = [
-            initial_r, 1, susceptibles,
-            [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
-            [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
+        # Set ICs parameters
+        ICs = em.PheICs(
+            model=model,
+            susceptibles_IC=[[5, 6], [7, 8]],
+            exposed1_IC=[[0, 0], [0, 0]],
+            exposed2_IC=[[0, 0], [0, 0]],
+            infectives1_IC=[[0, 0], [0, 0]],
+            infectives2_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
+        )
 
-        times = [1, 2]
+        # Set disease-specific parameters
+        disease_parameters = em.PheDiseaseParameters(
+            model=model,
+            dL=4,
+            dI=4
+        )
 
-        output = model.simulate(
-            list(deepflatten(parameters, ignore=str)), times)
+        # Set other simulation parameters
+        simulation_parameters = em.PheSimParameters(
+            model=model,
+            delta_t=0.5,
+            method='my-solver'
+        )
+
+        # Set all parameters in the controller
+        parameters = em.PheParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            simulation_parameters=simulation_parameters
+        )
+
+        output = model.simulate(parameters)
 
         new_infections = model.new_infections(output)
 
@@ -531,9 +455,6 @@ class TestPheSEIRModel(unittest.TestCase):
         region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
         region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
 
-        susceptibles = [[5, 6], [7, 8]]
-        dI = 4
-
         contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
         contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
         regional_0_0 = em.RegionMatrix(
@@ -554,21 +475,54 @@ class TestPheSEIRModel(unittest.TestCase):
         time_changes_region = [1, 2]
 
         model.set_regions(regions)
+        model.set_age_groups(age_groups)
         model.read_contact_data(matrices_contact, time_changes_contact)
         model.read_regional_data(matrices_region, time_changes_region)
 
-        initial_r = [0.5, 1]
+        # Set regional and time dependent parameters
+        regional_parameters = em.PheRegParameters(
+            model=model,
+            initial_r=[0.5, 1],
+            region_index=2,
+            betas=[[1]*2, [1]*2],
+            times=[1, 2]
+        )
 
-        parameters = [
-            initial_r, 1, susceptibles,
-            [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
-            [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
+        # Set ICs parameters
+        ICs = em.PheICs(
+            model=model,
+            susceptibles_IC=[[5, 6], [7, 8]],
+            exposed1_IC=[[0, 0], [0, 0]],
+            exposed2_IC=[[0, 0], [0, 0]],
+            infectives1_IC=[[0, 0], [0, 0]],
+            infectives2_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
+        )
 
-        times = [1, 2]
+        # Set disease-specific parameters
+        disease_parameters = em.PheDiseaseParameters(
+            model=model,
+            dL=4,
+            dI=4
+        )
 
-        output = model.simulate(
-            list(deepflatten(parameters, ignore=str)), times)
+        # Set other simulation parameters
+        simulation_parameters = em.PheSimParameters(
+            model=model,
+            delta_t=0.5,
+            method='my-solver'
+        )
+
+        # Set all parameters in the controller
+        parameters = em.PheParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            simulation_parameters=simulation_parameters
+        )
+
+        output = model.simulate(parameters)
 
         new_infections = model.new_infections(output)
 
@@ -689,9 +643,6 @@ class TestPheSEIRModel(unittest.TestCase):
         region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
         region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
 
-        susceptibles = [[5, 6], [7, 8]]
-        dI = 4
-
         contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
         contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
         regional_0_0 = em.RegionMatrix(
@@ -712,21 +663,54 @@ class TestPheSEIRModel(unittest.TestCase):
         time_changes_region = [1, 2]
 
         model.set_regions(regions)
+        model.set_age_groups(age_groups)
         model.read_contact_data(matrices_contact, time_changes_contact)
         model.read_regional_data(matrices_region, time_changes_region)
 
-        initial_r = [0.5, 1]
+        # Set regional and time dependent parameters
+        regional_parameters = em.PheRegParameters(
+            model=model,
+            initial_r=[0.5, 1],
+            region_index=1,
+            betas=[[1]*60, [1]*60],
+            times=np.arange(1, 61).tolist()
+        )
 
-        parameters = [
-            initial_r, 1, susceptibles,
-            [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
-            [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*60, [1]*60], 4, dI, 0.5, 'my-solver']
+        # Set ICs parameters
+        ICs = em.PheICs(
+            model=model,
+            susceptibles_IC=[[5, 6], [7, 8]],
+            exposed1_IC=[[0, 0], [0, 0]],
+            exposed2_IC=[[0.1, 0.2], [0, 0]],
+            infectives1_IC=[[0, 0], [0, 0]],
+            infectives2_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
+        )
 
-        times = np.arange(1, 61).tolist()
+        # Set disease-specific parameters
+        disease_parameters = em.PheDiseaseParameters(
+            model=model,
+            dL=4,
+            dI=4
+        )
 
-        output = model.simulate(
-            list(deepflatten(parameters, ignore=str)), times)
+        # Set other simulation parameters
+        simulation_parameters = em.PheSimParameters(
+            model=model,
+            delta_t=0.5,
+            method='my-solver'
+        )
+
+        # Set all parameters in the controller
+        parameters = em.PheParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            simulation_parameters=simulation_parameters
+        )
+
+        output = model.simulate(parameters)
 
         new_infections = model.new_infections(output)
 
@@ -781,9 +765,6 @@ class TestPheSEIRModel(unittest.TestCase):
         region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
         region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
 
-        susceptibles = [[5, 6], [7, 8]]
-        dI = 4
-
         contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
         contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
         regional_0_0 = em.RegionMatrix(
@@ -804,20 +785,54 @@ class TestPheSEIRModel(unittest.TestCase):
         time_changes_region = [1, 2]
 
         model.set_regions(regions)
+        model.set_age_groups(age_groups)
         model.read_contact_data(matrices_contact, time_changes_contact)
         model.read_regional_data(matrices_region, time_changes_region)
 
-        initial_r = [0.5, 1]
+        # Set regional and time dependent parameters
+        regional_parameters = em.PheRegParameters(
+            model=model,
+            initial_r=[0.5, 1],
+            region_index=2,
+            betas=[[1]*2, [1]*2],
+            times=[1, 2]
+        )
 
-        parameters = [
-            initial_r, 1, susceptibles, [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
-            [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
+        # Set ICs parameters
+        ICs = em.PheICs(
+            model=model,
+            susceptibles_IC=[[5, 6], [7, 8]],
+            exposed1_IC=[[0, 0], [0, 0]],
+            exposed2_IC=[[0, 0], [0, 0]],
+            infectives1_IC=[[0, 0], [0, 0]],
+            infectives2_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
+        )
 
-        times = [1, 2]
+        # Set disease-specific parameters
+        disease_parameters = em.PheDiseaseParameters(
+            model=model,
+            dL=4,
+            dI=4
+        )
 
-        output = model.simulate(
-            list(deepflatten(parameters, ignore=str)), times)
+        # Set other simulation parameters
+        simulation_parameters = em.PheSimParameters(
+            model=model,
+            delta_t=0.5,
+            method='my-solver'
+        )
+
+        # Set all parameters in the controller
+        parameters = em.PheParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            simulation_parameters=simulation_parameters
+        )
+
+        output = model.simulate(parameters)
 
         obs_pos = [10, 12]
         tests = [[20, 30], [10, 0]]
@@ -885,9 +900,6 @@ class TestPheSEIRModel(unittest.TestCase):
         region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
         region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
 
-        susceptibles = [[5, 6], [7, 8]]
-        dI = 4
-
         contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
         contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
         regional_0_0 = em.RegionMatrix(
@@ -908,20 +920,54 @@ class TestPheSEIRModel(unittest.TestCase):
         time_changes_region = [1, 2]
 
         model.set_regions(regions)
+        model.set_age_groups(age_groups)
         model.read_contact_data(matrices_contact, time_changes_contact)
         model.read_regional_data(matrices_region, time_changes_region)
 
-        initial_r = [0.5, 1]
+        # Set regional and time dependent parameters
+        regional_parameters = em.PheRegParameters(
+            model=model,
+            initial_r=[0.5, 1],
+            region_index=2,
+            betas=[[1]*2, [1]*2],
+            times=[1, 2]
+        )
 
-        parameters = [
-            initial_r, 1, susceptibles, [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
-            [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
+        # Set ICs parameters
+        ICs = em.PheICs(
+            model=model,
+            susceptibles_IC=[[5, 6], [7, 8]],
+            exposed1_IC=[[0, 0], [0, 0]],
+            exposed2_IC=[[0, 0], [0, 0]],
+            infectives1_IC=[[0, 0], [0, 0]],
+            infectives2_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
+        )
 
-        times = [1, 2]
+        # Set disease-specific parameters
+        disease_parameters = em.PheDiseaseParameters(
+            model=model,
+            dL=4,
+            dI=4
+        )
 
-        output = model.simulate(
-            list(deepflatten(parameters, ignore=str)), times)
+        # Set other simulation parameters
+        simulation_parameters = em.PheSimParameters(
+            model=model,
+            delta_t=0.5,
+            method='my-solver'
+        )
+
+        # Set all parameters in the controller
+        parameters = em.PheParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            simulation_parameters=simulation_parameters
+        )
+
+        output = model.simulate(parameters)
 
         tests = [[20, 30], [10, 0]]
         sens = 0.9
@@ -1028,9 +1074,6 @@ class TestPheSEIRModel(unittest.TestCase):
         region_data_matrix_1_0 = np.array([[0.5, 1.2], [0.29, 6]])
         region_data_matrix_1_1 = np.array([[0.85, 1], [0.9, 6]])
 
-        susceptibles = [[5, 6], [7, 8]]
-        dI = 4
-
         contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
         contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
         regional_0_0 = em.RegionMatrix(
@@ -1051,20 +1094,54 @@ class TestPheSEIRModel(unittest.TestCase):
         time_changes_region = [1, 2]
 
         model.set_regions(regions)
+        model.set_age_groups(age_groups)
         model.read_contact_data(matrices_contact, time_changes_contact)
         model.read_regional_data(matrices_region, time_changes_region)
 
-        initial_r = [0.5, 1]
+        # Set regional and time dependent parameters
+        regional_parameters = em.PheRegParameters(
+            model=model,
+            initial_r=[0.5, 1],
+            region_index=2,
+            betas=[[1]*2, [1]*2],
+            times=[1, 2]
+        )
 
-        parameters = [
-            initial_r, 1, susceptibles, [[0, 0], [0, 0]], [[0.1, 0.2], [0, 0]],
-            [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            [[1]*2, [1]*2], 4, dI, 0.5, 'my-solver']
+        # Set ICs parameters
+        ICs = em.PheICs(
+            model=model,
+            susceptibles_IC=[[5, 6], [7, 8]],
+            exposed1_IC=[[0, 0], [0, 0]],
+            exposed2_IC=[[0, 0], [0, 0]],
+            infectives1_IC=[[0, 0], [0, 0]],
+            infectives2_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
+        )
 
-        times = [1, 2]
+        # Set disease-specific parameters
+        disease_parameters = em.PheDiseaseParameters(
+            model=model,
+            dL=4,
+            dI=4
+        )
 
-        output = model.simulate(
-            list(deepflatten(parameters, ignore=str)), times)
+        # Set other simulation parameters
+        simulation_parameters = em.PheSimParameters(
+            model=model,
+            delta_t=0.5,
+            method='my-solver'
+        )
+
+        # Set all parameters in the controller
+        parameters = em.PheParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            simulation_parameters=simulation_parameters
+        )
+
+        output = model.simulate(parameters)
 
         tests = [[20, 30], [10, 0]]
         sens = 0.9

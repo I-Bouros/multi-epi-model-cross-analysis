@@ -415,7 +415,7 @@ class TestMultiTimesContacts(unittest.TestCase):
                 matrices_contact, time_changes_contact, regions,
                 matrices_region1, time_changes_region)
 
-        with self.assertRaises(ValueError) as test_excep:
+        with self.assertRaises(ValueError):
             matrices_region1 = [
                 [regional_0_0, regional_0_0],
                 [regional_1_0, regional_1_1]]
@@ -423,9 +423,6 @@ class TestMultiTimesContacts(unittest.TestCase):
             em.MultiTimesContacts(
                 matrices_contact, time_changes_contact, regions,
                 matrices_region1, time_changes_region)
-
-        self.assertTrue(
-            'Incorrect region name' in str(test_excep.exception))
 
         with self.assertRaises(ValueError):
             time_changes_region1 = [[1], [14]]

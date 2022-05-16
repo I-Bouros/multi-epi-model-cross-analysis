@@ -162,7 +162,7 @@ class RocheSEIRModel(pints.ForwardModel):
     :math:`k_{ri}` the average time to recovery since the end of the
     presymptomatic stage for an asymptomatic case.
 
-    :math:`S(0) = S_0, E(0) = E_0, I(O) = I_0, R(0) = R_0` are also
+    :math:`S(0) = S_0, E(0) = E_0, I(0) = I_0, R(0) = R_0, D(0) = D_0` are also
     parameters of the model (evaluation at 0 refers to the compartments'
     structure at intial time.
 
@@ -554,7 +554,7 @@ class RocheSEIRModel(pints.ForwardModel):
             [times[0], times[-1]], init_cond, method=method, t_eval=times)
         return sol
 
-    def _simulate(
+    def _split_simulate(
             self, parameters, times, method):
         r"""
         Computes the number of individuals in each compartment at the given
@@ -858,14 +858,40 @@ class RocheSEIRModel(pints.ForwardModel):
 
         return np.sum(inverse_sumand) / np.sum(targeted_npi)
 
-    def simulate(self, parameters, times):
+    def simulate(self, parameters):
+        """
+        Simulates the Roche model using a :class:`RocheParametersController`
+        for the model parameters.
+
+        Extends the :meth:`_split_simulate`. Always apply methods
+        :meth:`set_regions`, :meth:`set_age_groups`, :meth:`read_contact_data`
+        and :meth:`read_regional_data` before running the
+        :meth:`RocheSEIRModel.simulate`.
+
+        Parameters
+        ----------
+        parameters : RocheParametersController
+            Controller class for the parameters used by the forward simulation
+            of the model.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured output matrix of the simulation for the specified
+            region.
+
+        """
+        return self._simulate(
+            parameters(), parameters.simulation_parameters.times)
+
+    def _simulate(self, parameters, times):
         r"""
         PINTS-configured wrapper for the simulation method of the PHE model.
 
-        Extends the :meth:`_simulation`. Always apply methods
-        :meth:`set_regions`, :meth:`read_contact_data` and
-        :meth:`read_regional_data` before running the
-        :meth:`PheSEIRModel.simulate`.
+        Extends the :meth:`_split_simulate`. Always apply methods
+        :meth:`set_regions`, :meth:`set_age_groups`, :meth:`read_contact_data`
+        and :meth:`read_regional_data` before running the
+        :meth:`RocheSEIRModel.simulate`.
 
         Parameters
         ----------
@@ -912,9 +938,6 @@ class RocheSEIRModel(pints.ForwardModel):
 
         start_index = n_reg * ((len(self._output_names)-1) * n_ages) + 1
 
-        self._check_input_simulate(
-            parameters, times, start_index + 10 + 4 * n_ages, n_reg, n_ages)
-
         # Separate list of parameters into the structures needed for the
         # simulation
         my_parameters = []
@@ -949,119 +972,6 @@ class RocheSEIRModel(pints.ForwardModel):
         # Add method
         method = parameters[start_index + 9 + 4 * n_ages]
 
-        return self._simulate(my_parameters,
-                              times,
-                              method)
-
-    def _check_input_simulate(
-            self, parameters, times, L, n_reg, n_ages):
-        """
-        Check correct format of input of simulate method.
-
-        Parameters
-        ----------
-        parameters : list
-            Long vector format of the quantities that characterise the PHE
-            SEIR model in this order:
-            (1) index of region for which we wish to simulate,
-            (2) initial conditions matrices classifed by age (column name) and
-            region (row name) for each type of compartment (s, e, iA, iAA, iS,
-            iAS, iAAS, iSS, iQ, r, rA, d),
-            (3) the average times spent in the different stages of the illness
-            (k, kS, kQ, kR, kRI) - kR and kRI are age-dependent, while k, kS
-            and kQ are not,
-            (4) the propotions of people that go on to be asymptomatic, super-
-            spreaders or dead (Pa, Pss, Pd) - Pa and Pd are age-dependent,
-            while Pss is not,
-            (5) the minimum (beta_min) and maximum (beta_max) possible
-            transmission rate of the virus,
-            (6) the relative increase in transmission of a super-spreader case
-            (bss),
-            (7) the sharpness of the intervention wave used for function
-            continuity purposes (gamma),
-            (8) the stringency index needed to reach 50% of the maximum effect
-            on the infection rate (s50) and
-            (9) the type of solver implemented by the :meth:`scipy.solve_ivp`.
-            Splited into the formats necessary for the :meth:`_simulate`
-            method.
-        times : list
-            List of time points at which we wish to evaluate the ODEs
-            system.
-        L : int
-            Number of parameters considered in the model.
-        n_reg : int
-            Number of regions considered in the model.
-        n_ages : int
-            Number of age groups considered in the model.
-
-        """
-        if not isinstance(times, list):
-            raise TypeError('Time points of evaluation must be given in a list \
-                format.')
-        for _ in times:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Time points of evaluation must be integer or \
-                    float.')
-            if _ <= 0:
-                raise ValueError('Time points of evaluation must be > 0.')
-
-        if not isinstance(parameters, list):
-            raise TypeError('Parameters must be given in a list format.')
-        if len(parameters) != L:
-            raise ValueError('List of parameters has wrong length.')
-        if not isinstance(parameters[0], int):
-            raise TypeError('Index of region to evaluate must be integer.')
-        if parameters[0] <= 0:
-            raise ValueError('Index of region to evaluate must be >= 1.')
-        if parameters[0] > n_reg:
-            raise ValueError('Index of region to evaluate is out of bounds.')
-        for param in parameters[-(10 + 4 * n_ages):(-(7 + 2 * n_ages))]:
-            if not isinstance(param, (float, int)):
-                raise TypeError('The average times spent in the different stages \
-                    of the illness must be float or integer.')
-            if param <= 0:
-                raise ValueError('The average times spent in the different stages \
-                    of the illness must be > 0.')
-        for param in parameters[-(7 + 2 * n_ages):(-6)]:
-            if not isinstance(param, (float, int)):
-                raise TypeError('The propotions of people that go on to be \
-                    asymptomatic, super-spreaders or dead must be float or \
-                        integer.')
-            if param < 0:
-                raise ValueError('The propotions of people that go on to be \
-                    asymptomatic, super-spreaders or dead must be >= 0.')
-            if param > 1:
-                raise ValueError('The propotions of people that go on to be \
-                    asymptomatic, super-spreaders or dead must be <= 1.')
-        for param in parameters[-6:(-4)]:
-            if not isinstance(param, (float, int)):
-                raise TypeError('The minimum and maximum possible transmission \
-                    rate must be float or integer.')
-            if param <= 0:
-                raise ValueError('The minimum and maximum possible transmission \
-                    rate must be > 0.')
-        if not isinstance(parameters[-4], (float, int)):
-            raise TypeError('The relative increase in transmission of a \
-                super-spreader must be float or integer.')
-        if parameters[-4] <= 0:
-            raise ValueError('The relative increase in transmission of a \
-                super-spreader must be > 0.')
-        if not isinstance(parameters[-3], (float, int)):
-            raise TypeError(
-                'The sharpness of the intervention wave must be float or \
-                    integer.')
-        if parameters[-3] < 0:
-            raise ValueError('The sharpness of the intervention wave must be \
-                => 0.')
-        if not isinstance(parameters[-2], (float, int)):
-            raise TypeError(
-                'The half-effect stringency index must be float or integer.')
-        if parameters[-2] <= 0:
-            raise ValueError('The half-effect stringency index must be > 0.')
-        if parameters[-2] > 100:
-            raise ValueError('The half-effect stringency index must be <=100.')
-        if not isinstance(parameters[-1], str):
-            raise TypeError('Simulation method must be a string.')
-        if parameters[-1] not in (
-                'RK45', 'RK23', 'Radau', 'BDF', 'LSODA', 'DOP853'):
-            raise ValueError('Simulation method not available.')
+        return self._split_simulate(my_parameters,
+                                    times,
+                                    method)
