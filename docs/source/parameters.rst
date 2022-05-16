@@ -65,7 +65,7 @@ Parameters Controller
   :members:
 
 Parameter Classes for the Roche Model
-***********************************
+*************************************
     Below we list the methods for all the parameter classes associated with the forward simulation of the Roche model.
 
 Initial Conditions Parameters
