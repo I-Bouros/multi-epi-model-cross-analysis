@@ -5,7 +5,7 @@ Model Parameters Classes
 .. currentmodule:: epimodels
 
 This page contains information about the different classes which contain parameters used for the forward simulation of the various
-models currently included in the :currentmodule:`epimodels` library: *PHE Model*, *Roche Model*.
+models currently included in the `epimodels` library: *PHE Model*, *Roche Model*.
 
 Overview:
 
