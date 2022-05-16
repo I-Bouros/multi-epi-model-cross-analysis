@@ -153,7 +153,7 @@ class PHELogLik(pints.LogPDF):
             for r, _ in enumerate(self._model.regions):
                 self._parameters[1] = r+1
 
-                model_output = self._model.simulate(
+                model_output = self._model._simulate(
                     parameters=list(deepflatten(self._parameters, ignore=str)),
                     times=self._times
                     )

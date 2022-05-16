@@ -47,3 +47,11 @@ from._parameters import (  # noqa
 )
 
 # For Roche
+from._parameters import (  # noqa
+    RocheICs,
+    RocheCompartmentTimes,
+    RocheProportions,
+    RocheTransmission,
+    RocheSimParameters,
+    RocheParametersController
+)

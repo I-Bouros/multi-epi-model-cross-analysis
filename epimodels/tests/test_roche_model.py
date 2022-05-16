@@ -9,8 +9,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-# from scipy.stats import gamma
-from iteration_utilities import deepflatten
 
 import epimodels as em
 
@@ -322,50 +320,70 @@ class TestRocheSEIRModel(unittest.TestCase):
             max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
             time_changes_npi)
 
-        # Initial number of susceptibles
-        susceptibles = [[5, 6], [7, 4]]
+        # Set ICs parameters
+        ICs = em.RocheICs(
+            model=model,
+            susceptibles_IC=[[5, 6], [7, 4]],
+            exposed_IC=[[0, 0], [0, 0]],
+            infectives_pre_IC=[[0, 0], [0, 0]],
+            infectives_asym_IC=[[0, 0], [0, 0]],
+            infectives_sym_IC=[[0, 0], [0, 0]],
+            infectives_pre_ss_IC=[[0, 0], [0, 0]],
+            infectives_asym_ss_IC=[[0, 0], [0, 0]],
+            infectives_sym_ss_IC=[[0, 0], [0, 0]],
+            infectives_q_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]],
+            recovered_asym_IC=[[0, 0], [0, 0]],
+            dead_IC=[[0, 0], [0, 0]]
+        )
 
-        # Initial number of infectives
-        infectives_pre = [[0, 0], [0, 0]]
-        infectives_pre_ss = [[0, 0], [0, 0]]
-        infectives_asym = [[0, 0], [0, 0]]
-        infectives_asym_ss = [[0, 0], [0, 0]]
-        infectives_sym = [[0, 0], [0, 0]]
-        infectives_sym_ss = [[0, 0], [0, 0]]
+        # Set average times in compartments
+        compartment_times = em.RocheCompartmentTimes(
+            model=model,
+            k=3.43,
+            kS=2.57,
+            kQ=1,
+            kR=9 * np.ones(len(model.age_groups)),
+            kRI=10
+        )
 
-        # Average times in compartments
-        k = 3.43
-        kS = 2.57
-        kQ = 1
-        kR = 9 * np.ones(len(age_groups))
-        kRI = 10 * np.ones(len(age_groups))
+        # Set proportion of asymptomatic, super-spreader and dead cases
+        proportion_parameters = em.RocheProportions(
+            model=model,
+            Pa=0.658 * np.ones(len(age_groups)),
+            Pss=0.0955,
+            Pd=0.05
+        )
 
-        # Proportion of asymptomatic, super-spreader and dead cases
-        Pa = 0.658 * np.ones(len(age_groups))
-        Pss = 0.0955
-        Pd = 0.05 * np.ones(len(age_groups))
+        # Set transmission parameters
+        transmission_parameters = em.RocheTransmission(
+            model=model,
+            beta_min=0.228,
+            beta_max=0.927,
+            bss=3.11,
+            gamma=1,
+            s50=35.3
+        )
 
-        # Transmission parameters
-        beta_min = 0.228,
-        beta_max = 0.927
-        bss = 3.11
-        gamma = 1
-        s50 = 35.3
+        # Set other simulation parameters
+        simulation_parameters = em.RocheSimParameters(
+            model=model,
+            region_index=2,
+            method='RK45',
+            times=[1, 2]
+        )
 
-        parameters = [
-            2, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-            infectives_asym, infectives_sym, infectives_pre_ss,
-            infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-            [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-            k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-            beta_min, beta_max, bss, gamma, s50, 'RK45']
+        # Set all parameters in the controller
+        parameters = em.RocheParametersController(
+            model=model,
+            ICs=ICs,
+            compartment_times=compartment_times,
+            proportion_parameters=proportion_parameters,
+            transmission_parameters=transmission_parameters,
+            simulation_parameters=simulation_parameters
+        )
 
-        # List of times at which we wish to evaluate the states of the
-        # compartments of the model
-        times = [1, 2]
-
-        output_scipy_solver = model.simulate(
-            list(deepflatten(parameters, ignore=str)), times)
+        output_scipy_solver = model.simulate(parameters)
 
         output = [7, 4]
         output.extend([0] * 24)
@@ -376,484 +394,3 @@ class TestRocheSEIRModel(unittest.TestCase):
                 output,
                 output
             ]), decimal=3)
-
-        with self.assertRaises(TypeError):
-            model.simulate(list(deepflatten(parameters, ignore=str)), '0')
-
-        with self.assertRaises(TypeError):
-            model.simulate(list(deepflatten(parameters, ignore=str)), ['1', 2])
-
-        with self.assertRaises(ValueError):
-            model.simulate(list(deepflatten(parameters, ignore=str)), [0, 1])
-
-        with self.assertRaises(TypeError):
-            model.simulate('parameters', times)
-
-        with self.assertRaises(ValueError):
-            model.simulate([0], times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                0.5, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(
-                list(deepflatten(parameters1, ignore=(str, float))),
-                times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                0, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                3, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            susceptibles1 = [5, 6]
-
-            parameters1 = [
-                1, susceptibles1, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0, 0], [0, 0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                '4', kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                -1, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, '4', kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, -1, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, '4', kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, -1, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, ['0', 1], kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, [-1, 3], kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, [3, 3, 3], kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, ['3', 0], Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, [3, -1], Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, [3], Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, ['0', 0], Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, [0.2, -1], Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, [1.5, 0.5], Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, [0.5, 0.5, 0.5], Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, '0', Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, -1, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, 1.5, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, ['0', '0'],
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, [0.2, -1],
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, [1.5, 0.5],
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, [0.5],
-                beta_min, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                '0', beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                -1, beta_max, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, '1', bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, -1, bss, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, '0', gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, -2, gamma, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, '0', s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, -1, s50, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, '0', 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, -1, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, 150, 'RK45']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(TypeError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 3]
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
-
-        with self.assertRaises(ValueError):
-            parameters1 = [
-                1, susceptibles, [[0, 0], [0, 0]], infectives_pre,
-                infectives_asym, infectives_sym, infectives_pre_ss,
-                infectives_asym_ss, infectives_sym_ss, [[0, 0], [0, 0]],
-                [[0, 0], [0, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]],
-                k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-                beta_min, beta_max, bss, gamma, s50, 'my-solver2']
-
-            model.simulate(list(deepflatten(parameters1, ignore=str)), times)
