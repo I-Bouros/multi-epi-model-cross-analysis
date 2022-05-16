@@ -166,6 +166,18 @@ class TestPheICs(unittest.TestCase):
                 infectives2_IC=infectives2,
                 recovered_IC=recovered)
 
+        with self.assertRaises(TypeError):
+            susceptibles1 = [[5, 6], [7, '8']]
+
+            em.PheICs(
+                model=model,
+                susceptibles_IC=susceptibles1,
+                exposed1_IC=exposed1,
+                exposed2_IC=exposed2,
+                infectives1_IC=infectives1,
+                infectives2_IC=infectives2,
+                recovered_IC=recovered)
+
         with self.assertRaises(ValueError):
             exposed11 = [10, 2]
 
@@ -192,6 +204,18 @@ class TestPheICs(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             exposed11 = [[10, 2, 3], [0, 0, 0]]
+
+            em.PheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed1_IC=exposed11,
+                exposed2_IC=exposed2,
+                infectives1_IC=infectives1,
+                infectives2_IC=infectives2,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed11 = [['10', 2], [3, 0]]
 
             em.PheICs(
                 model=model,
@@ -238,6 +262,18 @@ class TestPheICs(unittest.TestCase):
                 infectives2_IC=infectives2,
                 recovered_IC=recovered)
 
+        with self.assertRaises(TypeError):
+            exposed21 = [[5, 9], [8, '8']]
+
+            em.PheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed1_IC=exposed1,
+                exposed2_IC=exposed21,
+                infectives1_IC=infectives1,
+                infectives2_IC=infectives2,
+                recovered_IC=recovered)
+
         with self.assertRaises(ValueError):
             infectives11 = [1, 1]
 
@@ -264,6 +300,18 @@ class TestPheICs(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             infectives11 = [[1, 1, 1], [0, 0, 0]]
+
+            em.PheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed1_IC=exposed1,
+                exposed2_IC=exposed2,
+                infectives1_IC=infectives11,
+                infectives2_IC=infectives2,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            infectives11 = [[1, 1], ['1', 0]]
 
             em.PheICs(
                 model=model,
@@ -310,6 +358,18 @@ class TestPheICs(unittest.TestCase):
                 infectives2_IC=infectives21,
                 recovered_IC=recovered)
 
+        with self.assertRaises(TypeError):
+            infectives21 = [[5, '5'], [0, 0]]
+
+            em.PheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed1_IC=exposed1,
+                exposed2_IC=exposed2,
+                infectives1_IC=infectives1,
+                infectives2_IC=infectives21,
+                recovered_IC=recovered)
+
         with self.assertRaises(ValueError):
             recovered1 = [0, 0]
 
@@ -336,6 +396,18 @@ class TestPheICs(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             recovered1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.PheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed1_IC=exposed1,
+                exposed2_IC=exposed2,
+                infectives1_IC=infectives1,
+                infectives2_IC=infectives2,
+                recovered_IC=recovered1)
+
+        with self.assertRaises(TypeError):
+            recovered1 = [[0, 0], ['0', 0]]
 
             em.PheICs(
                 model=model,
@@ -451,6 +523,39 @@ class TestPheRegParameters(unittest.TestCase):
                 region_index=region_index,
                 betas=betas,
                 times=times1
+            )
+
+        with self.assertRaises(ValueError):
+            initial_r1 = [[0.5], [1]]
+
+            em.PheRegParameters(
+                model=model,
+                initial_r=initial_r1,
+                region_index=region_index,
+                betas=betas,
+                times=times
+            )
+
+        with self.assertRaises(ValueError):
+            initial_r1 = [0.5, 1, 1]
+
+            em.PheRegParameters(
+                model=model,
+                initial_r=initial_r1,
+                region_index=region_index,
+                betas=betas,
+                times=times
+            )
+
+        with self.assertRaises(TypeError):
+            initial_r1 = [0.5, '1']
+
+            em.PheRegParameters(
+                model=model,
+                initial_r=initial_r1,
+                region_index=region_index,
+                betas=betas,
+                times=times
             )
 
         with self.assertRaises(TypeError):
@@ -1122,6 +1227,24 @@ class TestRocheICs(unittest.TestCase):
                 recovered_asym_IC=recovered_asym,
                 dead_IC=dead)
 
+        with self.assertRaises(TypeError):
+            susceptibles1 = [[1500, '600'], [700, 400]]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles1,
+                exposed_IC=exposed,
+                infectives_pre_IC=infectives_pre,
+                infectives_asym_IC=infectives_asym,
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=infectives_pre_ss,
+                infectives_asym_ss_IC=infectives_asym_ss,
+                infectives_sym_ss_IC=infectives_sym_ss,
+                infectives_q_IC=infectives_q,
+                recovered_IC=recovered,
+                recovered_asym_IC=recovered_asym,
+                dead_IC=dead)
+
         with self.assertRaises(ValueError):
             exposed1 = [0, 0]
 
@@ -1160,6 +1283,24 @@ class TestRocheICs(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             exposed1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_IC=exposed1,
+                infectives_pre_IC=infectives_pre,
+                infectives_asym_IC=infectives_asym,
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=infectives_pre_ss,
+                infectives_asym_ss_IC=infectives_asym_ss,
+                infectives_sym_ss_IC=infectives_sym_ss,
+                infectives_q_IC=infectives_q,
+                recovered_IC=recovered,
+                recovered_asym_IC=recovered_asym,
+                dead_IC=dead)
+
+        with self.assertRaises(TypeError):
+            exposed1 = [[0, '0'], [0, 0]]
 
             em.RocheICs(
                 model=model,
@@ -1230,6 +1371,24 @@ class TestRocheICs(unittest.TestCase):
                 recovered_asym_IC=recovered_asym,
                 dead_IC=dead)
 
+        with self.assertRaises(TypeError):
+            infectives_pre1 = [[40, '20'], [50, 32]]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_IC=exposed,
+                infectives_pre_IC=infectives_pre1,
+                infectives_asym_IC=infectives_asym,
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=infectives_pre_ss,
+                infectives_asym_ss_IC=infectives_asym_ss,
+                infectives_sym_ss_IC=infectives_sym_ss,
+                infectives_q_IC=infectives_q,
+                recovered_IC=recovered,
+                recovered_asym_IC=recovered_asym,
+                dead_IC=dead)
+
         with self.assertRaises(ValueError):
             infectives_asym1 = [0, 10]
 
@@ -1268,6 +1427,24 @@ class TestRocheICs(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             infectives_asym1 = [[0, 10, 0], [2, 0, 0]]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_IC=exposed,
+                infectives_pre_IC=infectives_pre,
+                infectives_asym_IC=infectives_asym1,
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=infectives_pre_ss,
+                infectives_asym_ss_IC=infectives_asym_ss,
+                infectives_sym_ss_IC=infectives_sym_ss,
+                infectives_q_IC=infectives_q,
+                recovered_IC=recovered,
+                recovered_asym_IC=recovered_asym,
+                dead_IC=dead)
+
+        with self.assertRaises(TypeError):
+            infectives_asym1 = [[0, '10'], [0, 2]]
 
             em.RocheICs(
                 model=model,
@@ -1338,6 +1515,24 @@ class TestRocheICs(unittest.TestCase):
                 recovered_asym_IC=recovered_asym,
                 dead_IC=dead)
 
+        with self.assertRaises(TypeError):
+            infectives_sym1 = [[10, 20], [20, '32']]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_IC=exposed,
+                infectives_pre_IC=infectives_pre,
+                infectives_asym_IC=infectives_asym,
+                infectives_sym_IC=infectives_sym1,
+                infectives_pre_ss_IC=infectives_pre_ss,
+                infectives_asym_ss_IC=infectives_asym_ss,
+                infectives_sym_ss_IC=infectives_sym_ss,
+                infectives_q_IC=infectives_q,
+                recovered_IC=recovered,
+                recovered_asym_IC=recovered_asym,
+                dead_IC=dead)
+
         with self.assertRaises(ValueError):
             infectives_pre_ss1 = [2, 3]
 
@@ -1376,6 +1571,24 @@ class TestRocheICs(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             infectives_pre_ss1 = [[2, 3, 10], [0, 0, 0]]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_IC=exposed,
+                infectives_pre_IC=infectives_pre,
+                infectives_asym_IC=infectives_asym,
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=infectives_pre_ss1,
+                infectives_asym_ss_IC=infectives_asym_ss,
+                infectives_sym_ss_IC=infectives_sym_ss,
+                infectives_q_IC=infectives_q,
+                recovered_IC=recovered,
+                recovered_asym_IC=recovered_asym,
+                dead_IC=dead)
+
+        with self.assertRaises(TypeError):
+            infectives_pre_ss1 = [['2', 3], [10, 0]]
 
             em.RocheICs(
                 model=model,
@@ -1446,6 +1659,24 @@ class TestRocheICs(unittest.TestCase):
                 recovered_asym_IC=recovered_asym,
                 dead_IC=dead)
 
+        with self.assertRaises(TypeError):
+            infectives_asym_ss1 = [[1, 1], [1, '0']]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_IC=exposed,
+                infectives_pre_IC=infectives_pre,
+                infectives_asym_IC=infectives_asym,
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=infectives_pre_ss,
+                infectives_asym_ss_IC=infectives_asym_ss1,
+                infectives_sym_ss_IC=infectives_sym_ss,
+                infectives_q_IC=infectives_q,
+                recovered_IC=recovered,
+                recovered_asym_IC=recovered_asym,
+                dead_IC=dead)
+
         with self.assertRaises(ValueError):
             infectives_sym_ss1 = [4, 5]
 
@@ -1484,6 +1715,24 @@ class TestRocheICs(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             infectives_sym_ss1 = [[4, 5, 1], [2, 0, 0]]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_IC=exposed,
+                infectives_pre_IC=infectives_pre,
+                infectives_asym_IC=infectives_asym,
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=infectives_pre_ss,
+                infectives_asym_ss_IC=infectives_asym_ss,
+                infectives_sym_ss_IC=infectives_sym_ss1,
+                infectives_q_IC=infectives_q,
+                recovered_IC=recovered,
+                recovered_asym_IC=recovered_asym,
+                dead_IC=dead)
+
+        with self.assertRaises(TypeError):
+            infectives_sym_ss1 = [['4', 5], [1, 2]]
 
             em.RocheICs(
                 model=model,
@@ -1554,6 +1803,24 @@ class TestRocheICs(unittest.TestCase):
                 recovered_asym_IC=recovered_asym,
                 dead_IC=dead)
 
+        with self.assertRaises(TypeError):
+            infectives_q1 = [['0', 0], [0, 0]]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_IC=exposed,
+                infectives_pre_IC=infectives_pre,
+                infectives_asym_IC=infectives_asym,
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=infectives_pre_ss,
+                infectives_asym_ss_IC=infectives_asym_ss,
+                infectives_sym_ss_IC=infectives_sym_ss,
+                infectives_q_IC=infectives_q1,
+                recovered_IC=recovered,
+                recovered_asym_IC=recovered_asym,
+                dead_IC=dead)
+
         with self.assertRaises(ValueError):
             recovered1 = [0, 0]
 
@@ -1592,6 +1859,24 @@ class TestRocheICs(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             recovered1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_IC=exposed,
+                infectives_pre_IC=infectives_pre,
+                infectives_asym_IC=infectives_asym,
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=infectives_pre_ss,
+                infectives_asym_ss_IC=infectives_asym_ss,
+                infectives_sym_ss_IC=infectives_sym_ss,
+                infectives_q_IC=infectives_q,
+                recovered_IC=recovered1,
+                recovered_asym_IC=recovered_asym,
+                dead_IC=dead)
+
+        with self.assertRaises(TypeError):
+            recovered1 = [[0, 0], ['0', 0]]
 
             em.RocheICs(
                 model=model,
@@ -1662,6 +1947,24 @@ class TestRocheICs(unittest.TestCase):
                 recovered_asym_IC=recovered_asym1,
                 dead_IC=dead)
 
+        with self.assertRaises(TypeError):
+            recovered_asym1 = [[0, 0], ['0', 0]]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_IC=exposed,
+                infectives_pre_IC=infectives_pre,
+                infectives_asym_IC=infectives_asym,
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=infectives_pre_ss,
+                infectives_asym_ss_IC=infectives_asym_ss,
+                infectives_sym_ss_IC=infectives_sym_ss,
+                infectives_q_IC=infectives_q,
+                recovered_IC=recovered,
+                recovered_asym_IC=recovered_asym1,
+                dead_IC=dead)
+
         with self.assertRaises(ValueError):
             dead1 = [0, 0]
 
@@ -1700,6 +2003,24 @@ class TestRocheICs(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             dead1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.RocheICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_IC=exposed,
+                infectives_pre_IC=infectives_pre,
+                infectives_asym_IC=infectives_asym,
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=infectives_pre_ss,
+                infectives_asym_ss_IC=infectives_asym_ss,
+                infectives_sym_ss_IC=infectives_sym_ss,
+                infectives_q_IC=infectives_q,
+                recovered_IC=recovered,
+                recovered_asym_IC=recovered_asym,
+                dead_IC=dead1)
+
+        with self.assertRaises(TypeError):
+            dead1 = [[0, 0], ['0', 0]]
 
             em.RocheICs(
                 model=model,
