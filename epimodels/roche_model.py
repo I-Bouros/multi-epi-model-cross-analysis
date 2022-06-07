@@ -1194,6 +1194,15 @@ class RocheSEIRModel(pints.ForwardModel):
             if _ < 0:
                 raise ValueError('Observed number of deaths must be => 0.')
 
+        # print(k)
+        # print(obs_death)
+        # print(self.mean_deaths(fatality_ratio, time_to_death, k, new_infections))
+        # print('\n')
+
+        if not hasattr(self, 'actual_deaths'):
+            self.actual_deaths = [0] * 150
+        self.actual_deaths[k] = sum(self.mean_deaths(fatality_ratio, time_to_death, k, new_infections))
+
         # Compute mean of negative-binomial
         return nbinom.logpmf(
             k=obs_death,
