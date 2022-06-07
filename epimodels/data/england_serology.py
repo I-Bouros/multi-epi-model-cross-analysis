@@ -74,7 +74,7 @@ def process_tests_data(
     Returns
     -------
     tuple of numpy.array
-        Tuple of processed regional tests data and psotive results data as a
+        Tuple of processed regional tests data and positive results data as a
         matrix.
 
     """

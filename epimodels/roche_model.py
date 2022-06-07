@@ -20,7 +20,7 @@ from itertools import chain
 
 import numpy as np
 import pints
-# from scipy.stats import nbinom, binom
+from scipy.stats import nbinom, binom
 from scipy.integrate import solve_ivp
 
 import epimodels as em
@@ -377,10 +377,14 @@ class RocheSEIRModel(pints.ForwardModel):
         pos = np.where(np.asarray(self.time_changes_npi) <= t)
         current_npis = self.reg_levels_npi[r-1][pos[-1][-1]]
 
+        # Identify the current time and region NPIs flags
+        pos = np.where(np.asarray(self.time_changes_flag) <= t)
+        current_flags = self.general_npi[pos[-1][-1]]
+
         # Compute the sub-indices of each of the different NPIs
         sub_indeces = [100 * (current_npis[j] * (1 - self._w *
                        self.targeted_npi[j]) / self.max_levels_npi[j] +
-                       self._w * self.targeted_npi[j] * self.general_npi[j])
+                       self._w * self.targeted_npi[j] * current_flags[j])
                        for j in range(len(current_npis))]
 
         return self.formula_SI(sub_indeces)
@@ -518,7 +522,7 @@ class RocheSEIRModel(pints.ForwardModel):
 
     def _scipy_solver(self, times, num_a_groups, method):
         """
-        Computes the values in each compartment of the PHE ODEs system using
+        Computes the values in each compartment of the Roche ODEs system using
         the 'off-the-shelf' solver of the IVP from :module:`scipy`.
 
         Parameters
@@ -563,7 +567,7 @@ class RocheSEIRModel(pints.ForwardModel):
         Parameters
         ----------
         parameters : list
-            List of quantities that characterise the PHE SEIR model in
+            List of quantities that characterise the Roche SEIR model in
             this order: index of region for which we wish to simulate,
             initial conditions matrices classifed by age (column name) and
             region (row name) for each type of compartment (s, e, iA, iAA, iS,
@@ -679,7 +683,7 @@ class RocheSEIRModel(pints.ForwardModel):
         self.time_changes_region = time_changes_region
 
     def read_npis_data(self, max_levels_npi, targeted_npi, general_npi,
-                       reg_levels_npi, time_changes_npi):
+                       reg_levels_npi, time_changes_npi, time_changes_flag):
         """
         Reads in the timelines of non-pharmaceutical interventions used for
         the modelling. These are expressed as levels of severity for each
@@ -694,9 +698,9 @@ class RocheSEIRModel(pints.ForwardModel):
             reach.
         targeted_npi : list of bool
             List of the targeted non-pharmaceutical interventions.
-        general_npi : list of bool
+        general_npi : list of list of int
             List of the general values of the targeted non-pharmaceutical
-            interventions.
+            interventions. In chronological order.
         reg_levels_npi : list of list of int
             List of region-specific levels the non-pharmaceutical interventions
             changes. In chronological order.
@@ -704,23 +708,29 @@ class RocheSEIRModel(pints.ForwardModel):
             List of times at which the next instances of region-specific
             non-pharmaceutical interventions start to be used. In
             increasing order.
+        time_changes_flag : list
+            List of times at which the next instances of region-specific
+            non-pharmaceutical interventions start to be used. In
+            increasing order.
 
         """
         # Check the data for the NPIs is in the correct format
         self._check_npis_data(max_levels_npi, targeted_npi, general_npi,
-                              reg_levels_npi, time_changes_npi)
+                              reg_levels_npi, time_changes_npi,
+                              time_changes_flag)
 
         self.max_levels_npi = max_levels_npi
         self.targeted_npi = targeted_npi
         self.general_npi = general_npi
         self.reg_levels_npi = reg_levels_npi
         self.time_changes_npi = time_changes_npi
+        self.time_changes_flag = time_changes_flag
 
         # Compute the additional weight for a policy of general scope
         self._w = self._compute_add_pol_weight(max_levels_npi, targeted_npi)
 
     def _check_npis_data(self, max_levels_npi, targeted_npi, general_npi,
-                         reg_levels_npi, time_changes_npi):
+                         reg_levels_npi, time_changes_npi, time_changes_flag):
         """
         Check correct format of input of non-pharmaceutical interventions data.
 
@@ -731,13 +741,17 @@ class RocheSEIRModel(pints.ForwardModel):
             reach.
         targeted_npi : list of bool
             List of the targeted non-pharmaceutical interventions.
-        general_npi : list of bool
+        general_npi : list of list of int
             List of the general values of the targeted non-pharmaceutical
-            interventions.
+            interventions. In chronological order.
         reg_levels_npi : list of list of int
             List of region-specific levels the non-pharmaceutical interventions
             changes. In chronological order.
         time_changes_npi : list
+            List of times at which the next instances of region-specific
+            non-pharmaceutical interventions start to be used. In
+            increasing order.
+        time_changes_flag : list
             List of times at which the next instances of region-specific
             non-pharmaceutical interventions start to be used. In
             increasing order.
@@ -770,17 +784,20 @@ class RocheSEIRModel(pints.ForwardModel):
         if not isinstance(general_npi, list):
             raise TypeError('The general value of non-pharmaceutical \
                     interventions must be given in a list format.')
-        if len(general_npi) != len(max_levels_npi):
-            raise ValueError('Wrong number of the general value of \
-                interventions.')
-        for ind, _ in enumerate(general_npi):
-            if not isinstance(_, bool):
-                raise TypeError('The general value of the non-pharmaceutical \
-                    interventions must be boolean.')
-            # If targeted (1) can be both 0 or 1, if not it can only be 0
-            if _ > targeted_npi[ind]:
-                raise ValueError('The general value of the non-pharmaceutical \
-                    interventions must match type of targeted status.')
+        if len(general_npi) != len(time_changes_flag):
+            raise ValueError('Wrong number of general value of non-pharmaceutical \
+                    interventions changes.')
+        for flags_npi in general_npi:
+            if not isinstance(flags_npi, list):
+                raise TypeError('Each change in levels the non-pharmaceutical \
+                    interventions must be given in a list format.')
+            if len(flags_npi) != len(max_levels_npi):
+                raise ValueError('Wrong number of the general value of \
+                    interventions.')
+            for ind, _ in enumerate(flags_npi):
+                if not isinstance(_, bool):
+                    raise TypeError('The general value of the non-pharmaceutical \
+                        interventions must be boolean.')
 
         # Times of changes NPIs
         if not isinstance(time_changes_npi, list):
@@ -793,6 +810,18 @@ class RocheSEIRModel(pints.ForwardModel):
             if _ < 0:
                 raise ValueError('Time points of changes in non-pharmaceutical \
                     interventions must be => 0.')
+
+        # Times of changes NPI flags:
+        if not isinstance(time_changes_flag, list):
+            raise TypeError('Time points of changes in non-pharmaceutical \
+                    interventions flags must be given in a list format.')
+        for _ in time_changes_flag:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of changes in non-pharmaceutical \
+                    interventions flags must be integer or float.')
+            if _ < 0:
+                raise ValueError('Time points of changes in non-pharmaceutical \
+                    interventions flags must be => 0.')
 
         # Regional time-dependent NPIs
         if not isinstance(reg_levels_npi, list):
@@ -886,7 +915,7 @@ class RocheSEIRModel(pints.ForwardModel):
 
     def _simulate(self, parameters, times):
         r"""
-        PINTS-configured wrapper for the simulation method of the PHE model.
+        PINTS-configured wrapper for the simulation method of the Roche model.
 
         Extends the :meth:`_split_simulate`. Always apply methods
         :meth:`set_regions`, :meth:`set_age_groups`, :meth:`read_contact_data`
@@ -896,7 +925,7 @@ class RocheSEIRModel(pints.ForwardModel):
         Parameters
         ----------
         parameters : list
-            Long vector format of the quantities that characterise the PHE
+            Long vector format of the quantities that characterise the Roche
             SEIR model in this order:
             (1) index of region for which we wish to simulate,
             (2) initial conditions matrices classifed by age (column name) and
@@ -975,3 +1004,583 @@ class RocheSEIRModel(pints.ForwardModel):
         return self._split_simulate(my_parameters,
                                     times,
                                     method)
+
+    def _check_output_format(self, output):
+        """
+        Checks correct format of the output matrix.
+
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the RocheSEIRModel.
+
+        """
+        if np.asarray(output).ndim != 2:
+            raise ValueError(
+                'Model output storage format must be 2-dimensional.')
+        if np.asarray(output).shape[0] != self._times.shape[0]:
+            raise ValueError(
+                    'Wrong number of rows for the model output.')
+        if np.asarray(output).shape[1] != 13 * self._num_ages:
+            raise ValueError(
+                    'Wrong number of columns for the model output.')
+        for r in np.asarray(output):
+            for _ in r:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'Model output elements must be integer or float.')
+
+    def _check_new_infections_format(self, new_infections):
+        """
+        Checks correct format of the new infections matrix.
+
+        Parameters
+        ----------
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the RocheSEIRModel.
+
+        """
+        if np.asarray(new_infections).ndim != 2:
+            raise ValueError(
+                'Model new infections storage format must be 2-dimensional.')
+        if np.asarray(new_infections).shape[0] != self._times.shape[0]:
+            raise ValueError(
+                    'Wrong number of rows for the model new infections.')
+        if np.asarray(new_infections).shape[1] != self._num_ages:
+            raise ValueError(
+                    'Wrong number of columns for the model new infections.')
+        for r in np.asarray(new_infections):
+            for _ in r:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'Model new infections elements must be integer or \
+                            float.')
+
+    def new_infections(self, output):
+        """
+        Computes number of new infections at each time step in specified
+        region, given the simulated timeline of susceptible number of
+        individuals, for all age groups in the model.
+
+        It uses an output of the simulation method for the RocheSEIRModel,
+        taking all the rest of the parameters necessary for the computation
+        from the way its simulation has been fitted.
+
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output of the simulation method for the
+            RocheSEIRModel.
+
+        Returns
+        -------
+        nunmpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the RocheSEIRModel.
+
+        Notes
+        -----
+        Always run :meth:`RocheSEIRModel.simulate` before running this one.
+
+        """
+        # Check correct format of parameters
+        self._check_output_format(output)
+
+        beta_min, beta_max, bss, gamma, s50 = self._c[8:]
+        d_infec = np.empty((self._times.shape[0], self._num_ages))
+
+        for ind, t in enumerate(self._times.tolist()):
+            # Read from output
+            s = output[ind, :][:self._num_ages]
+            iA = output[ind, :][(2*self._num_ages):(3*self._num_ages)]
+            iAA = output[ind, :][(3*self._num_ages):(4*self._num_ages)]
+            iS = output[ind, :][(4*self._num_ages):(5*self._num_ages)]
+            iAS = output[ind, :][(5*self._num_ages):(6*self._num_ages)]
+            iAAS = output[ind, :][(6*self._num_ages):(7*self._num_ages)]
+            iSS = output[ind, :][(7*self._num_ages):(8*self._num_ages)]
+
+            # Compute the current time, age and region-varying
+            # rate with which susceptible individuals become infected
+            si = self._compute_SI(self._region, t)
+            bA, bS, bAA, bAS, bSS, bAAS = \
+                self._compute_betas(beta_min, beta_max, bss, gamma, si, s50)
+
+            # Identify the appropriate contact matrix for the ODE system
+            cont_mat = self.contacts_timeline.identify_current_contacts(
+                self._region, t)
+
+            # Write actual RHS
+            lam = bA * np.asarray(iA) + bAA * np.asarray(iAA) + bS * \
+                np.asarray(iS) + bAS * np.asarray(iAS) + bAAS * \
+                np.asarray(iAAS) + bSS * np.asarray(iSS)
+
+            # fraction of new infectives in delta_t time step
+            d_infec[ind, :] = np.multiply(
+                np.asarray(s), (1 / self._N) * np.dot(cont_mat, lam))
+
+            if np.any(d_infec[ind, :] < 0):  # pragma: no cover
+                d_infec[ind, :] = np.zeros_like(d_infec[ind, :])
+
+        return d_infec
+
+    def loglik_deaths(
+            self, obs_death, new_infections, fatality_ratio, time_to_death,
+            niu, k):
+        r"""
+        Computes the log-likelihood for the number of deaths at time step
+        :math:`k` in specified region, given the simulated timeline of
+        susceptible number of individuals, for all age groups in the model.
+
+        The number of deaths is assumed to be distributed according to
+        a negative binomial distribution with mean
+
+        .. math::
+            \mu_{r,t_k,i} = p_i \sum_{l=0}^{k} f_{k-l} \delta_{r,t_l,i}^{infec}
+
+        and variance :math:`\mu_{r,t_k,i} (\nu + 1)`, where :math:`p_i` is the
+        age-specific fatality ratio for age group :math:`i`, :math:`f_{k-l}`
+        is the probability of demise :math:`k-l` days after infection and
+        :math:`\delta_{r,t_l,i}^{infec}` is the number of new infections
+        in specified region, for age group :math:`i` on day :math:`t_l`.
+
+        It uses new_infections output of the simulation method for the
+        RocheSEIRModel, taking all the rest of the parameters necessary for
+        the computation from the way its simulation has been fitted.
+
+        Parameters
+        ----------
+        obs_death : list
+            List of number of observed deaths by age group at time point k.
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the RocheSEIRModel.
+        fatality_ratio : list
+            List of age-specific fatality ratios.
+        time_to_death : list
+            List of probabilities of death of individual k days after
+            infection.
+        niu : float
+            Dispersion factor for the negative binomial distribution.
+        k : int
+            Index of day for which we intend to sample the number of deaths for
+            by age group.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured matrix of log-likelihoods for the observed number
+            of deaths in specified region at time :math:`t_k`.
+
+        Notes
+        -----
+        Always run :meth:`RocheSEIRModel.new_infections` and
+        :meth:`RocheSEIRModel.check_death_format` before running this one.
+
+        """
+        self._check_time_step_format(k)
+
+        # Check correct format for observed number of deaths
+        if np.asarray(obs_death).ndim != 1:
+            raise ValueError('Observed number of deaths by age category storage \
+                format is 1-dimensional.')
+        if np.asarray(obs_death).shape[0] != self._num_ages:
+            raise ValueError('Wrong number of age groups for observed number \
+                of deaths.')
+        for _ in obs_death:
+            if not isinstance(_, (int, np.integer)):
+                raise TypeError('Observed number of deaths must be integer.')
+            if _ < 0:
+                raise ValueError('Observed number of deaths must be => 0.')
+
+        # Compute mean of negative-binomial
+        return nbinom.logpmf(
+            k=obs_death,
+            n=niu * self.mean_deaths(
+                fatality_ratio, time_to_death, k, new_infections),
+            p=niu/(1+niu))
+
+    def check_death_format(
+            self, new_infections, fatality_ratio, time_to_death, niu):
+        """
+        Checks correct format of the inputs of number of death calculation.
+
+        Parameters
+        ----------
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the RocheSEIRModel.
+        fatality_ratio : list
+            List of age-specific fatality ratios.
+        time_to_death : list
+            List of probabilities of death of individual k days after
+            infection.
+        niu : float
+            Dispersion factor for the negative binomial distribution.
+
+        """
+        self._check_new_infections_format(new_infections)
+        if not isinstance(niu, (int, float)):
+            raise TypeError('Dispersion factor must be integer or float.')
+        if niu <= 0:
+            raise ValueError('Dispersion factor must be > 0.')
+        if np.asarray(fatality_ratio).ndim != 1:
+            raise ValueError('Fatality ratios by age category storage \
+                format is 1-dimensional.')
+        if np.asarray(fatality_ratio).shape[0] != self._num_ages:
+            raise ValueError('Wrong number of age groups for fatality ratios.')
+        for _ in fatality_ratio:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Fatality ratio must be integer or \
+                    float.')
+            if(_ < 0) or (_ > 1):
+                raise ValueError('Fatality ratio must be => 0 and <=1.')
+        if np.asarray(time_to_death).ndim != 1:
+            raise ValueError('Probabilities of death of individual k days after \
+                infection storage format is 1-dimensional.')
+        if np.asarray(time_to_death).shape[0] != len(self._times):
+            raise ValueError('Wrong number of probabilities of death of individual\
+                k days after infection.')
+        for _ in time_to_death:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Probabilities of death of individual k days after \
+                    infection must be integer or float.')
+            if (_ < 0) or (_ > 1):
+                raise ValueError('Probabilities of death of individual k days after \
+                    infection must be => 0 and <=1.')
+
+    def mean_deaths(self, fatality_ratio, time_to_death, k, d_infec):
+        """
+        Computes the mean of the negative binomial distribution used to
+        calculate number of deaths for specified age group.
+
+        Parameters
+        ----------
+        fatality_ratio : list
+            List of age-specific fatality ratios.
+        time_to_death : list
+            List of probabilities of death of individual k days after
+            infection.
+        k : int
+            Index of day for which we intend to sample the number of deaths for
+            by age group.
+        d_infec : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the RocheSEIRModel.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured matrix of the expected number of deaths to be
+            observed in specified region at time :math:`t_k`.
+
+        """
+        if k >= 30:
+            return np.array(fatality_ratio) * np.sum(np.matmul(
+                np.diag(time_to_death[:31][::-1]),
+                d_infec[(k-30):(k+1), :]), axis=0)
+        else:
+            return np.array(fatality_ratio) * np.sum(np.matmul(
+                np.diag(time_to_death[:(k+1)][::-1]), d_infec[:(k+1), :]),
+                axis=0)
+
+    def samples_deaths(
+            self, new_infections, fatality_ratio, time_to_death, niu, k):
+        r"""
+        Computes samples for the number of deaths at time step
+        :math:`k` in specified region, given the simulated timeline of
+        susceptible number of individuals, for all age groups in the model.
+
+        The number of deaths is assumed to be distributed according to
+        a negative binomial distribution with mean
+
+        .. math::
+            \mu_{r,t_k,i} = p_i \sum_{l=0}^{k} f_{k-l} \delta_{r,t_l,i}^{infec}
+
+        and variance :math:`\mu_{r,t_k,i} (\nu + 1)`, where :math:`p_i` is the
+        age-specific fatality ratio for age group :math:`i`, :math:`f_{k-l}`
+        is the probability of demise :math:`k-l` days after infection and
+        :math:`\delta_{r,t_l,i}^{infec}` is the number of new infections
+        in specified region, for age group :math:`i` on day :math:`t_l`.
+
+        It uses an output of the simulation method for the RocheSEIRModel,
+        taking all the rest of the parameters necessary for the computation
+        from the way its simulation has been fitted.
+
+        Parameters
+        ----------
+        new_infections : numpy.array
+            Age-structured matrix of the number of new infections from the
+            simulation method for the RocheSEIRModel.
+        fatality_ratio : list
+            List of age-specific fatality ratios.
+        time_to_death : list
+            List of probabilities of death of individual k days after
+            infection.
+        niu : float
+            Dispersion factor for the negative binomial distribution.
+        k : int
+            Index of day for which we intend to sample the number of deaths for
+            by age group.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured matrix of sampled number of deaths in specified
+            region at time :math:`t_k`.
+
+        Notes
+        -----
+        Always run :meth:`RocheSEIRModel.new_infections` and
+        :meth:`RocheSEIRModel.check_death_format` before running this one.
+
+        """
+        self._check_time_step_format(k)
+
+        # Compute mean of negative-binomial
+        return nbinom.rvs(
+            n=niu * self.mean_deaths(
+                fatality_ratio, time_to_death, k, new_infections),
+            p=niu/(1+niu))
+
+    def loglik_positive_tests(self, obs_pos, output, tests, sens, spec, k):
+        r"""
+        Computes the log-likelihood for the number of positive tests at time
+        step :math:`k` in specified region, given the simulated timeline of
+        susceptible number of individuals, for all age groups in the model.
+
+        The number of positive tests is assumed to be distributed according to
+        a binomial distribution with parameters :math:`n = n_{r,t_k,i}` and
+
+        .. math::
+            p = k_{sens} (1-\frac{S_{r,t_k,i}}{N_{r,i}}) + (
+                1-k_{spec}) \frac{S_{r,t_k,i}}{N_{r,i}}
+
+        where :math:`n_{r,t_k,i}` is the number of tests conducted for
+        people in age group :math:`i` in specified region :math:`r` at time
+        atep :math:`t_k`, :math:`k_{sens}` and :math:`k_{spec}` are the
+        sensitivity and specificity respectively of a test, while
+        is the probability of demise :math:`k-l` days after infection and
+        :math:`\delta_{r,t_l,i}^{infec}` is the number of new infections
+        in specified region, for age group :math:`i` on day :math:`t_l`.
+
+        It uses an output of the simulation method for the RocheSEIRModel,
+        taking all the rest of the parameters necessary for the computation
+        from the way its simulation has been fitted.
+
+        Parameters
+        ----------
+        obs_pos : list
+            List of number of observed positive test results by age group at
+            time point k.
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the RocheSEIRModel.
+        tests : list
+            List of conducted tests in specified region and at time point k
+            classifed by age groups.
+        sens : float or int
+            Sensitivity of the test (or ratio of true positives).
+        spec : float or int
+            Specificity of the test (or ratio of true negatives).
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured matrix of log-likelihoods for the obsereved number
+            of positive test results for each age group in specified region at
+            time :math:`t_k`.
+
+        Notes
+        -----
+        Always run :meth:`RocheSEIRModel.simulate` and
+        :meth:`RocheSEIRModel.check_positives_format` before running this one.
+
+        """
+        self._check_time_step_format(k)
+
+        # Check correct format for observed number of positive results
+        if np.asarray(obs_pos).ndim != 1:
+            raise ValueError('Observed number of postive tests results by age category \
+                storage format is 1-dimensional.')
+        if np.asarray(obs_pos).shape[0] != self._num_ages:
+            raise ValueError('Wrong number of age groups for observed number \
+                of postive tests results.')
+        for _ in obs_pos:
+            if not isinstance(_, (int, np.integer)):
+                raise TypeError('Observed number of postive tests results must be \
+                    integer.')
+            if _ < 0:
+                raise ValueError('Observed number of postive tests results must \
+                    be => 0.')
+
+        # Check correct format for number of tests based on the observed number
+        # of positive results
+        for i, _ in enumerate(tests):
+            if _ < obs_pos[i]:
+                raise ValueError('Not enough performed tests for the number \
+                    of observed positives.')
+
+        a = self._num_ages
+        # Compute parameters of binomial
+        suscep = output[k, :a]
+        pop = 0
+        for i in range(6):
+            pop += output[k, (i*a):((i+1)*a)]
+
+        return binom.logpmf(
+            k=obs_pos,
+            n=tests,
+            p=self.mean_positives(sens, spec, suscep, pop))
+
+    def _check_time_step_format(self, k):
+        if not isinstance(k, int):
+            raise TypeError('Index of time of computation of the log-likelihood \
+                must be integer.')
+        if k < 0:
+            raise ValueError('Index of time of computation of the log-likelihood \
+                must be >= 0.')
+        if k >= self._times.shape[0]:
+            raise ValueError('Index of time of computation of the log-likelihood \
+                must be within those considered in the output.')
+
+    def check_positives_format(self, output, tests, sens, spec):
+        """
+        Checks correct format of the inputs of number of positive test results
+        calculation.
+
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the RocheSEIRModel.
+        tests : list
+            List of conducted tests in specified region and at time point k
+            classifed by age groups.
+        sens : float or int
+            Sensitivity of the test (or ratio of true positives).
+        spec : float or int
+            Specificity of the test (or ratio of true negatives).
+
+        """
+        self._check_output_format(output)
+        if np.asarray(tests).ndim != 2:
+            raise ValueError('Number of tests conducted by age category storage \
+                format is 2-dimensional.')
+        if np.asarray(tests).shape[1] != self._num_ages:
+            raise ValueError('Wrong number of age groups for observed number \
+                of tests conducted.')
+        for i in tests:
+            for _ in i:
+                if not isinstance(_, (int, np.integer)):
+                    raise TypeError('Number of tests conducted must be \
+                        integer.')
+                if _ < 0:
+                    raise ValueError('Number of tests conducted ratio must \
+                        be => 0.')
+        if not isinstance(sens, (int, float)):
+            raise TypeError('Sensitivity must be integer or float.')
+        if (sens < 0) or (sens > 1):
+            raise ValueError('Sensitivity must be >= 0 and <=1.')
+        if not isinstance(spec, (int, float)):
+            raise TypeError('Specificity must be integer or float.')
+        if (spec < 0) or (spec > 1):
+            raise ValueError('Specificity must be >= 0 and >=1.')
+
+    def mean_positives(self, sens, spec, suscep, pop):
+        """
+        Computes the mean of the binomial distribution used to
+        calculate number of positive test results for specified age group.
+
+        Parameters
+        ----------
+        sens : float or int
+            Sensitivity of the test (or ratio of true positives).
+        spec : float or int
+            Specificity of the test (or ratio of true negatives).
+        suscep : numpy.array
+            Age-structured matrix of the current number of susceptibles
+            in the population.
+        pop : numpy.array
+            Age-structured matrix of the current number of individuals
+            in the population.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured matrix of the expected number of positive test
+            results to be observed in specified region at time :math:`t_k`.
+
+        """
+        return sens * (1-np.divide(suscep, pop)) + (1-spec) * np.divide(
+            suscep, pop)
+
+    def samples_positive_tests(self, output, tests, sens, spec, k):
+        r"""
+        Computes the samples for the number of positive tests at time
+        step :math:`k` in specified region, given the simulated timeline of
+        susceptible number of individuals, for all age groups in the model.
+
+        The number of positive tests is assumed to be distributed according to
+        a binomial distribution with parameters :math:`n = n_{r,t_k,i}` and
+
+        .. math::
+            p = k_{sens} (1-\frac{S_{r,t_k,i}}{N_{r,i}}) + (
+                1-k_{spec}) \frac{S_{r,t_k,i}}{N_{r,i}}
+
+        where :math:`n_{r,t_k,i}` is the number of tests conducted for
+        people in age group :math:`i` in specified region :math:`r` at time
+        atep :math:`t_k`, :math:`k_{sens}` and :math:`k_{spec}` are the
+        sensitivity and specificity respectively of a test, while
+        is the probability of demise :math:`k-l` days after infection and
+        :math:`\delta_{r,t_l,i}^{infec}` is the number of new infections
+        in specified region, for age group :math:`i` on day :math:`t_l`.
+
+        It uses an output of the simulation method for the RocheSEIRModel,
+        taking all the rest of the parameters necessary for the computation
+        from the way its simulation has been fitted.
+
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the RocheSEIRModel.
+        tests : list
+            List of conducted tests in specified region and at time point k
+            classifed by age groups.
+        sens : float or int
+            Sensitivity of the test (or ratio of true positives).
+        spec : float or int
+            Specificity of the test (or ratio of true negatives).
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured matrix of sampled number of positive test results
+            in specified region at time :math:`t_k`.
+
+        Notes
+        -----
+        Always run :meth:`RocheSEIRModel.simulate` and
+        :meth:`RocheSEIRModel.check_positives_format` before running this one.
+
+        """
+        self._check_time_step_format(k)
+
+        a = self._num_ages
+        # Compute parameters of binomial
+        suscep = output[k, :a]
+        pop = 0
+        for i in range(6):
+            pop += output[k, (i*a):((i+1)*a)]
+
+        return binom.rvs(
+            n=tests,
+            p=self.mean_positives(sens, spec, suscep, pop))
