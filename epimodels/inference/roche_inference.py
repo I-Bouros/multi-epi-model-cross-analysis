@@ -314,7 +314,7 @@ class RocheLogLik(pints.LogPDF):
         beta_max = 0.928
         bss = 3.11
         gamma = 0.5
-        s50 = 51.5
+        s50 = 51.
 
         self._parameters = [
             0, susceptibles, exposed, infectives_pre,
