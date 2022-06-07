@@ -181,11 +181,11 @@ class RocheLogLik(pints.LogPDF):
         # Pd
         self._parameters[-7] = var_parameters[(-3-self._model._num_ages):(-3)]
         # beta_min
-        self._parameters[-5] = var_parameters[-3]
+        self._parameters[-6] = var_parameters[-3]
         # beta_max
-        self._parameters[-4] = var_parameters[-2]
+        self._parameters[-5] = var_parameters[-2]
         # bss
-        self._parameters[-3] = var_parameters[-1]
+        self._parameters[-4] = var_parameters[-1]
 
         total_log_lik = 0
 
@@ -614,6 +614,8 @@ class RocheSEIRInfer(object):
         # Create a prior
         log_prior = RocheLogPrior(self._model, times)
 
+        self.ll = loglikelihood
+
         # Create a posterior log-likelihood (log(likelihood * prior))
         self._log_posterior = pints.LogPosterior(loglikelihood, log_prior)
 
@@ -712,6 +714,7 @@ class RocheSEIRInfer(object):
             self._log_posterior, x0, method=pints.CMAES)
 
         optimiser.set_max_unchanged_iterations(100, 1)
+        optimiser.set_max_iterations(10)
 
         found_ics, found_posterior_val = optimiser.run()
         print(found_ics, found_posterior_val)
