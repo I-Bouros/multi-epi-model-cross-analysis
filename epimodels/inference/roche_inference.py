@@ -714,7 +714,7 @@ class RocheSEIRInfer(object):
             self._log_posterior, x0, method=pints.CMAES)
 
         optimiser.set_max_unchanged_iterations(100, 1)
-        optimiser.set_max_iterations(10)
+        optimiser.set_max_iterations(50)
 
         found_ics, found_posterior_val = optimiser.run()
         print(found_ics, found_posterior_val)
