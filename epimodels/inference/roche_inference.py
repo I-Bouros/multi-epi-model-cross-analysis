@@ -614,6 +614,8 @@ class RocheSEIRInfer(object):
         # Create a prior
         log_prior = RocheLogPrior(self._model, times)
 
+        self.ll = loglikelihood
+
         # Create a posterior log-likelihood (log(likelihood * prior))
         self._log_posterior = pints.LogPosterior(loglikelihood, log_prior)
 
@@ -712,7 +714,7 @@ class RocheSEIRInfer(object):
             self._log_posterior, x0, method=pints.CMAES)
 
         optimiser.set_max_unchanged_iterations(100, 1)
-        optimiser.set_max_iterations(100)
+        optimiser.set_max_iterations(10)
 
         found_ics, found_posterior_val = optimiser.run()
         print(found_ics, found_posterior_val)
