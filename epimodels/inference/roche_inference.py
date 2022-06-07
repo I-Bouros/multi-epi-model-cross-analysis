@@ -181,11 +181,11 @@ class RocheLogLik(pints.LogPDF):
         # Pd
         self._parameters[-7] = var_parameters[(-3-self._model._num_ages):(-3)]
         # beta_min
-        self._parameters[-5] = var_parameters[-3]
+        self._parameters[-6] = var_parameters[-3]
         # beta_max
-        self._parameters[-4] = var_parameters[-2]
+        self._parameters[-5] = var_parameters[-2]
         # bss
-        self._parameters[-3] = var_parameters[-1]
+        self._parameters[-4] = var_parameters[-1]
 
         total_log_lik = 0
 
