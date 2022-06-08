@@ -298,8 +298,8 @@ class RocheLogLik(pints.LogPDF):
             self._model._num_ages)).tolist()
 
         # Average times in compartments
-        k = 1.25
-        kS = 3.7
+        k = 1.25 # 3.43, 
+        kS = 3.7 # 2.57
         kQ = 1
         kR = 9 * np.ones(self._model._num_ages)
         kRI = 10 * np.ones(self._model._num_ages)
