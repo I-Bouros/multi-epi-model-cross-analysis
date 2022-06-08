@@ -145,7 +145,7 @@ class RocheLogLik(pints.LogPDF):
             Number of parameters for log-likelihood object.
 
         """
-        return 7 + self._model._num_ages
+        return 4 + self._model._num_ages
 
     def _log_likelihood(self, var_parameters):
         """
@@ -173,25 +173,19 @@ class RocheLogLik(pints.LogPDF):
         self._parameters[6] = \
             (Prop * np.asarray(self._infectives)).tolist()
 
-        # k
-        self._parameters[-14] = var_parameters[1]
-        # kS
-        self._parameters[-13] = var_parameters[2]
         # # Pa
         # self._parameters[-9] = var_parameters[
         #     (-4-2*self._model._num_ages):(-4-self._model._num_ages)]
         # # Pss
         # self._parameters[-8] = var_parameters[-4-self._model._num_ages]
         # Pd
-        self._parameters[-7] = var_parameters[(-4-self._model._num_ages):(-4)]
+        self._parameters[-7] = var_parameters[(-3-self._model._num_ages):(-3)]
         # beta_min
-        self._parameters[-6] = var_parameters[-4]
+        self._parameters[-6] = var_parameters[-3]
         # beta_max
-        self._parameters[-5] = var_parameters[-3]
+        self._parameters[-5] = var_parameters[-2]
         # bss
-        self._parameters[-4] = var_parameters[-2]
-        # s50
-        self._parameters[-2] = var_parameters[-1]
+        self._parameters[-4] = var_parameters[-1]
 
         total_log_lik = 0
 
@@ -385,7 +379,7 @@ class RocheLogPrior(pints.LogPrior):
             Number of parameters for log-prior object.
 
         """
-        return 7 + self._model._num_ages
+        return 4 + self._model._num_ages
 
     def __call__(self, x):
         """
@@ -407,27 +401,18 @@ class RocheLogPrior(pints.LogPrior):
         # infectives
         log_prior = pints.UniformLogPrior([0], [1])(x[0])
 
-        # Prior contribution of k
-        log_prior += pints.UniformLogPrior([0], [6])(x[1])
-
-        # Prior contribution of kS
-        log_prior += pints.UniformLogPrior([0], [6])(x[2])
-
         # Prior contribution of Pa, Pss, Pd
         for param in range(self._model._num_ages):
-            log_prior += pints.UniformLogPrior([0], [1])(x[param + 3])
+            log_prior += pints.UniformLogPrior([0], [1])(x[param + 1])
 
         # Prior contribution of beta_min
-        log_prior += pints.UniformLogPrior([0], [5])(x[-4])
-
-        # Prior contribution of beta_max
         log_prior += pints.UniformLogPrior([0], [5])(x[-3])
 
-        # Prior contribution of bss
-        log_prior += pints.UniformLogPrior([0], [10])(x[-2])
+        # Prior contribution of beta_max
+        log_prior += pints.UniformLogPrior([0], [5])(x[-2])
 
-        # Prior contribution of s50
-        log_prior += pints.UniformLogPrior([0], [100])(x[-1])
+        # Prior contribution of bss
+        log_prior += pints.UniformLogPrior([0], [10])(x[-1])
 
         return log_prior
 
