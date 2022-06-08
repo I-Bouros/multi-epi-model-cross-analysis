@@ -298,8 +298,8 @@ class RocheLogLik(pints.LogPDF):
             self._model._num_ages)).tolist()
 
         # Average times in compartments
-        k = 4.5
-        kS = 1
+        k = 1.25
+        kS = 3.7
         kQ = 1
         kR = 9 * np.ones(self._model._num_ages)
         kRI = 10 * np.ones(self._model._num_ages)
@@ -313,8 +313,8 @@ class RocheLogLik(pints.LogPDF):
         beta_min = 0.228
         beta_max = 0.928
         bss = 3.11
-        gamma = 0.5
-        s50 = 51.
+        gamma = 1
+        s50 = 6
 
         self._parameters = [
             0, susceptibles, exposed, infectives_pre,
@@ -614,6 +614,8 @@ class RocheSEIRInfer(object):
         # Create a prior
         log_prior = RocheLogPrior(self._model, times)
 
+        self.ll = loglikelihood
+
         # Create a posterior log-likelihood (log(likelihood * prior))
         self._log_posterior = pints.LogPosterior(loglikelihood, log_prior)
 
@@ -703,9 +705,9 @@ class RocheSEIRInfer(object):
         self._create_posterior(times, wd, wp)
 
         # Starting points
-        x0 = [0.5]
+        x0 = [0.106]
         x0 += self._model._num_ages * [0.05]
-        x0 += [0.135] + [1.08] + [3]
+        x0 += [0.135, 1.08, 3]
 
         # Create optimisation routine
         optimiser = pints.OptimisationController(
