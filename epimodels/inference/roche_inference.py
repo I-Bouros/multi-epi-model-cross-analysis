@@ -145,7 +145,7 @@ class RocheLogLik(pints.LogPDF):
             Number of parameters for log-likelihood object.
 
         """
-        return 4 + self._model._num_ages
+        return 5
 
     def _log_likelihood(self, var_parameters):
         """
@@ -173,19 +173,14 @@ class RocheLogLik(pints.LogPDF):
         self._parameters[6] = \
             (Prop * np.asarray(self._infectives)).tolist()
 
-        # # Pa
-        # self._parameters[-9] = var_parameters[
-        #     (-4-2*self._model._num_ages):(-4-self._model._num_ages)]
-        # # Pss
-        # self._parameters[-8] = var_parameters[-4-self._model._num_ages]
-        # Pd
-        self._parameters[-7] = var_parameters[(-3-self._model._num_ages):(-3)]
         # beta_min
-        self._parameters[-6] = var_parameters[-3]
+        self._parameters[-6] = var_parameters[-4]
         # beta_max
-        self._parameters[-5] = var_parameters[-2]
+        self._parameters[-5] = var_parameters[-3]
         # bss
-        self._parameters[-4] = var_parameters[-1]
+        self._parameters[-4] = var_parameters[-2]
+        # gamma
+        self._parameters[-3] = var_parameters[-1]
 
         total_log_lik = 0
 
@@ -298,8 +293,8 @@ class RocheLogLik(pints.LogPDF):
             self._model._num_ages)).tolist()
 
         # Average times in compartments
-        k = 1.25
-        kS = 3.7
+        k = 3.43
+        kS = 2.59
         kQ = 1
         kR = 9 * np.ones(self._model._num_ages)
         kRI = 10 * np.ones(self._model._num_ages)
@@ -307,14 +302,16 @@ class RocheLogLik(pints.LogPDF):
         # Proportion of asymptomatic, super-spreader and dead cases
         Pa = 0.716 * np.ones(self._model._num_ages)
         Pss = 0.106
-        Pd = 0.05 * np.ones(self._model._num_ages)
+        Pd = (1/100 * np.array([
+            0.0026, 0.0026, 0.0087, 0.0374,
+            0.2968, 1.6963, 6.3, 11.005])).tolist()
 
         # Transmission parameters
         beta_min = 0.228
         beta_max = 0.928
         bss = 3.11
-        gamma = 1
-        s50 = 6
+        gamma = 10
+        s50 = 50
 
         self._parameters = [
             0, susceptibles, exposed, infectives_pre,
@@ -379,7 +376,7 @@ class RocheLogPrior(pints.LogPrior):
             Number of parameters for log-prior object.
 
         """
-        return 4 + self._model._num_ages
+        return 5
 
     def __call__(self, x):
         """
@@ -401,18 +398,17 @@ class RocheLogPrior(pints.LogPrior):
         # infectives
         log_prior = pints.UniformLogPrior([0], [1])(x[0])
 
-        # Prior contribution of Pa, Pss, Pd
-        for param in range(self._model._num_ages):
-            log_prior += pints.UniformLogPrior([0], [1])(x[param + 1])
-
         # Prior contribution of beta_min
-        log_prior += pints.UniformLogPrior([0], [5])(x[-3])
+        log_prior += pints.UniformLogPrior([0], [5])(x[-4])
 
         # Prior contribution of beta_max
-        log_prior += pints.UniformLogPrior([0], [5])(x[-2])
+        log_prior += pints.UniformLogPrior([0], [5])(x[-3])
 
         # Prior contribution of bss
-        log_prior += pints.UniformLogPrior([0], [10])(x[-1])
+        log_prior += pints.UniformLogPrior([0], [10])(x[-2])
+
+        # Prior contribution of bss
+        log_prior += pints.UniformLogPrior([8], [15])(x[-1])
 
         return log_prior
 
@@ -706,8 +702,7 @@ class RocheSEIRInfer(object):
 
         # Starting points
         x0 = [0.106]
-        x0 += self._model._num_ages * [0.05]
-        x0 += [0.135, 1.08, 3]
+        x0 += [0.228, 1.08, 3, 10]
 
         # Create optimisation routine
         optimiser = pints.OptimisationController(
