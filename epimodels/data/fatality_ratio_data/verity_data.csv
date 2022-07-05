@@ -1,4 +1,4 @@
-Age group,Deaths,Laboratory-confirmed cases*,CFR Crude,CFR Adjusted for censoring,"CFR Adjusted for censoring, demography, and under-ascertainmentà",IFR
+Age group,Deaths,Laboratory-confirmed cases*,CFR Crude,CFR Adjusted for censoring,"CFR Adjusted for censoring, demography, and under-ascertainment",IFR
 Overall,1023,44672,2.29% (2.15-2.43),3.67% (3.56-3.80),1.38% (1.23-1.53),0.657% (0.389-1.33)
 0-9,0,416,0.000% (0.000-0.883),0.0954% (0.0110-1.34),0.00260% (0.000312-0.0382),0.00161% (0.000185-0.0249)
 10-19,1,549,0.182% (0.00461-1.01),0.352% (0.0663-1.74),0.0148% (0.00288-0.0759),0.00695% (0.00149-0.0502)

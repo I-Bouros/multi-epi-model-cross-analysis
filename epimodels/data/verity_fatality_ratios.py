@@ -50,39 +50,66 @@ def read_fatality_ratios_data(fr_file: str):
     return data
 
 
-def change_age_groups(matrix: np.array):
+def process_ages(age_groups: list, data: pd.DataFrame, type: str):
     """
-    Reprocess the fatality ratios so that it has the appropriate age groups.
+    Parses wwekly data into the correct age structure types.
 
     Parameters
     ----------
-    matrix : numpy.array
-        Fatality ratios with old age groups.
+    age_groups : list
+        List of the names for the age groups the data is split into.
+    data : pandas.Dataframe
+        Dataframe of age-structured weekly number of tests
+        or positive results in a given region.
+    type : str
+        Column name for the data we want to parse for.
 
     Returns
     -------
-    numpy.array
-        New fatality ratios with correct age groups.
+    pandas.Dataframe
+        Processed dataframe row.
 
     """
-    new_matrix = np.empty((8, 8))
+    newcol = {}
+    # Process 0-1
+    newcol[age_groups[0]] = data[data['age'] == '0-9'][type].values
 
-    ind_old = [
-        np.array([0]),
-        np.array([0]),
-        np.array(range(1, 3)),
-        np.array(range(3, 5)),
-        np.array(range(5, 9)),
-        np.array(range(9, 13)),
-        np.array(range(13, 15)),
-        np.array([15])]
+    # Process 1-5
+    newcol[age_groups[1]] = data[data['age'] == '0-9'][type].values
 
-    for i in range(8):
-        for j in range(8):
-            new_matrix[i, j] = np.mean(
-                matrix[ind_old[i][:, None], ind_old[j]][:, None])
+    # Process 5-15
+    newcol[age_groups[2]] = \
+        0.5 * data[data['age'] == '0-9'][type].values + \
+        0.5 * data[data['age'] == '10-19'][type].values
 
-    return new_matrix
+    # Process 15-25
+    newcol[age_groups[3]] = \
+        0.5 * data[data['age'].isin(['10-19'])][type].values + \
+        0.5 * data[data['age'].isin(['20-29'])][type].values
+
+    # Process 25-45
+    newcol[age_groups[4]] = \
+        0.25 * data[data['age'].isin(['20-29'])][type].values + \
+        0.5 * data[data['age'].isin(['30-39'])][type].values + \
+        0.25 * data[data['age'].isin(['40-49'])][type].values
+
+    # Process 45-65
+    newcol[age_groups[5]] = \
+        0.25 * data[data['age'].isin(['40-49'])][type].values + \
+        0.5 * data[data['age'].isin(['50-59'])][type].values + \
+        0.25 * data[data['age'].isin(['60-69'])][type].values
+
+    # Process 65-75
+    newcol[age_groups[6]] = \
+        0.5 * data[data['age'].isin(['60-69'])][type].values + \
+        0.5 * data[data['age'].isin(['70-79'])][type].values
+
+    # Process 75+
+    newcol[age_groups[7]] = \
+        0.5 * data[data['age'].isin(['70-79'])][type].values + \
+        0.5 * data[data['age'].isin(['80+'])][type].values
+
+    return newcol
 
 
 def main():
@@ -98,52 +125,45 @@ def main():
         contact matrices for each different region found in the default file.
 
     """
-    baseline_fatality_ratios = read_fatality_ratios_data()
-    baseline_contact_matrix = np.zeros_like(baseline_matrices[0])
-    for ind, a in enumerate(activity):
-        baseline_contact_matrix += baseline_matrices[ind]
+    data = read_fatality_ratios_data('verity_data.csv')
 
-    all_regions = ['EE', 'London', 'Mid', 'NE', 'NW', 'SE', 'SW']
+    # Rename the columns of interest
+    data = data.rename(columns={
+        'Age group': 'age',
+        'CFR Adjusted for censoring, demography, and under-ascertainment':
+            'cfr',
+        'IFR': 'ifr'})
 
-    for region in all_regions:
-        multipliers = compute_contact_matrices(
-            region, start_date='15/02/2020', end_date='25/06/2021',)
-        days = range(multipliers.shape[0])
-        weeks = [days[x:x+7] for x in range(0, len(days), 7)]
-        week_mean = pd.Series(
-            np.zeros(6),
-            index=['shop', 'grocery', 'parks', 'transit', 'work', 'home'])
-        for w, week in enumerate(weeks):
-            contact_matrix = np.zeros_like(baseline_matrices[0])
-            to_replace = np.where(multipliers.iloc[week].mean().notna())[0]
-            for _ in to_replace:
-                week_mean[_] = multipliers.iloc[week].mean()[_]
-            week_multi = week_mean/100 + 1
-            act_week_multi = pd.Series(
-                [
-                    week_multi.get(key='work'),
-                    week_multi.get(key='home'),
-                    week_multi.get(key='work'),
-                    week_multi.get(
-                        key=['shop', 'grocery', 'parks', 'transit']).mean(),
-                ])
-            act_week_multi.index = activity
-            for ind, a in enumerate(activity):
-                contact_matrix += act_week_multi.get(
-                    key=a) * baseline_matrices[ind]
+    # Keep only columns of interest
+    data = data[['age', 'cfr', 'ifr']]
 
-            # Transform recorded matrix of serial intervals to csv file
-            path_ = os.path.join(
-                os.path.dirname(__file__), 'final_contact_matrices/')
-            path = os.path.join(
-                    path_,
-                    '{}_W{}.csv'.format(region, w+1))
-            path1 = os.path.join(path_, 'BASE.csv')
+    # Process values of the type
+    data = data.apply(lambda x: [np.float64(x_value.split('%')[0]) / 100
+                      for x_value in x] if x.name in ['cfr', 'ifr'] else x)
 
-            np.savetxt(path, change_age_groups(contact_matrix), delimiter=',')
-            np.savetxt(
-                path1, change_age_groups(baseline_contact_matrix),
-                delimiter=',')
+    age_groups = [
+        '0-1', '1-5', '5-15', '15-25', '25-45', '45-65', '65-75', '75+']
+
+    # Process cfr results
+    newcol = process_ages(age_groups, data, type='cfr')
+    cfr_values = pd.DataFrame.from_dict(
+        newcol, orient='index', columns=['cfr'])
+    cfr_values.index.name = 'age'
+
+    # Process ifr results
+    newcol = process_ages(age_groups, data, type='ifr')
+    ifr_values = pd.DataFrame.from_dict(
+        newcol, orient='index', columns=['ifr'])
+    ifr_values.index.name = 'age'
+
+    # Transform recorded matrix of serial intervals to csv file
+    path_ = os.path.join(
+        os.path.dirname(__file__), 'fatality_ratio_data/')
+    path = os.path.join(path_, 'CFR.csv')
+    path1 = os.path.join(path_, 'IFR.csv')
+
+    cfr_values.to_csv(path, index='False')
+    ifr_values.to_csv(path1, index='False')
 
 
 if __name__ == '__main__':
