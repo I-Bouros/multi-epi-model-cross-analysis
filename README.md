@@ -7,15 +7,14 @@
 [![codecov](https://codecov.io/gh/I-Bouros/multi-epi-model-cross-analysis/branch/main/graph/badge.svg?token=SNHCUJIS3B)](https://codecov.io/gh/I-Bouros/multi-epi-model-cross-analysis)
 [![Style (flake8)](https://github.com/I-Bouros/multi-epi-model-cross-analysis/actions/workflows/flake8-style-test.yml/badge.svg)](https://github.com/I-Bouros/multi-epi-model-cross-analysis/actions/workflows/flake8-style-test.yml)
 
-A collection of multiple epidemiological models used in the modelling of cases observed during the COVID-19 pandemic. Amongst the models curated
-in this collection are:
-- *PHE & Cambridge*: official model used by the UK government for policy making.
-- *Roche*.
+A collection of multiple epidemiological models used in the modelling of cases observed during the COVID-19 pandemic. Amongst the models curated in this collection are:
+- *PHE & Cambridge*: an official model used by the UK government for policy making.
+- *Roche*: a model developed by F. Hoffmann-La Roche Ltd.
 
 All features of our software are described in detail in our
 [full API documentation](https://multi-epi-model-cross-analysis.readthedocs.io/en/latest/).
 
-More details on branching process models and inference can be found in these
+More details on epidemiological models and inference can be found in these
 papers:
 
 ## References
