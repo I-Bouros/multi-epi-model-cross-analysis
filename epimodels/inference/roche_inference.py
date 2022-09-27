@@ -46,12 +46,8 @@ class RocheLogLik(pints.LogPDF):
     deaths_data : numpy.array
         List of region-specific age-structured number of deaths as a matrix.
         Each column represents an age group.
-    time_to_death : list
-        List of probabilities of death of individual d days after infection.
     deaths_times : numpy.array
         Matrix of timepoints for which deaths data is available.
-    fatality_ratio : list
-        List of age-specific fatality ratios.
     tests_data : list of numpy.array
         List of region-specific age-structured number of tests conducted as a
         matrix. Each column represents an age group.
@@ -92,7 +88,7 @@ class RocheLogLik(pints.LogPDF):
 
     """
     def __init__(self, model, susceptibles_data, infectives_data, times,
-                 deaths, time_to_death, deaths_times, fatality_ratio,
+                 deaths, deaths_times,
                  tests_data, positives_data, serology_times, sens, spec,
                  max_levels_npi, targeted_npi, general_npi,
                  reg_levels_npi, time_changes_npi, time_changes_flag,
@@ -108,8 +104,6 @@ class RocheLogLik(pints.LogPDF):
         # Death data
         self._deaths = deaths
         self._deaths_times = deaths_times
-        self._time_to_death = time_to_death
-        self._fatality_ratio = fatality_ratio
 
         # Serology data
         self._total_tests = tests_data
@@ -147,7 +141,7 @@ class RocheLogLik(pints.LogPDF):
             Number of parameters for log-likelihood object.
 
         """
-        return 5
+        return 2
 
     def _log_likelihood(self, var_parameters):
         """
@@ -168,21 +162,10 @@ class RocheLogLik(pints.LogPDF):
 
         """
         # Update parameters
-        Prop = var_parameters[0]
-
-        self._parameters[3] = \
-            ((1 - Prop) * np.asarray(self._infectives)).tolist()
-        self._parameters[6] = \
-            (Prop * np.asarray(self._infectives)).tolist()
-
         # beta_min
-        self._parameters[-6] = var_parameters[-4]
-        # beta_max
-        self._parameters[-5] = var_parameters[-3]
+        self._parameters[-6] = var_parameters[-2]
         # bss
-        self._parameters[-4] = var_parameters[-2]
-        # gamma
-        self._parameters[-3] = var_parameters[-1]
+        self._parameters[-4] = var_parameters[-1]
 
         total_log_lik = 0
 
@@ -195,14 +178,10 @@ class RocheLogLik(pints.LogPDF):
                     parameters=list(deepflatten(self._parameters, ignore=str)),
                     times=self._times
                     )
-                model_new_infections = self._model.new_infections(model_output)
+                model_new_deaths = self._model.new_deaths(model_output)
 
                 # Check the input of log-likelihoods fixed data
-                self._model.check_death_format(
-                    model_new_infections,
-                    self._fatality_ratio,
-                    self._time_to_death,
-                    self._niu)
+                self._model.check_death_format(model_new_deaths, self._niu)
 
                 self._model.check_positives_format(
                     model_output,
@@ -214,9 +193,7 @@ class RocheLogLik(pints.LogPDF):
                 for t, time in enumerate(self._deaths_times):
                     total_log_lik += self._wd * self._model.loglik_deaths(
                         obs_death=self._deaths[r][t, :],
-                        new_infections=model_new_infections,
-                        fatality_ratio=self._fatality_ratio,
-                        time_to_death=self._time_to_death,
+                        new_deaths=model_new_deaths,
                         niu=self._niu,
                         k=time-1
                     )
@@ -270,9 +247,7 @@ class RocheLogLik(pints.LogPDF):
             len(self._model.regions),
             self._model._num_ages)).tolist()
 
-        infectives_sym = np.zeros((
-            len(self._model.regions),
-            self._model._num_ages)).tolist()
+        infectives_sym = self._infectives
 
         infectives_sym_ss = np.zeros((
             len(self._model.regions),
@@ -295,15 +270,15 @@ class RocheLogLik(pints.LogPDF):
             self._model._num_ages)).tolist()
 
         # Average times in compartments
-        k = 2.59
-        kS = 4.28
-        kQ = 1
-        kR = 9 * np.ones(self._model._num_ages)
-        kRI = 10 * np.ones(self._model._num_ages)
+        k = 6.8
+        kS = 5
+        kQ = 2.5
+        kR = 8 * np.ones(self._model._num_ages)
+        kRI = 10.5 * np.ones(self._model._num_ages)
 
         # Proportion of asymptomatic, super-spreader and dead cases
-        Pa = 0.716 * np.ones(self._model._num_ages)
-        Pss = 0.106
+        Pa = 0.6 * np.ones(self._model._num_ages)
+        Pss = 0.15
         Pd = pd.read_csv(
             os.path.join(
                 os.path.dirname(__file__),
@@ -312,9 +287,9 @@ class RocheLogLik(pints.LogPDF):
 
         # Transmission parameters
         beta_min = 0.228
-        beta_max = 0.928
+        beta_max = 1.8
         bss = 3.11
-        gamma = 11
+        gamma = 12
         s50 = 50
 
         self._parameters = [
@@ -380,7 +355,7 @@ class RocheLogPrior(pints.LogPrior):
             Number of parameters for log-prior object.
 
         """
-        return 5
+        return 2
 
     def __call__(self, x):
         """
@@ -398,21 +373,11 @@ class RocheLogPrior(pints.LogPrior):
             parameter space.
 
         """
-        # Prior contribution of proportion of super-spreaders in intial
-        # infectives
+        # Prior contribution of beta_min
         log_prior = pints.UniformLogPrior([0], [1])(x[0])
 
-        # Prior contribution of beta_min
-        log_prior += pints.UniformLogPrior([0], [5])(x[-4])
-
-        # Prior contribution of beta_max
-        log_prior += pints.UniformLogPrior([0], [5])(x[-3])
-
         # Prior contribution of bss
-        log_prior += pints.UniformLogPrior([0], [10])(x[-2])
-
-        # Prior contribution of bss
-        log_prior += pints.UniformLogPrior([8], [15])(x[-1])
+        log_prior += pints.UniformLogPrior([0], [10])(x[1])
 
         return log_prior
 
@@ -488,7 +453,7 @@ class RocheSEIRInfer(object):
         self._spec = spec
 
     def read_deaths_data(
-            self, deaths_data, deaths_times, time_to_death, fatality_ratio):
+            self, deaths_data, deaths_times):
         """
         Sets the serology data used for the model's parameters inference.
 
@@ -499,17 +464,10 @@ class RocheSEIRInfer(object):
             matrix. Each column represents an age group.
         deaths_times : numpy.array
             Matrix of timepoints for which deaths data is available.
-        time_to_death : list
-            List of probabilities of death of individual d days after
-            infection.
-        fatality_ratio : list
-            List of age-specific fatality ratios.
 
         """
         self._deaths = deaths_data
         self._deaths_times = deaths_times
-        self._time_to_death = time_to_death
-        self._fatality_ratio = fatality_ratio
 
     def read_npis_data(self, max_levels_npi, targeted_npi, general_npi,
                        reg_levels_npi, time_changes_npi, time_changes_flag):
@@ -574,8 +532,7 @@ class RocheSEIRInfer(object):
         """
         loglikelihood = RocheLogLik(
             self._model, self._susceptibles_data, self._infectives_data, times,
-            self._deaths, self._time_to_death, self._deaths_times,
-            self._fatality_ratio,
+            self._deaths, self._deaths_times,
             self._total_tests, self._positive_tests, self._serology_times,
             self._sens, self._spec,
             self._max_levels_npi, self._targeted_npi, self._general_npi,
@@ -603,8 +560,7 @@ class RocheSEIRInfer(object):
         # Create a likelihood
         loglikelihood = RocheLogLik(
             self._model, self._susceptibles_data, self._infectives_data, times,
-            self._deaths, self._time_to_death, self._deaths_times,
-            self._fatality_ratio,
+            self._deaths, self._deaths_times,
             self._total_tests, self._positive_tests, self._serology_times,
             self._sens, self._spec,
             self._max_levels_npi, self._targeted_npi, self._general_npi,
@@ -658,15 +614,14 @@ class RocheSEIRInfer(object):
         chains = mcmc.run()
         print('Done!')
 
-        param_names = ['Initial Pss']
-        for age in self._model.age_groups:
-            param_names.extend('Pa_{}'.format(age))
-        param_names.extend('Pss')
+        # param_names = ['Initial Pss']
+        # for age in self._model.age_groups:
+        #     param_names.append('kR_{}'.format(age))
 
-        for age in self._model.age_groups:
-            param_names.extend('Pd_{}'.format(age))
+        # for age in self._model.age_groups:
+        #     param_names.append('Pa_{}'.format(age))
 
-        param_names.extend(['beta_min', 'beta_max', 'bss'])
+        param_names = ['beta_min', 'bss']
 
         # Check convergence and other properties of chains
         results = pints.MCMCSummary(
@@ -705,8 +660,7 @@ class RocheSEIRInfer(object):
         self._create_posterior(times, wd, wp)
 
         # Starting points
-        x0 = [0.106]
-        x0 += [0.228, 1.08, 3, 12]
+        x0 = [0.228, 3]
 
         # Create optimisation routine
         optimiser = pints.OptimisationController(

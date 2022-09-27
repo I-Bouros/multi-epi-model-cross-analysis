@@ -1125,25 +1125,86 @@ class RocheSEIRModel(pints.ForwardModel):
 
         return d_infec
 
-    def loglik_deaths(
-            self, obs_death, new_infections, fatality_ratio, time_to_death,
-            niu, k):
+    def _check_new_deaths_format(self, new_deaths):
+        """
+        Checks correct format of the new deaths matrix.
+
+        Parameters
+        ----------
+        new_deaths : numpy.array
+            Age-structured matrix of the number of new deaths from the
+            simulation method for the RocheSEIRModel.
+
+        """
+        if np.asarray(new_deaths).ndim != 2:
+            raise ValueError(
+                'Model new infections storage format must be 2-dimensional.')
+        if np.asarray(new_deaths).shape[0] != self._times.shape[0]:
+            raise ValueError(
+                    'Wrong number of rows for the model new infections.')
+        if np.asarray(new_deaths).shape[1] != self._num_ages:
+            raise ValueError(
+                    'Wrong number of columns for the model new infections.')
+        for r in np.asarray(new_deaths):
+            for _ in r:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'Model new infections elements must be integer or \
+                            float.')
+
+    def new_deaths(self, output):
+        """
+        Computes number of new deaths at each time step in specified
+        region, given the simulated timeline of susceptible number of
+        individuals, for all age groups in the model.
+
+        It uses an output of the simulation method for the RocheSEIRModel,
+        taking all the rest of the parameters necessary for the computation
+        from the way its simulation has been fitted.
+
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output of the simulation method for the
+            RocheSEIRModel.
+
+        Returns
+        -------
+        nunmpy.array
+            Age-structured matrix of the number of new deaths from the
+            simulation method for the RocheSEIRModel.
+
+        Notes
+        -----
+        Always run :meth:`RocheSEIRModel.simulate` before running this one.
+
+        """
+        # Check correct format of parameters
+        self._check_output_format(output)
+
+        # Check correct format of parameters
+        # Age-based total dead is dead 'd'
+        n_daily_deaths = np.zeros((self._times.shape[0], self._num_ages))
+        total_dead = output[:, (11*self._num_ages):(12*self._num_ages)]
+        n_daily_deaths[1:, :] = total_dead[1:, :] - total_dead[:-1, :]
+
+        for ind, t in enumerate(self._times.tolist()):  # pragma: no cover
+            if np.any(n_daily_deaths[ind, :] < 0):
+                n_daily_deaths[ind, :] = np.zeros_like(n_daily_deaths[ind, :])
+
+        return n_daily_deaths
+
+    def loglik_deaths(self, obs_death, new_deaths, niu, k):
         r"""
         Computes the log-likelihood for the number of deaths at time step
         :math:`k` in specified region, given the simulated timeline of
         susceptible number of individuals, for all age groups in the model.
 
         The number of deaths is assumed to be distributed according to
-        a negative binomial distribution with mean
-
-        .. math::
-            \mu_{r,t_k,i} = p_i \sum_{l=0}^{k} f_{k-l} \delta_{r,t_l,i}^{infec}
-
-        and variance :math:`\mu_{r,t_k,i} (\nu + 1)`, where :math:`p_i` is the
-        age-specific fatality ratio for age group :math:`i`, :math:`f_{k-l}`
-        is the probability of demise :math:`k-l` days after infection and
-        :math:`\delta_{r,t_l,i}^{infec}` is the number of new infections
-        in specified region, for age group :math:`i` on day :math:`t_l`.
+        a negative binomial distribution with mean :math:`\mu_{r,t_k,i}`
+        and variance :math:`\mu_{r,t_k,i} (\nu + 1)`, where
+        :math:`\mu_{r,t_k,i}` is the number of new deaths in specified region,
+        for age group :math:`i` on day :math:`t_k`.
 
         It uses new_infections output of the simulation method for the
         RocheSEIRModel, taking all the rest of the parameters necessary for
@@ -1153,14 +1214,9 @@ class RocheSEIRModel(pints.ForwardModel):
         ----------
         obs_death : list
             List of number of observed deaths by age group at time point k.
-        new_infections : numpy.array
-            Age-structured matrix of the number of new infections from the
+        new_deaths : numpy.array
+            Age-structured matrix of the number of new deaths from the
             simulation method for the RocheSEIRModel.
-        fatality_ratio : list
-            List of age-specific fatality ratios.
-        time_to_death : list
-            List of probabilities of death of individual k days after
-            infection.
         niu : float
             Dispersion factor for the negative binomial distribution.
         k : int
@@ -1196,82 +1252,48 @@ class RocheSEIRModel(pints.ForwardModel):
 
         if not hasattr(self, 'actual_deaths'):
             self.actual_deaths = [0] * 150
-        self.actual_deaths[k] = sum(self.mean_deaths(
-            fatality_ratio, time_to_death, k, new_infections))
+        self.actual_deaths[k] = sum(self.mean_deaths(k, new_deaths))
 
         # Compute mean of negative-binomial
-        return nbinom.logpmf(
-            k=obs_death,
-            n=niu * self.mean_deaths(
-                fatality_ratio, time_to_death, k, new_infections),
-            p=niu/(1+niu))
+        if k != 0:
+            return nbinom.logpmf(
+                k=obs_death,
+                n=niu * self.mean_deaths(k, new_deaths),
+                p=niu/(1+niu))
+        else:
+            return 0
 
-    def check_death_format(
-            self, new_infections, fatality_ratio, time_to_death, niu):
+    def check_death_format(self, new_deaths, niu):
         """
         Checks correct format of the inputs of number of death calculation.
 
         Parameters
         ----------
-        new_infections : numpy.array
-            Age-structured matrix of the number of new infections from the
+        new_deaths : numpy.array
+            Age-structured matrix of the number of new deaths from the
             simulation method for the RocheSEIRModel.
-        fatality_ratio : list
-            List of age-specific fatality ratios.
-        time_to_death : list
-            List of probabilities of death of individual k days after
-            infection.
         niu : float
             Dispersion factor for the negative binomial distribution.
 
         """
-        self._check_new_infections_format(new_infections)
+        self._check_new_deaths_format(new_deaths)
         if not isinstance(niu, (int, float)):
             raise TypeError('Dispersion factor must be integer or float.')
         if niu <= 0:
             raise ValueError('Dispersion factor must be > 0.')
-        if np.asarray(fatality_ratio).ndim != 1:
-            raise ValueError('Fatality ratios by age category storage \
-                format is 1-dimensional.')
-        if np.asarray(fatality_ratio).shape[0] != self._num_ages:
-            raise ValueError('Wrong number of age groups for fatality ratios.')
-        for _ in fatality_ratio:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Fatality ratio must be integer or \
-                    float.')
-            if(_ < 0) or (_ > 1):
-                raise ValueError('Fatality ratio must be => 0 and <=1.')
-        if np.asarray(time_to_death).ndim != 1:
-            raise ValueError('Probabilities of death of individual k days after \
-                infection storage format is 1-dimensional.')
-        if np.asarray(time_to_death).shape[0] != len(self._times):
-            raise ValueError('Wrong number of probabilities of death of individual\
-                k days after infection.')
-        for _ in time_to_death:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Probabilities of death of individual k days after \
-                    infection must be integer or float.')
-            if (_ < 0) or (_ > 1):
-                raise ValueError('Probabilities of death of individual k days after \
-                    infection must be => 0 and <=1.')
 
-    def mean_deaths(self, fatality_ratio, time_to_death, k, d_infec):
+    def mean_deaths(self, k, new_deaths):
         """
         Computes the mean of the negative binomial distribution used to
         calculate number of deaths for specified age group.
 
         Parameters
         ----------
-        fatality_ratio : list
-            List of age-specific fatality ratios.
-        time_to_death : list
-            List of probabilities of death of individual k days after
-            infection.
         k : int
             Index of day for which we intend to sample the number of deaths for
             by age group.
-        d_infec : numpy.array
-            Age-structured matrix of the number of new infections from the
+        new_deaths : numpy.array
+            Age-structured matrix of the number of new deaths from the
             simulation method for the RocheSEIRModel.
 
         Returns
@@ -1281,33 +1303,19 @@ class RocheSEIRModel(pints.ForwardModel):
             observed in specified region at time :math:`t_k`.
 
         """
-        if k >= 30:
-            return np.array(fatality_ratio) * np.sum(np.matmul(
-                np.diag(time_to_death[:31][::-1]),
-                d_infec[(k-30):(k+1), :]), axis=0)
-        else:
-            return np.array(fatality_ratio) * np.sum(np.matmul(
-                np.diag(time_to_death[:(k+1)][::-1]), d_infec[:(k+1), :]),
-                axis=0)
+        return new_deaths[k, :]
 
-    def samples_deaths(
-            self, new_infections, fatality_ratio, time_to_death, niu, k):
+    def samples_deaths(self, new_deaths, niu, k):
         r"""
         Computes samples for the number of deaths at time step
         :math:`k` in specified region, given the simulated timeline of
         susceptible number of individuals, for all age groups in the model.
 
         The number of deaths is assumed to be distributed according to
-        a negative binomial distribution with mean
-
-        .. math::
-            \mu_{r,t_k,i} = p_i \sum_{l=0}^{k} f_{k-l} \delta_{r,t_l,i}^{infec}
-
-        and variance :math:`\mu_{r,t_k,i} (\nu + 1)`, where :math:`p_i` is the
-        age-specific fatality ratio for age group :math:`i`, :math:`f_{k-l}`
-        is the probability of demise :math:`k-l` days after infection and
-        :math:`\delta_{r,t_l,i}^{infec}` is the number of new infections
-        in specified region, for age group :math:`i` on day :math:`t_l`.
+        a negative binomial distribution with mean :math:`\mu_{r,t_k,i}`
+        and variance :math:`\mu_{r,t_k,i} (\nu + 1)`, where
+        :math:`\mu_{r,t_k,i}` is the number of new deaths in specified region,
+        for age group :math:`i` on day :math:`t_k`.
 
         It uses an output of the simulation method for the RocheSEIRModel,
         taking all the rest of the parameters necessary for the computation
@@ -1315,14 +1323,9 @@ class RocheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        new_infections : numpy.array
-            Age-structured matrix of the number of new infections from the
+        new_deaths : numpy.array
+            Age-structured matrix of the number of new deaths from the
             simulation method for the RocheSEIRModel.
-        fatality_ratio : list
-            List of age-specific fatality ratios.
-        time_to_death : list
-            List of probabilities of death of individual k days after
-            infection.
         niu : float
             Dispersion factor for the negative binomial distribution.
         k : int
@@ -1344,10 +1347,12 @@ class RocheSEIRModel(pints.ForwardModel):
         self._check_time_step_format(k)
 
         # Compute mean of negative-binomial
-        return nbinom.rvs(
-            n=niu * self.mean_deaths(
-                fatality_ratio, time_to_death, k, new_infections),
-            p=niu/(1+niu))
+        if k != 0:
+            return nbinom.rvs(
+                n=niu * self.mean_deaths(k, new_deaths),
+                p=niu/(1+niu))
+        else:
+            return np.zeros_like(self.mean_deaths(k, new_deaths))
 
     def loglik_positive_tests(self, obs_pos, output, tests, sens, spec, k):
         r"""
