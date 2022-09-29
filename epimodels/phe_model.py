@@ -865,9 +865,9 @@ class PheSEIRModel(pints.ForwardModel):
         # Compute mean of negative-binomial
         return nbinom.logpmf(
             k=obs_death,
-            n=niu * self.mean_deaths(
+            n=(1/niu) * self.mean_deaths(
                 fatality_ratio, time_to_death, k, new_infections),
-            p=niu/(1+niu))
+            p=1/(1+niu))
 
     def check_death_format(
             self, new_infections, fatality_ratio, time_to_death, niu):
@@ -1008,9 +1008,9 @@ class PheSEIRModel(pints.ForwardModel):
 
         # Compute mean of negative-binomial
         return nbinom.rvs(
-            n=niu * self.mean_deaths(
+            n=(1/niu) * self.mean_deaths(
                 fatality_ratio, time_to_death, k, new_infections),
-            p=niu/(1+niu))
+            p=1/(1+niu))
 
     def loglik_positive_tests(self, obs_pos, output, tests, sens, spec, k):
         r"""
