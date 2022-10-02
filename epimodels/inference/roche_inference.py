@@ -222,7 +222,7 @@ class RocheLogLik(pints.LogPDF):
 
         """
         # Use prior mean for the over-dispersion parameter
-        self._niu = 5
+        self._niu = 10**(-5)
 
         # Initial Conditions
         susceptibles = self._susceptibles

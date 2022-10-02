@@ -1258,8 +1258,8 @@ class RocheSEIRModel(pints.ForwardModel):
         if k != 0:
             return nbinom.logpmf(
                 k=obs_death,
-                n=niu * self.mean_deaths(k, new_deaths),
-                p=niu/(1+niu))
+                n=(1/niu) * self.mean_deaths(k, new_deaths),
+                p=1/(1+niu))
         else:
             return 0
 
@@ -1349,8 +1349,8 @@ class RocheSEIRModel(pints.ForwardModel):
         # Compute mean of negative-binomial
         if k != 0:
             return nbinom.rvs(
-                n=niu * self.mean_deaths(k, new_deaths),
-                p=niu/(1+niu))
+                n=(1/niu) * self.mean_deaths(k, new_deaths),
+                p=1/(1+niu))
         else:
             return np.zeros_like(self.mean_deaths(k, new_deaths))
 
