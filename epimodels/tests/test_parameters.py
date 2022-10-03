@@ -1055,7 +1055,10 @@ exampleRochemodel2 = em.RocheSEIRModel()
 # NPIs data
 max_levels_npi = [3, 3, 2, 4, 2, 3, 2, 4, 2]
 targeted_npi = [True, True, True, True, True, True, True, False, True]
-general_npi = [True, False, True, True, False, False, False, False, False]
+general_npi = [
+            [True, False, True, True, False, False, False, False, False],
+            [True, False, True, True, True, True, False, False, False]]
+time_changes_flag = [1, 12]
 reg_levels_npi = [
     [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
     [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]]]
@@ -1065,16 +1068,18 @@ exampleRochemodel.set_regions(regions)
 exampleRochemodel.set_age_groups(age_groups)
 exampleRochemodel.read_contact_data(matrices_contact, time_changes_contact)
 exampleRochemodel.read_regional_data(matrices_region, time_changes_region)
-exampleRochemodel.read_npis_data(max_levels_npi, targeted_npi, general_npi,
-                                 reg_levels_npi, time_changes_npi)
+exampleRochemodel.read_npis_data(
+    max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
+    time_changes_npi, time_changes_flag)
 
 
 exampleRochemodel2.set_regions(regions)
 exampleRochemodel2.set_age_groups(age_groups)
 exampleRochemodel2.read_contact_data(matrices_contact2, time_changes_contact2)
 exampleRochemodel2.read_regional_data(matrices_region2, time_changes_region2)
-exampleRochemodel2.read_npis_data(max_levels_npi, targeted_npi, general_npi,
-                                  reg_levels_npi, time_changes_npi)
+exampleRochemodel2.read_npis_data(
+    max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
+    time_changes_npi, time_changes_flag)
 
 #
 # Test RocheICs Class

@@ -7,9 +7,10 @@
 
 import unittest
 
+import os
 import numpy as np
 import numpy.testing as npt
-from scipy.stats import gamma
+import pandas as pd
 
 import epimodels as em
 
@@ -76,31 +77,32 @@ class TestRocheModel(em.RocheSEIRModel):
         susceptibles = [[668999, 584130]]
 
         # Initial number of infectives
-        ICs_multiplier = 30
-        infectives_pre = (ICs_multiplier * np.ones(
-            (len(self.regions), self._num_ages))).tolist()
-
-        infectives_pre_ss = (ICs_multiplier * np.ones(
+        ICs_multiplier = 40
+        infectives_sym = (ICs_multiplier * np.ones(
             (len(self.regions), self._num_ages))).tolist()
 
         # Average times in compartments
-        k = 3.43
-        kS = 2.57
-        kQ = 1
-        kR = 9 * np.ones(self._num_ages)
-        kRI = 10 * np.ones(self._num_ages)
+        k = 6.8
+        kS = 5
+        kQ = 2.5
+        kR = 8 * np.ones(self._num_ages)
+        kRI = 10.5 * np.ones(self._num_ages)
 
         # Proportion of asymptomatic, super-spreader and dead cases
-        Pa = 0.658 * np.ones(self._num_ages)
-        Pss = 0.0955
-        Pd = 0.05 * np.ones(self._num_ages)
+        Pa = 0.6 * np.ones(self._num_ages)
+        Pss = 0.15
+        Pd = pd.read_csv(
+            os.path.join(
+                os.path.dirname(__file__),
+                '../../data/fatality_ratio_data/CFR.csv'),
+            usecols=['cfr'], dtype=np.float64)['cfr'].values.tolist()
 
         # Transmission parameters
         beta_min = 0.228
-        beta_max = 0.927
+        beta_max = 1.8
         bss = 3.11
-        gamma = 1
-        s50 = 35.3
+        gamma = 12
+        s50 = 50
 
         # List of common initial conditions and parameters that characterise
         # the model
@@ -108,12 +110,13 @@ class TestRocheModel(em.RocheSEIRModel):
             1, susceptibles,
             np.zeros(
                 (len(self.regions), self._num_ages)).tolist(),
-            infectives_pre,
             np.zeros(
                 (len(self.regions), self._num_ages)).tolist(),
             np.zeros(
                 (len(self.regions), self._num_ages)).tolist(),
-            infectives_pre_ss,
+            infectives_sym,
+            np.zeros(
+                (len(self.regions), self._num_ages)).tolist(),
             np.zeros(
                 (len(self.regions), self._num_ages)).tolist(),
             np.zeros(
@@ -145,22 +148,10 @@ class TestDeathData(object):
     def __init__(self, total_days):
         # Toy values for data structures about death
         self.deaths = [4 * np.ones((total_days, 2), dtype=int)]
-
-        td_mean = 15.0
-        td_var = 12.1**2
-        theta = td_var / td_mean
-        k = td_mean / theta
-        self.time_to_death = \
-            gamma(k, scale=theta).pdf(np.arange(1, 31)).tolist()
-        self.time_to_death.extend([0.0] * (total_days-30))
-
         self.deaths_times = np.arange(1, total_days+1, 1).tolist()
-        self.fatality_ratio = (1/100 * np.array([3.1, 6.05])).tolist()
 
     def __call__(self):
-        return (
-            self.deaths, self.time_to_death, self.deaths_times,
-            self.fatality_ratio)
+        return (self.deaths, self.deaths_times)
 
 
 #
@@ -204,7 +195,7 @@ class TestNPIsData(object):
 
         self.time_changes_npi = [1]
         self.reg_levels_npi = np.tile(
-            np.array([3, 3, 2, 4, 2, 3, 2, 4, 2]),
+            np.array([0, 0, 0, 0, 0, 0, 0, 0, 0]),
             (num_reg, len(self.time_changes_npi), 1)).tolist()
 
     def __call__(self):
@@ -228,8 +219,7 @@ class TestRocheLogLik(unittest.TestCase):
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
         model.set_initial_conditions()
-        deaths, time_to_death, deaths_times, fatality_ratio = \
-            TestDeathData(len(times))()
+        deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
         max_levels_npi, targeted_npi, general_npi, reg_levels_npi, \
@@ -238,18 +228,18 @@ class TestRocheLogLik(unittest.TestCase):
 
         # Set toy model initial conditions
         susceptibles_data = [[668999, 584130]]
-        infectives_data = [[30, 30]]
+        infectives_data = [[40, 40]]
 
         # Set log-likelihood object
         log_lik = em.inference.RocheLogLik(
             model, susceptibles_data, infectives_data, times,
-            deaths, time_to_death, deaths_times, fatality_ratio,
+            deaths, deaths_times,
             tests_data, positives_data, serology_times, sens, spec,
             max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
             time_changes_npi, time_changes_flag, wd=1, wp=1)
 
-        self.assertIsInstance(log_lik([0.5, 3, 3, 3, 3, 50]), (int, float))
-        self.assertEqual(log_lik([0.5, 3, 3, 3, 3, 50]) < 0, True)
+        self.assertIsInstance(log_lik([0.5, 3]), (int, float))
+        self.assertEqual(log_lik([0.5, 3]) < 0, True)
 
     def test_n_parameters(self):
         # Set times for inference
@@ -258,8 +248,7 @@ class TestRocheLogLik(unittest.TestCase):
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
         model.set_initial_conditions()
-        deaths, time_to_death, deaths_times, fatality_ratio = \
-            TestDeathData(len(times))()
+        deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
         max_levels_npi, targeted_npi, general_npi, reg_levels_npi, \
@@ -268,17 +257,17 @@ class TestRocheLogLik(unittest.TestCase):
 
         # Set toy model initial conditions
         susceptibles_data = [[668999, 584130]]
-        infectives_data = [[30, 30]]
+        infectives_data = [[40, 40]]
 
         # Set log-likelihood object
         log_lik = em.inference.RocheLogLik(
             model, susceptibles_data, infectives_data, times,
-            deaths, time_to_death, deaths_times, fatality_ratio,
+            deaths, deaths_times,
             tests_data, positives_data, serology_times, sens, spec,
             max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
             time_changes_npi, time_changes_flag, wd=1, wp=1)
 
-        self.assertEqual(log_lik.n_parameters(), 6)
+        self.assertEqual(log_lik.n_parameters(), 2)
 
 
 #
@@ -300,8 +289,8 @@ class TestRocheLogPrior(unittest.TestCase):
         # Set log-prior object
         log_prior = em.inference.RocheLogPrior(model, times)
 
-        self.assertIsInstance(log_prior([0.5, 3, 3, 3, 3, 50]), (int, float))
-        self.assertEqual(log_prior([0.5, 3, 3, 3, 3, 50]) < 0, True)
+        self.assertIsInstance(log_prior([0.5, 3]), (int, float))
+        self.assertEqual(log_prior([0.5, 3]) < 0, True)
 
     def test_n_parameters(self):
         # Set times for inference
@@ -314,7 +303,7 @@ class TestRocheLogPrior(unittest.TestCase):
         # Set log-prior object
         log_prior = em.inference.RocheLogPrior(model, times)
 
-        self.assertEqual(log_prior.n_parameters(), 6)
+        self.assertEqual(log_prior.n_parameters(), 2)
 
 
 #
@@ -345,8 +334,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
         model.set_initial_conditions()
-        deaths, time_to_death, deaths_times, fatality_ratio = \
-            TestDeathData(len(times))()
+        deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
         max_levels_npi, targeted_npi, general_npi, reg_levels_npi, \
@@ -355,7 +343,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
 
         # Set toy model initial conditions
         susceptibles_data = [[668999, 584130]]
-        infectives_data = [[30, 30]]
+        infectives_data = [[40, 40]]
 
         # Set up Roche Inference class
         inference = em.inference.RocheSEIRInfer(model)
@@ -387,16 +375,13 @@ class TestRocheSEIRInfer(unittest.TestCase):
         self.assertEqual(inference._spec, 0.95)
 
         # Test read_deaths_data
-        inference.read_deaths_data(
-            deaths, deaths_times, time_to_death, fatality_ratio)
+        inference.read_deaths_data(deaths, deaths_times)
 
         self.assertEqual(
             np.asarray(inference._deaths).shape, (1, len(times), 2))
 
         self.assertEqual(inference._deaths, deaths)
         self.assertEqual(inference._deaths_times, times)
-        self.assertEqual(inference._time_to_death, time_to_death)
-        self.assertEqual(inference._fatality_ratio, fatality_ratio)
 
         # Test read_npis_data
         inference.read_npis_data(
@@ -421,8 +406,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
         model.set_initial_conditions()
-        deaths, time_to_death, deaths_times, fatality_ratio = \
-            TestDeathData(len(times))()
+        deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
         max_levels_npi, targeted_npi, general_npi, reg_levels_npi, \
@@ -431,7 +415,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
 
         # Set toy model initial conditions
         susceptibles_data = [[668999, 584130]]
-        infectives_data = [[30, 30]]
+        infectives_data = [[40, 40]]
 
         # Set up Roche Inference class
         inference = em.inference.RocheSEIRInfer(model)
@@ -440,15 +424,14 @@ class TestRocheSEIRInfer(unittest.TestCase):
         inference.read_model_data(susceptibles_data, infectives_data)
         inference.read_serology_data(
             tests_data, positives_data, serology_times, sens, spec)
-        inference.read_deaths_data(
-            deaths, deaths_times, time_to_death, fatality_ratio)
+        inference.read_deaths_data(deaths, deaths_times)
         inference.read_npis_data(
             max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
             time_changes_npi, time_changes_flag
         )
 
         # Compute the log likelihood at chosen point in the parameter space
-        log_lik = inference.return_loglikelihood(times, [0.5, 3, 3, 3, 3, 50])
+        log_lik = inference.return_loglikelihood(times, [0.5, 3])
 
         self.assertIsInstance(log_lik, (int, float))
         self.assertEqual(log_lik < 0, True)
@@ -460,8 +443,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
         model.set_initial_conditions()
-        deaths, time_to_death, deaths_times, fatality_ratio = \
-            TestDeathData(len(times))()
+        deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
         max_levels_npi, targeted_npi, general_npi, reg_levels_npi, \
@@ -470,7 +452,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
 
         # Set toy model initial conditions
         susceptibles_data = [[668999, 584130]]
-        infectives_data = [[30, 30]]
+        infectives_data = [[40, 40]]
 
         # Set up Roche Inference class for optimisation
         optimisation = em.inference.RocheSEIRInfer(model)
@@ -479,8 +461,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
         optimisation.read_model_data(susceptibles_data, infectives_data)
         optimisation.read_serology_data(
             tests_data, positives_data, serology_times, sens, spec)
-        optimisation.read_deaths_data(
-            deaths, deaths_times, time_to_death, fatality_ratio)
+        optimisation.read_deaths_data(deaths, deaths_times)
         optimisation.read_npis_data(
             max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
             time_changes_npi, time_changes_flag
@@ -489,7 +470,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
         # Set up and run the optimisation problem
         found, log_post_value = optimisation.optimisation_problem_setup(times)
 
-        self.assertEqual(len(found), 6)
+        self.assertEqual(len(found), 2)
         self.assertIsInstance(log_post_value, (int, float))
         self.assertEqual(log_post_value < 0, True)
 
@@ -500,8 +481,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
         model.set_initial_conditions()
-        deaths, time_to_death, deaths_times, fatality_ratio = \
-            TestDeathData(len(times))()
+        deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
         max_levels_npi, targeted_npi, general_npi, reg_levels_npi, \
@@ -510,7 +490,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
 
         # Set toy model initial conditions
         susceptibles_data = [[668999, 584130]]
-        infectives_data = [[30, 30]]
+        infectives_data = [[40, 40]]
 
         # Set up Roche Inference class
         inference = em.inference.RocheSEIRInfer(model)
@@ -519,8 +499,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
         inference.read_model_data(susceptibles_data, infectives_data)
         inference.read_serology_data(
             tests_data, positives_data, serology_times, sens, spec)
-        inference.read_deaths_data(
-            deaths, deaths_times, time_to_death, fatality_ratio)
+        inference.read_deaths_data(deaths, deaths_times)
         inference.read_npis_data(
             max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
             time_changes_npi, time_changes_flag
@@ -530,4 +509,4 @@ class TestRocheSEIRInfer(unittest.TestCase):
         samples = inference.inference_problem_setup(times, num_iter=600)
 
         self.assertEqual(len(samples), 3)
-        self.assertEqual(samples[0].shape, (600, 6))
+        self.assertEqual(samples[0].shape, (600, 2))
