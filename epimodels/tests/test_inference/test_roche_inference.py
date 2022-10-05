@@ -195,7 +195,7 @@ class TestNPIsData(object):
 
         self.time_changes_npi = [1]
         self.reg_levels_npi = np.tile(
-            np.array([0, 0, 0, 0, 0, 0, 0, 0, 0]),
+            np.array([3, 3, 2, 4, 2, 3, 2, 4, 2]),
             (num_reg, len(self.time_changes_npi), 1)).tolist()
 
     def __call__(self):
