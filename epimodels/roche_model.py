@@ -1002,7 +1002,6 @@ class RocheSEIRModel(pints.ForwardModel):
         # Add method
         method = parameters[start_index + 9 + 4 * n_ages]
 
-        print(method)
         return self._split_simulate(my_parameters,
                                     times,
                                     method)

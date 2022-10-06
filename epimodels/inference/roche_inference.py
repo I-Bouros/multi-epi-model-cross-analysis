@@ -212,8 +212,7 @@ class RocheLogLik(pints.LogPDF):
 
             return np.sum(total_log_lik)
 
-        except ValueError as e:  # pragma: no cover
-            print(e)
+        except ValueError:  # pragma: no cover
             return -np.inf
 
     def set_fixed_parameters(self):
@@ -284,7 +283,8 @@ class RocheLogLik(pints.LogPDF):
             os.path.join(
                 os.path.dirname(__file__),
                 '../data/fatality_ratio_data/CFR.csv'),
-            usecols=['cfr'], dtype=np.float64)['cfr'].values.tolist()
+            usecols=['cfr'], dtype=np.float64)['cfr'].values.tolist()[
+                -(self._model._num_ages):]
 
         # Transmission parameters
         beta_min = 0.228
