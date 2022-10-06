@@ -283,8 +283,7 @@ class RocheLogLik(pints.LogPDF):
             os.path.join(
                 os.path.dirname(__file__),
                 '../data/fatality_ratio_data/CFR.csv'),
-            usecols=['cfr'], dtype=np.float64)['cfr'].values.tolist()[
-                -(self._model._num_ages):]
+            usecols=['cfr'], dtype=np.float64)['cfr'].values.tolist()
 
         # Transmission parameters
         beta_min = 0.228
