@@ -212,7 +212,8 @@ class RocheLogLik(pints.LogPDF):
 
             return np.sum(total_log_lik)
 
-        except ValueError:  # pragma: no cover
+        except ValueError as e:  # pragma: no cover
+            print(e)
             return -np.inf
 
     def set_fixed_parameters(self):

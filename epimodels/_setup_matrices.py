@@ -86,7 +86,7 @@ class ContactMatrix():
             The number of age groups and their names of the contact matrix.
 
         """
-        return('Polpulation is split into {} age groups: {}.'.format(
+        return ('Polpulation is split into {} age groups: {}.'.format(
             self._num_a_groups, self.ages))
 
     def _check_age_groups_format(self, age_groups):
@@ -695,7 +695,7 @@ class MultiTimesContacts(UniNextGenMatrix):
                             be in the RegionMatrix format.')
                 if _.region != regions[r]:
                     raise ValueError(
-                        'Incorrect region name used for this regional relative \
+                        'Incorrect region name used for this regional relative\
                             susceptibility matrix.')
 
         # Check correct format of time_changes_region
@@ -713,8 +713,8 @@ class MultiTimesContacts(UniNextGenMatrix):
                 raise TypeError(
                     'Times of changes in regional matrices must be integers.')
             if time_changes_region[_] <= 0:
-                raise ValueError('Times of changes in regional matrices must be \
-                    positive.')
+                raise ValueError('Times of changes in regional matrices must \
+                    be positive.')
 
         self._regions = regions
         self.times_contact = np.asarray(time_changes_contact)
@@ -853,7 +853,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
                             be in the RegionMatrix format.')
                 if matrices_region[_][r].region != regions[r]:
                     raise ValueError(
-                        'Incorrect region name used for this regional relative \
+                        'Incorrect region name used for this regional relative\
                             susceptibility matrix.')
 
         # Check correct format of time_changes_region
@@ -871,8 +871,8 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
                 raise TypeError(
                     'Times of changes in regional matrices must be integers.')
             if time_changes_region[_] <= 0:
-                raise ValueError('Times of changes in regional matrices must be \
-                    positive.')
+                raise ValueError('Times of changes in regional matrices must \
+                    be positive.')
 
         # Check correct format of initial_r
         if np.asarray(initial_r).ndim != 1:
@@ -907,13 +907,13 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
 
         if np.asarray(susceptibles).shape[0] != len(regions):
             raise ValueError(
-                'Number of compartments of susceptibles by region does not match \
-                    that of regions.')
+                'Number of compartments of susceptibles by region does not \
+                    match that of regions.')
 
         if np.asarray(susceptibles).shape[1] != len(matrices_contact[0].ages):
             raise ValueError(
-                'Number of compartments of susceptibles by region does not match \
-                    that of age groups.')
+                'Number of compartments of susceptibles by region does not \
+                    match that of age groups.')
 
         for r in np.asarray(susceptibles):
             for _ in r:
@@ -958,13 +958,13 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         """
         if np.asarray(susceptibles).ndim != 1:
             raise ValueError(
-                'Storage format for the numbers of susceptibles for fixed region \
-                    must be 1-dimensional.')
+                'Storage format for the numbers of susceptibles for fixed \
+                    region must be 1-dimensional.')
 
         if np.asarray(susceptibles).shape[0] != len(contact_matrix.ages):
             raise ValueError(
-                'Number of compartments of susceptibles by region does not match \
-                    that of age groups.')
+                'Number of compartments of susceptibles by region does not \
+                    match that of age groups.')
 
         for _ in np.asarray(susceptibles):
             if not isinstance(_, (np.integer, np.floating)):

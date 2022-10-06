@@ -420,7 +420,7 @@ class PheSEIRModel(pints.ForwardModel):
                 s_.tolist(), e1_.tolist(), e2_.tolist(),
                 i1_.tolist(), i2_.tolist(), r_.tolist())
 
-        return({'y': np.transpose(solution)})
+        return ({'y': np.transpose(solution)})
 
     def _scipy_solver(self, times, num_a_groups, method):
         """
@@ -851,8 +851,8 @@ class PheSEIRModel(pints.ForwardModel):
 
         # Check correct format for observed number of deaths
         if np.asarray(obs_death).ndim != 1:
-            raise ValueError('Observed number of deaths by age category storage \
-                format is 1-dimensional.')
+            raise ValueError('Observed number of deaths by age category \
+                storage format is 1-dimensional.')
         if np.asarray(obs_death).shape[0] != self._num_ages:
             raise ValueError('Wrong number of age groups for observed number \
                 of deaths.')
@@ -902,21 +902,21 @@ class PheSEIRModel(pints.ForwardModel):
             if not isinstance(_, (int, float)):
                 raise TypeError('Fatality ratio must be integer or \
                     float.')
-            if(_ < 0) or (_ > 1):
+            if (_ < 0) or (_ > 1):
                 raise ValueError('Fatality ratio must be => 0 and <=1.')
         if np.asarray(time_to_death).ndim != 1:
-            raise ValueError('Probabilities of death of individual k days after \
-                infection storage format is 1-dimensional.')
+            raise ValueError('Probabilities of death of individual k days \
+                after infection storage format is 1-dimensional.')
         if np.asarray(time_to_death).shape[0] != len(self._times):
-            raise ValueError('Wrong number of probabilities of death of individual\
-                k days after infection.')
+            raise ValueError('Wrong number of probabilities of death of \
+                individual k days after infection.')
         for _ in time_to_death:
             if not isinstance(_, (int, float)):
-                raise TypeError('Probabilities of death of individual k days after \
-                    infection must be integer or float.')
+                raise TypeError('Probabilities of death of individual k days \
+                    after infection must be integer or float.')
             if (_ < 0) or (_ > 1):
-                raise ValueError('Probabilities of death of individual k days after \
-                    infection must be => 0 and <=1.')
+                raise ValueError('Probabilities of death of individual k days \
+                    after infection must be => 0 and <=1.')
 
     def mean_deaths(self, fatality_ratio, time_to_death, k, d_infec):
         """
@@ -1073,18 +1073,18 @@ class PheSEIRModel(pints.ForwardModel):
 
         # Check correct format for observed number of positive results
         if np.asarray(obs_pos).ndim != 1:
-            raise ValueError('Observed number of postive tests results by age category \
-                storage format is 1-dimensional.')
+            raise ValueError('Observed number of postive tests results by age \
+                category storage format is 1-dimensional.')
         if np.asarray(obs_pos).shape[0] != self._num_ages:
             raise ValueError('Wrong number of age groups for observed number \
                 of postive tests results.')
         for _ in obs_pos:
             if not isinstance(_, (int, np.integer)):
-                raise TypeError('Observed number of postive tests results must be \
-                    integer.')
+                raise TypeError('Observed number of postive tests results must\
+                    be integer.')
             if _ < 0:
-                raise ValueError('Observed number of postive tests results must \
-                    be => 0.')
+                raise ValueError('Observed number of postive tests results \
+                    must be => 0.')
 
         # Check correct format for number of tests based on the observed number
         # of positive results
@@ -1107,14 +1107,14 @@ class PheSEIRModel(pints.ForwardModel):
 
     def _check_time_step_format(self, k):
         if not isinstance(k, int):
-            raise TypeError('Index of time of computation of the log-likelihood \
-                must be integer.')
+            raise TypeError('Index of time of computation of the \
+                log-likelihood must be integer.')
         if k < 0:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be >= 0.')
+            raise ValueError('Index of time of computation of the \
+                log-likelihood must be >= 0.')
         if k >= self._times.shape[0]:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be within those considered in the output.')
+            raise ValueError('Index of time of computation of the \
+                log-likelihood must be within those considered in the output.')
 
     def check_positives_format(self, output, tests, sens, spec):
         """
@@ -1137,8 +1137,8 @@ class PheSEIRModel(pints.ForwardModel):
         """
         self._check_output_format(output)
         if np.asarray(tests).ndim != 2:
-            raise ValueError('Number of tests conducted by age category storage \
-                format is 2-dimensional.')
+            raise ValueError('Number of tests conducted by age category \
+                storage format is 2-dimensional.')
         if np.asarray(tests).shape[1] != self._num_ages:
             raise ValueError('Wrong number of age groups for observed number \
                 of tests conducted.')

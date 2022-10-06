@@ -7,10 +7,9 @@
 
 import unittest
 
-import os
 import numpy as np
 import numpy.testing as npt
-import pandas as pd
+from iteration_utilities import deepflatten
 
 import epimodels as em
 
@@ -91,11 +90,7 @@ class TestRocheModel(em.RocheSEIRModel):
         # Proportion of asymptomatic, super-spreader and dead cases
         Pa = 0.6 * np.ones(self._num_ages)
         Pss = 0.15
-        Pd = pd.read_csv(
-            os.path.join(
-                os.path.dirname(__file__),
-                '../../data/fatality_ratio_data/CFR.csv'),
-            usecols=['cfr'], dtype=np.float64)['cfr'].values.tolist()
+        Pd = (1/100 * np.array([6.3, 11.005])).tolist()
 
         # Transmission parameters
         beta_min = 0.228
@@ -510,3 +505,36 @@ class TestRocheSEIRInfer(unittest.TestCase):
 
         self.assertEqual(len(samples), 3)
         self.assertEqual(samples[0].shape, (600, 2))
+
+
+# Set times for inference
+times = np.arange(1, 50, 1).tolist()
+
+# Set toy model, death, serology and NPIs data
+model = TestRocheModel()
+model.set_initial_conditions()
+deaths, deaths_times = TestDeathData(len(times))()
+tests_data, positives_data, serology_times, sens, spec = \
+    TestSerologyData(len(times))()
+max_levels_npi, targeted_npi, general_npi, reg_levels_npi, \
+    time_changes_npi, time_changes_flag = TestNPIsData(
+        len(model.regions))()
+
+# Set toy model initial conditions
+susceptibles_data = [[668999, 584130]]
+infectives_data = [[40, 40]]
+
+# Set log-likelihood object
+log_lik = em.inference.RocheLogLik(
+    model, susceptibles_data, infectives_data, times,
+    deaths, deaths_times,
+    tests_data, positives_data, serology_times, sens, spec,
+    max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
+    time_changes_npi, time_changes_flag, wd=1, wp=1)
+
+print(list(deepflatten(log_lik._parameters, ignore=str)))
+# model._simulate(
+#     parameters=list(deepflatten(log_lik._parameters, ignore=str)),
+#     times=times)
+
+print(len(model.output_names()))

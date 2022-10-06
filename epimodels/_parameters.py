@@ -106,8 +106,8 @@ class PheICs(object):
 
         """
         if np.asarray(susceptibles_IC).ndim != 2:
-            raise ValueError('The inital numbers of susceptibles storage format \
-                must be 2-dimensional.')
+            raise ValueError('The inital numbers of susceptibles storage \
+                format must be 2-dimensional.')
         if np.asarray(susceptibles_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
@@ -120,12 +120,12 @@ class PheICs(object):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
-                        'The inital numbers of susceptibles must be integer or \
+                        'The inital numbers of susceptibles must be integer or\
                             float.')
 
         if np.asarray(exposed1_IC).ndim != 2:
-            raise ValueError('The inital numbers of exposed of the first type storage format \
-                must be 2-dimensional.')
+            raise ValueError('The inital numbers of exposed of the first type \
+                storage format must be 2-dimensional.')
         if np.asarray(exposed1_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
@@ -138,12 +138,12 @@ class PheICs(object):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
-                        'The inital numbers of exposed of the first type must be integer or \
-                            float.')
+                        'The inital numbers of exposed of the first type must \
+                            be integer or float.')
 
         if np.asarray(exposed2_IC).ndim != 2:
-            raise ValueError('The inital numbers of exposed of the second type storage format \
-                must be 2-dimensional.')
+            raise ValueError('The inital numbers of exposed of the second type\
+                storage format must be 2-dimensional.')
         if np.asarray(exposed2_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
@@ -156,12 +156,12 @@ class PheICs(object):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
-                        'The inital numbers of exposed of the second type must be integer or \
-                            float.')
+                        'The inital numbers of exposed of the second type must\
+                            be integer or float.')
 
         if np.asarray(infectives1_IC).ndim != 2:
-            raise ValueError('The inital numbers of infectives of the first type storage format \
-                must be 2-dimensional.')
+            raise ValueError('The inital numbers of infectives of the first \
+                type storage format must be 2-dimensional.')
         if np.asarray(infectives1_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
@@ -174,12 +174,12 @@ class PheICs(object):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
-                        'The inital numbers of infectives of the first type must be integer or \
-                            float.')
+                        'The inital numbers of infectives of the first type\
+                            must be integer or float.')
 
         if np.asarray(infectives2_IC).ndim != 2:
-            raise ValueError('The inital numbers of infectives of the second type storage format \
-                must be 2-dimensional.')
+            raise ValueError('The inital numbers of infectives of the second\
+                type storage format must be 2-dimensional.')
         if np.asarray(infectives2_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
@@ -192,8 +192,8 @@ class PheICs(object):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
-                        'The inital numbers of infectives of the second type must be integer or \
-                            float.')
+                        'The inital numbers of infectives of the second type\
+                            must be integer or float.')
 
         if np.asarray(recovered_IC).ndim != 2:
             raise ValueError('The inital numbers of recovered storage format \
@@ -290,7 +290,7 @@ class PheRegParameters(object):
         """
         # Check times format
         if not isinstance(times, list):
-            raise TypeError('Time points of evaluation must be given in a list \
+            raise TypeError('Time points of evaluation must be given in a list\
                 format.')
         for _ in times:
             if not isinstance(_, (int, float)):
@@ -320,8 +320,8 @@ class PheRegParameters(object):
             raise ValueError('Index of region to evaluate is out of bounds.')
 
         if np.asarray(betas).ndim != 2:
-            raise ValueError('The temporal and regional fluctuations storage format \
-                must be 2-dimensional.')
+            raise ValueError('The temporal and regional fluctuations storage\
+                format must be 2-dimensional.')
         if np.asarray(betas).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the temporal and regional \
@@ -570,31 +570,31 @@ class PheParametersController(object):
 
         """
         if not isinstance(regional_parameters, PheRegParameters):
-            raise TypeError('The model`s regional and time dependent parameters must \
-                be a of a PHE SEIR Model.')
+            raise TypeError('The model`s regional and time dependent\
+                parameters must be of a PHE SEIR Model.')
         if regional_parameters.model != self.model:
             raise ValueError('The regional and time dependent parameters do \
                 not correspond to the right model.')
 
         if not isinstance(ICs, PheICs):
-            raise TypeError('The model`s ICs parameters must be a of a PHE SEIR \
-                Model.')
+            raise TypeError('The model`s ICs parameters must be of a PHE\
+                SEIR Model.')
         if ICs.model != self.model:
             raise ValueError('ICs do not correspond to the right model.')
 
         if not isinstance(disease_parameters, PheDiseaseParameters):
-            raise TypeError('The model`s disease-specific parameters must be a \
+            raise TypeError('The model`s disease-specific parameters must be \
                 of a PHE SEIR Model.')
         if disease_parameters.model != self.model:
-            raise ValueError('The disease-specific parameters do not correspond \
-                to the right model.')
+            raise ValueError('The disease-specific parameters do not \
+            correspond to the right model.')
 
         if not isinstance(simulation_parameters, PheSimParameters):
-            raise TypeError('The model`s simulation method`s parameters must be a \
-                of a PHE SEIR Model.')
+            raise TypeError('The model`s simulation method`s parameters must\
+                be of a PHE SEIR Model.')
         if simulation_parameters.model != self.model:
-            raise ValueError('The simulation method`s parameters do not correspond \
-                to the right model.')
+            raise ValueError('The simulation method`s parameters do not \
+                correspond to the right model.')
 
     def __call__(self):
         """
@@ -767,8 +767,8 @@ class RocheICs(object):
 
         """
         if np.asarray(susceptibles_IC).ndim != 2:
-            raise ValueError('The inital numbers of susceptibles storage format \
-                must be 2-dimensional.')
+            raise ValueError('The inital numbers of susceptibles storage \
+                format must be 2-dimensional.')
         if np.asarray(susceptibles_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
@@ -781,8 +781,8 @@ class RocheICs(object):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
-                        'The inital numbers of susceptibles must be integer or \
-                            float.')
+                        'The inital numbers of susceptibles must be integer \
+                        or float.')
 
         if np.asarray(exposed_IC).ndim != 2:
             raise ValueError('The inital numbers of exposed storage format \
@@ -803,8 +803,8 @@ class RocheICs(object):
                             float.')
 
         if np.asarray(infectives_pre_IC).ndim != 2:
-            raise ValueError('The inital numbers of presymptomatic infectives storage format \
-                must be 2-dimensional.')
+            raise ValueError('The inital numbers of presymptomatic infectives\
+                storage format must be 2-dimensional.')
         if np.asarray(infectives_pre_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
@@ -817,12 +817,12 @@ class RocheICs(object):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
-                        'The inital numbers of presymptomatic infectives must be integer or \
-                            float.')
+                        'The inital numbers of presymptomatic infectives must\
+                            be integer or float.')
 
         if np.asarray(infectives_asym_IC).ndim != 2:
-            raise ValueError('The inital numbers of asymptomatic infectives storage format \
-                must be 2-dimensional.')
+            raise ValueError('The inital numbers of asymptomatic infectives\
+                storage format must be 2-dimensional.')
         if np.asarray(infectives_asym_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
@@ -835,12 +835,12 @@ class RocheICs(object):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
-                        'The inital numbers of asymptomatic infectives must be integer or \
-                            float.')
+                        'The inital numbers of asymptomatic infectives must be\
+                        integer or float.')
 
         if np.asarray(infectives_sym_IC).ndim != 2:
-            raise ValueError('The inital numbers of symptomatic infectives storage format \
-                must be 2-dimensional.')
+            raise ValueError('The inital numbers of symptomatic infectives \
+                storage format must be 2-dimensional.')
         if np.asarray(infectives_sym_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
@@ -853,12 +853,13 @@ class RocheICs(object):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
-                        'The inital numbers of symptomatic infectives must be integer or \
-                            float.')
+                        'The inital numbers of symptomatic infectives must be\
+                        integer or float.')
 
         if np.asarray(infectives_pre_ss_IC).ndim != 2:
-            raise ValueError('The inital numbers of presymptomatic super-spreader \
-                infectives storage format must be 2-dimensional.')
+            raise ValueError('The inital numbers of presymptomatic \
+                super-spreader infectives storage format must be \
+                    2-dimensional.')
         if np.asarray(infectives_pre_ss_IC).shape[0] != len(
                 self.model.regions):
             raise ValueError(
@@ -876,8 +877,9 @@ class RocheICs(object):
                             infectives must be integer or float.')
 
         if np.asarray(infectives_asym_ss_IC).ndim != 2:
-            raise ValueError('The inital numbers of asymptomatic super-spreader \
-                infectives storage format must be 2-dimensional.')
+            raise ValueError('The inital numbers of asymptomatic \
+            super-spreader infectives storage format must be \
+                2-dimensional.')
         if np.asarray(infectives_asym_ss_IC).shape[0] != len(
                 self.model.regions):
             raise ValueError(
@@ -895,7 +897,7 @@ class RocheICs(object):
                             infectives must be integer or float.')
 
         if np.asarray(infectives_sym_ss_IC).ndim != 2:
-            raise ValueError('The inital numbers of symptomatic super-spreader \
+            raise ValueError('The inital numbers of symptomatic super-spreader\
                 infectives storage format must be 2-dimensional.')
         if np.asarray(infectives_sym_ss_IC).shape[0] != len(
                 self.model.regions):
@@ -932,8 +934,8 @@ class RocheICs(object):
                             infectives must be integer or float.')
 
         if np.asarray(recovered_IC).ndim != 2:
-            raise ValueError('The inital numbers of symptomatic recovered storage format \
-                must be 2-dimensional.')
+            raise ValueError('The inital numbers of symptomatic recovered\
+                storage format must be 2-dimensional.')
         if np.asarray(recovered_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
@@ -946,12 +948,12 @@ class RocheICs(object):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
-                        'The inital numbers of symptomatic recovered must be integer or \
-                            float.')
+                        'The inital numbers of symptomatic recovered must be\
+                        integer or float.')
 
         if np.asarray(recovered_asym_IC).ndim != 2:
-            raise ValueError('The inital numbers of asymptomatic recovered storage format \
-                must be 2-dimensional.')
+            raise ValueError('The inital numbers of asymptomatic recovered\
+                storage format must be 2-dimensional.')
         if np.asarray(recovered_asym_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
@@ -964,8 +966,8 @@ class RocheICs(object):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
-                        'The inital numbers of asymptomatic recovered must be integer or \
-                            float.')
+                        'The inital numbers of asymptomatic recovered must be\
+                        integer or float.')
 
         if np.asarray(dead_IC).ndim != 2:
             raise ValueError('The inital numbers of dead storage format \
@@ -1088,63 +1090,66 @@ class RocheCompartmentTimes(object):
 
         """
         if not isinstance(k, (float, int)):
-            raise TypeError('The average time it takes for an individual to become \
-                infectious once exposed must be float or integer.')
+            raise TypeError('The average time it takes for an individual to \
+                become infectious once exposed must be float or integer.')
         if k <= 0:
-            raise ValueError('The average time it takes for an individual to become \
-                infectious once exposed must be > 0.')
+            raise ValueError('The average time it takes for an individual to \
+                become infectious once exposed must be > 0.')
 
         if not isinstance(kS, (float, int)):
-            raise TypeError('The average time it takes for an individual to develop symptoms \
-                (or remain asymptomatic) once they becomes infectious must be \
-                    float or integer.')
+            raise TypeError('The average time it takes for an individual to \
+                develop symptoms (or remain asymptomatic) once they becomes \
+                infectious must be float or integer.')
         if kS <= 0:
-            raise ValueError('The average time it takes for an individual to develop symptoms \
-                (or remain asymptomatic) once they becomes infectious must be \
-                    > 0.')
+            raise ValueError('The average time it takes for an individual to \
+                develop symptoms (or remain asymptomatic) once they becomes \
+                infectious must be > 0.')
 
         if not isinstance(kQ, (float, int)):
-            raise TypeError('The average time it takes for an individual to enter quarantine \
-                once they develop symptoms must be float or integer.')
+            raise TypeError('The average time it takes for an individual to \
+                enter quarantine once they develop symptoms must be float or \
+                integer.')
         if kQ <= 0:
-            raise ValueError('The average time it takes for an individual to enter quarantine \
-                once they develop symptoms must be > 0.')
+            raise ValueError('The average time it takes for an individual to \
+                enter quarantine once they develop symptoms must be > 0.')
 
         if isinstance(kR, (float, int)):
             kR = [kR]
         if np.asarray(kR).ndim != 1:
-            raise ValueError('The average time it takes for a quarantined individual to \
-                recover or die storage format must be 1-dimensional.')
+            raise ValueError('The average time it takes for a quarantined \
+                individual to recover or die storage format must be \
+                1-dimensional.')
         if (np.asarray(kR).shape[0] != self.model._num_ages) and (
                 np.asarray(kR).shape[0] != 1):
             raise ValueError(
-                    'Wrong number of age groups for the average time it takes for a quarantined \
-                    individual to recover or die.')
+                    'Wrong number of age groups for the average time it takes \
+                    for a quarantined individual to recover or die.')
         for _ in kR:
             if not isinstance(_, (float, int)):
-                raise TypeError('The average time it takes for a quarantined individual to \
-                    recover or die must be float or integer.')
+                raise TypeError('The average time it takes for a quarantined \
+                    individual to recover or die must be float or integer.')
             if _ <= 0:
-                raise ValueError('The average time it takes for a quarantined individual to \
-                    recover or die must be > 0.')
+                raise ValueError('The average time it takes for a quarantined \
+                    individual to recover or die must be > 0.')
 
         if isinstance(kRI, (float, int)):
             kRI = [kRI]
         if np.asarray(kRI).ndim != 1:
-            raise ValueError('The average times it takes for an asymptomatic individual to \
-                recover storage format must be 1-dimensional.')
+            raise ValueError('The average times it takes for an asymptomatic \
+                individual to recover storage format must be 1-dimensional.')
         if (np.asarray(kRI).shape[0] != self.model._num_ages) and (
                 np.asarray(kRI).shape[0] != 1):
             raise ValueError(
-                    'Wrong number of age groups for the average times it takes for \
-                    an asymptomatic individual to recover.')
+                    'Wrong number of age groups for the average times it takes\
+                    for an asymptomatic individual to recover.')
         for _ in kRI:
             if not isinstance(_, (float, int)):
-                raise TypeError('The average times it takes for an asymptomatic individual to \
-                    recover must be float or integer.')
+                raise TypeError('The average times it takes for an \
+                    asymptomatic individual to recover must be float or \
+                    integer.')
             if _ <= 0:
-                raise ValueError('The average times it takes for an asymptomatic individual to \
-                    recover must be > 0.')
+                raise ValueError('The average times it takes for an \
+                    asymptomatic individual to recover must be > 0.')
 
     def __call__(self):
         """
@@ -1464,7 +1469,7 @@ class RocheSimParameters(object):
 
         """
         if not isinstance(times, list):
-            raise TypeError('Time points of evaluation must be given in a list \
+            raise TypeError('Time points of evaluation must be given in a list\
                 format.')
         for _ in times:
             if not isinstance(_, (int, float)):
@@ -1593,38 +1598,40 @@ class RocheParametersController(object):
 
         """
         if not isinstance(ICs, RocheICs):
-            raise TypeError('The model`s ICs parameters must be a of a Roche SEIRD \
-                Model.')
+            raise TypeError('The model`s ICs parameters must be of a Roche \
+                SEIRD Model.')
         if ICs.model != self.model:
             raise ValueError('ICs do not correspond to the right model.')
 
         if not isinstance(compartment_times, RocheCompartmentTimes):
-            raise TypeError('The model`s average-time-in-compartment parameters must \
-                be a of a Roche SEIRD Model.')
+            raise TypeError('The model`s average-time-in-compartment \
+                parameters must be of a Roche SEIRD Model.')
         if compartment_times.model != self.model:
             raise ValueError('The average-time-in-compartment parameters do \
                 not correspond to the right model.')
 
         if not isinstance(proportion_parameters, RocheProportions):
-            raise TypeError('The model`s proportions of asymptomatic, super-spreader and dead \
-                cases parameters parameters must be a of a Roche SEIRD Model.')
+            raise TypeError('The model`s proportions of asymptomatic, \
+                super-spreader and dead cases parameters parameters must \
+                be of a Roche SEIRD Model.')
         if proportion_parameters.model != self.model:
-            raise ValueError('The proportions of asymptomatic, super-spreader and dead cases \
-                parameters parameters do not correspond to the right model.')
+            raise ValueError('The proportions of asymptomatic, super-spreader \
+                and dead cases parameters parameters do not correspond to the \
+                right model.')
 
         if not isinstance(transmission_parameters, RocheTransmission):
-            raise TypeError('The model`s transmission-specific parameters must be a \
-                of a Roche SEIRD Model.')
+            raise TypeError('The model`s transmission-specific parameters must\
+                be a of a Roche SEIRD Model.')
         if transmission_parameters.model != self.model:
-            raise ValueError('The transmission-specific parameters do not correspond \
-                to the right model.')
+            raise ValueError('The transmission-specific parameters do not \
+                correspond to the right model.')
 
         if not isinstance(simulation_parameters, RocheSimParameters):
-            raise TypeError('The model`s simulation method`s parameters must be a \
-                of a Roche SEIR Model.')
+            raise TypeError('The model`s simulation method`s parameters must \
+                be of a Roche SEIR Model.')
         if simulation_parameters.model != self.model:
-            raise ValueError('The simulation method`s parameters do not correspond \
-                to the right model.')
+            raise ValueError('The simulation method`s parameters do not \
+                correspond to the right model.')
 
     def __call__(self):
         """

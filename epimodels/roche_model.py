@@ -785,8 +785,8 @@ class RocheSEIRModel(pints.ForwardModel):
             raise TypeError('The general value of non-pharmaceutical \
                     interventions must be given in a list format.')
         if len(general_npi) != len(time_changes_flag):
-            raise ValueError('Wrong number of general value of non-pharmaceutical \
-                    interventions changes.')
+            raise ValueError('Wrong number of general value of \
+                non-pharmaceutical interventions changes.')
         for flags_npi in general_npi:
             if not isinstance(flags_npi, list):
                 raise TypeError('Each change in levels the non-pharmaceutical \
@@ -796,8 +796,8 @@ class RocheSEIRModel(pints.ForwardModel):
                     interventions.')
             for ind, _ in enumerate(flags_npi):
                 if not isinstance(_, bool):
-                    raise TypeError('The general value of the non-pharmaceutical \
-                        interventions must be boolean.')
+                    raise TypeError('The general value of the \
+                        non-pharmaceutical interventions must be boolean.')
 
         # Times of changes NPIs
         if not isinstance(time_changes_npi, list):
@@ -808,8 +808,8 @@ class RocheSEIRModel(pints.ForwardModel):
                 raise TypeError('Time points of changes in non-pharmaceutical \
                     interventions must be integer or float.')
             if _ < 0:
-                raise ValueError('Time points of changes in non-pharmaceutical \
-                    interventions must be => 0.')
+                raise ValueError('Time points of changes in\
+                non-pharmaceutical interventions must be => 0.')
 
         # Times of changes NPI flags:
         if not isinstance(time_changes_flag, list):
@@ -820,23 +820,24 @@ class RocheSEIRModel(pints.ForwardModel):
                 raise TypeError('Time points of changes in non-pharmaceutical \
                     interventions flags must be integer or float.')
             if _ < 0:
-                raise ValueError('Time points of changes in non-pharmaceutical \
+                raise ValueError('Time points of changes in non-pharmaceutical\
                     interventions flags must be => 0.')
 
         # Regional time-dependent NPIs
         if not isinstance(reg_levels_npi, list):
-            raise TypeError('Regional changes in levels the non-pharmaceutical \
+            raise TypeError('Regional changes in levels the non-pharmaceutical\
                     interventions must be given in a list format.')
         if len(reg_levels_npi) != len(self.regions):
-            raise ValueError('Wrong number of regions for the regional changes \
+            raise ValueError('Wrong number of regions for the regional changes\
                 in levels the non-pharmaceutical interventions.')
         for levels_npi in reg_levels_npi:
             if not isinstance(levels_npi, list):
                 raise TypeError('Each change in levels the non-pharmaceutical \
                     interventions must be given in a list format.')
             if len(levels_npi) != len(time_changes_npi):
-                raise ValueError('Wrong number of time changes for the regional \
-                    changes in levels the non-pharmaceutical interventions.')
+                raise ValueError('Wrong number of time changes for the\
+                     regional changes in levels the non-pharmaceutical\
+                         interventions.')
             for inst_npis in levels_npi:
                 if len(inst_npis) != len(max_levels_npi):
                     raise ValueError('Wrong number of interventions for the \
@@ -1001,6 +1002,7 @@ class RocheSEIRModel(pints.ForwardModel):
         # Add method
         method = parameters[start_index + 9 + 4 * n_ages]
 
+        print(method)
         return self._split_simulate(my_parameters,
                                     times,
                                     method)
@@ -1239,8 +1241,8 @@ class RocheSEIRModel(pints.ForwardModel):
 
         # Check correct format for observed number of deaths
         if np.asarray(obs_death).ndim != 1:
-            raise ValueError('Observed number of deaths by age category storage \
-                format is 1-dimensional.')
+            raise ValueError('Observed number of deaths by age category \
+                storage format is 1-dimensional.')
         if np.asarray(obs_death).shape[0] != self._num_ages:
             raise ValueError('Wrong number of age groups for observed number \
                 of deaths.')
@@ -1415,18 +1417,18 @@ class RocheSEIRModel(pints.ForwardModel):
 
         # Check correct format for observed number of positive results
         if np.asarray(obs_pos).ndim != 1:
-            raise ValueError('Observed number of postive tests results by age category \
-                storage format is 1-dimensional.')
+            raise ValueError('Observed number of postive tests results by age \
+                category storage format is 1-dimensional.')
         if np.asarray(obs_pos).shape[0] != self._num_ages:
             raise ValueError('Wrong number of age groups for observed number \
                 of postive tests results.')
         for _ in obs_pos:
             if not isinstance(_, (int, np.integer)):
-                raise TypeError('Observed number of postive tests results must be \
-                    integer.')
+                raise TypeError('Observed number of postive tests results must\
+                    be integer.')
             if _ < 0:
-                raise ValueError('Observed number of postive tests results must \
-                    be => 0.')
+                raise ValueError('Observed number of postive tests results \
+                    must be => 0.')
 
         # Check correct format for number of tests based on the observed number
         # of positive results
@@ -1449,14 +1451,14 @@ class RocheSEIRModel(pints.ForwardModel):
 
     def _check_time_step_format(self, k):
         if not isinstance(k, int):
-            raise TypeError('Index of time of computation of the log-likelihood \
-                must be integer.')
+            raise TypeError('Index of time of computation of the \
+                log-likelihood must be integer.')
         if k < 0:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be >= 0.')
+            raise ValueError('Index of time of computation of the \
+                log-likelihood must be >= 0.')
         if k >= self._times.shape[0]:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be within those considered in the output.')
+            raise ValueError('Index of time of computation of the \
+                log-likelihood must be within those considered in the output.')
 
     def check_positives_format(self, output, tests, sens, spec):
         """
@@ -1479,8 +1481,8 @@ class RocheSEIRModel(pints.ForwardModel):
         """
         self._check_output_format(output)
         if np.asarray(tests).ndim != 2:
-            raise ValueError('Number of tests conducted by age category storage \
-                format is 2-dimensional.')
+            raise ValueError('Number of tests conducted by age category \
+                storage format is 2-dimensional.')
         if np.asarray(tests).shape[1] != self._num_ages:
             raise ValueError('Wrong number of age groups for observed number \
                 of tests conducted.')
