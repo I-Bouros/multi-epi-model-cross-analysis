@@ -16,9 +16,16 @@ matrices.
 Overview:
 
 - :class:`PheSEIRModel`
+- :class:`RocheSEIRModel`
 
 Public Health England & Cambridge Model
 ***************************************
 
 .. autoclass:: PheSEIRModel
+  :members:
+
+Roche SEIRD Model
+*****************
+
+.. autoclass:: RocheSEIRModel
   :members:

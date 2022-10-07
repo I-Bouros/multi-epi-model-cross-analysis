@@ -86,7 +86,7 @@ class ContactMatrix():
             The number of age groups and their names of the contact matrix.
 
         """
-        return('Polpulation is split into {} age groups: {}.'.format(
+        return ('Polpulation is split into {} age groups: {}.'.format(
             self._num_a_groups, self.ages))
 
     def _check_age_groups_format(self, age_groups):
@@ -607,6 +607,151 @@ class UniInfectivityMatrix(object):
         return later_nextgen_matrix.compute_dom_eigenvalue() * (
             self._constant * temp_variation)
 
+#
+# MultiTimesContacts Class
+#
+
+
+class MultiTimesContacts(UniNextGenMatrix):
+    """MultiTimesContacts Class:
+    Base class for storing the contact matrices for the population at multiple
+    time points.
+
+    Parameters
+    ----------
+    matrices_contact : list of ContactMatrix
+        Time-dependent contact matrices used for the modelling.
+    time_changes_contact : list
+        Times at which the next contact matrix recorded starts to be used. In
+        increasing order. Start with 1.
+    regions : list
+        List of region names for the region-specific relative susceptibility
+        matrices.
+    matrices_region : list of lists of RegionMatrix
+        Time-dependent and region-specific relative susceptibility matrices
+        used for the modelling.
+    time_changes_region : list
+        Times at which the next instances of region-specific relative
+        susceptibility matrices recorded start to be used. In increasing order.
+        Start with 1.
+
+    """
+    def __init__(
+            self, matrices_contact, time_changes_contact, regions,
+            matrices_region, time_changes_region):
+        # Check correct format of matrices_contact
+        if np.asarray(matrices_contact).ndim != 1:
+            raise ValueError(
+                'Storage format for the multiple contact matrices \
+                    must be 1-dimensional.')
+
+        for _ in range(len(matrices_contact)):
+            if not isinstance(matrices_contact[_], ContactMatrix):
+                raise TypeError(
+                    'Contact matrices must be in the ContactMatrix format.')
+
+        # Check correct format of time_changes_contact
+        if np.asarray(time_changes_contact).ndim != 1:
+            raise ValueError(
+                'Times of changes in contacts storage format must be \
+                    1-dimensional')
+        if len(time_changes_contact) != len(matrices_contact):
+            raise ValueError(
+                'Number of changing points and given contact matrices do \
+                    not match.')
+
+        for _ in range(len(time_changes_contact)):
+            if not isinstance(time_changes_contact[_], int):
+                raise TypeError(
+                    'Times of changes in contacts must be integers.')
+            if time_changes_contact[_] <= 0:
+                raise ValueError('Times of changes in contacts must be \
+                    positive.')
+
+        # Check correct format of regions
+        if np.asarray(regions).ndim != 1:
+            raise ValueError(
+                'Region names storage format must be 1-dimensional.')
+
+        for _ in range(len(regions)):
+            if not isinstance(regions[_], str):
+                raise TypeError(
+                    'Region names value format must be a string.')
+
+        # Check correct format of matrices_region
+        if np.asarray(matrices_region).ndim != 2:
+            raise ValueError(
+                'Storage format for the multiple regional relative \
+                    susceptibility matrices must be 2-dimensional.')
+
+        for all_reg_one_time in matrices_region:
+            if len(all_reg_one_time) != len(regions):
+                raise ValueError('Wrong number of matrices for the \
+                    number of regions registered.')
+            for r, _ in enumerate(all_reg_one_time):
+                if not isinstance(_, RegionMatrix):
+                    raise TypeError(
+                        'Regional relative susceptibility matrices must \
+                            be in the RegionMatrix format.')
+                if _.region != regions[r]:
+                    raise ValueError(
+                        'Incorrect region name used for this regional relative\
+                            susceptibility matrix.')
+
+        # Check correct format of time_changes_region
+        if np.asarray(time_changes_region).ndim != 1:
+            raise ValueError(
+                'Times of changes in regional matrices storage format must be \
+                    1-dimensional.')
+        if len(time_changes_region) != len(matrices_region):
+            raise ValueError(
+                'Number of changing points and given region-specific relative \
+                    susceptibility matrices do not match.')
+
+        for _ in range(len(time_changes_region)):
+            if not isinstance(time_changes_region[_], int):
+                raise TypeError(
+                    'Times of changes in regional matrices must be integers.')
+            if time_changes_region[_] <= 0:
+                raise ValueError('Times of changes in regional matrices must \
+                    be positive.')
+
+        self._regions = regions
+        self.times_contact = np.asarray(time_changes_contact)
+        self.times_region = np.asarray(time_changes_region)
+        self.contact_matrices = matrices_contact
+        self.region_matrices = matrices_region
+
+    def identify_current_contacts(self, r, t_k):
+        """
+        Computes the current regional contact matrices at a specified time
+        point and region. Element :math:`(i, j)` refers to the expected number
+        of new infections in age group :math:`i` caused by an infectious in age
+        group :math:`j`.
+
+        Parameters
+        ----------
+        r : int
+            Index of the region at which the regional contact matrix
+            is evaluated.
+        t_k : int or float
+            Time of evaluation of the regional contact matrix.
+
+        Returns
+        -------
+        numpy.array
+            Unnormalised next generation matrix.
+
+        """
+        # Identify current contact matrix
+        pos = np.where(self.times_contact <= t_k)
+        current_contacts = self.contact_matrices[pos[-1][-1]]
+
+        # Identify current regional relative susceptibility matrix
+        pos = np.where(self.times_region <= t_k)
+        current_rel_susc = self.region_matrices[pos[-1][-1]][r-1]
+
+        return np.multiply(current_contacts._data, current_rel_susc._data)
 
 #
 # MultiTimesInfectivity Class
@@ -708,7 +853,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
                             be in the RegionMatrix format.')
                 if matrices_region[_][r].region != regions[r]:
                     raise ValueError(
-                        'Incorrect region name used for this regional relative \
+                        'Incorrect region name used for this regional relative\
                             susceptibility matrix.')
 
         # Check correct format of time_changes_region
@@ -726,8 +871,8 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
                 raise TypeError(
                     'Times of changes in regional matrices must be integers.')
             if time_changes_region[_] <= 0:
-                raise ValueError('Times of changes in regional matrices must be \
-                    positive.')
+                raise ValueError('Times of changes in regional matrices must \
+                    be positive.')
 
         # Check correct format of initial_r
         if np.asarray(initial_r).ndim != 1:
@@ -762,13 +907,13 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
 
         if np.asarray(susceptibles).shape[0] != len(regions):
             raise ValueError(
-                'Number of compartments of susceptibles by region does not match \
-                    that of regions.')
+                'Number of compartments of susceptibles by region does not \
+                    match that of regions.')
 
         if np.asarray(susceptibles).shape[1] != len(matrices_contact[0].ages):
             raise ValueError(
-                'Number of compartments of susceptibles by region does not match \
-                    that of age groups.')
+                'Number of compartments of susceptibles by region does not \
+                    match that of age groups.')
 
         for r in np.asarray(susceptibles):
             for _ in r:
@@ -813,13 +958,13 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         """
         if np.asarray(susceptibles).ndim != 1:
             raise ValueError(
-                'Storage format for the numbers of susceptibles for fixed region \
-                    must be 1-dimensional.')
+                'Storage format for the numbers of susceptibles for fixed \
+                    region must be 1-dimensional.')
 
         if np.asarray(susceptibles).shape[0] != len(contact_matrix.ages):
             raise ValueError(
-                'Number of compartments of susceptibles by region does not match \
-                    that of age groups.')
+                'Number of compartments of susceptibles by region does not \
+                    match that of age groups.')
 
         for _ in np.asarray(susceptibles):
             if not isinstance(_, (np.integer, np.floating)):

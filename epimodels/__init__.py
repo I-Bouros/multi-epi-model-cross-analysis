@@ -23,6 +23,35 @@ from .version_info import VERSION_INT, VERSION  # noqa
 # Import inference submodule
 from . import inference  # noqa
 
-# Import main classes
-from ._setup_matrices import ContactMatrix, RegionMatrix, UniNextGenMatrix, UniInfectivityMatrix, MultiTimesInfectivity  # noqa
+# Import models
 from .phe_model import PheSEIRModel  # noqa
+from .roche_model import RocheSEIRModel  # noqa
+
+# Import auxiliary matrices
+from ._setup_matrices import (  # noqa
+    ContactMatrix,
+    RegionMatrix,
+    UniNextGenMatrix,
+    MultiTimesContacts,
+    UniInfectivityMatrix,
+    MultiTimesInfectivity)
+
+# Import model parameter controller classes
+# For PHE
+from._parameters import (  # noqa
+    PheICs,
+    PheRegParameters,
+    PheDiseaseParameters,
+    PheSimParameters,
+    PheParametersController
+)
+
+# For Roche
+from._parameters import (  # noqa
+    RocheICs,
+    RocheCompartmentTimes,
+    RocheProportions,
+    RocheTransmission,
+    RocheSimParameters,
+    RocheParametersController
+)

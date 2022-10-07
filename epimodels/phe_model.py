@@ -28,7 +28,7 @@ import epimodels as em
 
 class PheSEIRModel(pints.ForwardModel):
     r"""PheSEIRModel Class:
-    Base class for constructing the ODE model: a deterministic SEIR used by the
+    Base class for constructing the PHE model: a deterministic SEIR used by the
     Public Health England to model the Covid-19 epidemic in UK based on region.
 
     The population is structured according to their age-group (:math:`i`) and
@@ -46,19 +46,19 @@ class PheSEIRModel(pints.ForwardModel):
        :nowrap:
 
         \begin{eqnarray}
-            \frac{dS(r, t, i)}{dt} = -\lambda_{r, t, i} S(r, t, i) \\
-            \frac{dE_1(r, t, i)}{dt} = \lambda_{r, t, i} S(
+            \frac{dS(r, t, i)}{dt} &=& -\lambda_{r, t, i} S(r, t, i) \\
+            \frac{dE_1(r, t, i)}{dt} &=& \lambda_{r, t, i} S(
                 r, t, i) - \kappa E_1(r, t, i) \\
-            \frac{dE_2(r, t, i)}{dt} = \kappa E_1(r, t, i) - \kappa E_2(
+            \frac{dE_2(r, t, i)}{dt} &=& \kappa E_1(r, t, i) - \kappa E_2(
                 r, t, i) \\
-            \frac{dI_1(r, t, i)}{dt} = \kappa E_2(r, t, i) - \gamma I_1(
+            \frac{dI_1(r, t, i)}{dt} &=& \kappa E_2(r, t, i) - \gamma I_1(
                 r, t, i) \\
-            \frac{dI_2(r, t, i)}{dt} = \gamma I_1(r, t, i) - \gamma I_2(
+            \frac{dI_2(r, t, i)}{dt} &=& \gamma I_1(r, t, i) - \gamma I_2(
                 r, t, i) \\
-            \frac{dR(r, t, i)}{dt} = \gamma I_2(r, t, i)
+            \frac{dR(r, t, i)}{dt} &=& \gamma I_2(r, t, i)
         \end{eqnarray}
 
-    where :math:`S(0) = S_0, E(0) = E_0, I(O) = I_0, R(0) = R_0` are also
+    where :math:`S(0) = S_0, E(0) = E_0, I(0) = I_0, R(0) = R_0` are also
     parameters of the model (evaluation at 0 refers to the compartments'
     structure at intial time.
 
@@ -73,8 +73,8 @@ class PheSEIRModel(pints.ForwardModel):
         :nowrap:
 
         \begin{eqnarray}
-            \kappa = \frac{2}{d_L} \\
-            \gamma = \frac{2}{d_I}
+            \kappa &=& \frac{2}{d_L} \\
+            \gamma &=& \frac{2}{d_I}
         \end{eqnarray}
 
     where :math:`d_L` refers to mean latent period until disease onset and
@@ -155,7 +155,7 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        regions
+        regions : list
             List of region names considered by the model.
 
         """
@@ -167,7 +167,7 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        age_groups
+        age_groups : list
             List of age group names considered by the model.
 
         """
@@ -204,7 +204,7 @@ class PheSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        outputs
+        outputs : list
             List of output names that are selected.
 
         """
@@ -420,7 +420,7 @@ class PheSEIRModel(pints.ForwardModel):
                 s_.tolist(), e1_.tolist(), e2_.tolist(),
                 i1_.tolist(), i2_.tolist(), r_.tolist())
 
-        return({'y': np.transpose(solution)})
+        return ({'y': np.transpose(solution)})
 
     def _scipy_solver(self, times, num_a_groups, method):
         """
@@ -458,7 +458,7 @@ class PheSEIRModel(pints.ForwardModel):
             [times[0], times[-1]], init_cond, method=method, t_eval=times)
         return sol
 
-    def _simulate(
+    def _split_simulate(
             self, parameters, times, initial_r, method):
         r"""
         Computes the number of individuals in each compartment at the given
@@ -547,7 +547,7 @@ class PheSEIRModel(pints.ForwardModel):
 
     def read_contact_data(self, matrices_contact, time_changes_contact):
         """
-        Reads in tthe timelines of contact data used for the modelling.
+        Reads in the timelines of contact data used for the modelling.
 
         Parameters
         ----------
@@ -563,7 +563,7 @@ class PheSEIRModel(pints.ForwardModel):
 
     def read_regional_data(self, matrices_region, time_changes_region):
         """
-        Reads in tthe timelines of regional data used for the modelling.
+        Reads in the timelines of regional data used for the modelling.
 
         Parameters
         ----------
@@ -579,13 +579,39 @@ class PheSEIRModel(pints.ForwardModel):
         self.matrices_region = matrices_region
         self.time_changes_region = time_changes_region
 
-    def simulate(self, parameters, times):
+    def simulate(self, parameters):
+        """
+        Simulates the PHE model using a :class:`PheParametersController`
+        for the model parameters.
+
+        Extends the :meth:`_split_simulate`. Always apply methods
+        :meth:`set_regions`, :meth:`set_age_groups`, :meth:`read_contact_data`
+        and :meth:`read_regional_data` before running the
+        :meth:`PheSEIRModel.simulate`.
+
+        Parameters
+        ----------
+        parameters : PheParametersController
+            Controller class for the parameters used by the forward simulation
+            of the model.
+
+        Returns
+        -------
+        numpy.array
+            Age-structured output matrix of the simulation for the specified
+            region.
+
+        """
+        return self._simulate(
+            parameters(), parameters.regional_parameters.times)
+
+    def _simulate(self, parameters, times):
         r"""
         PINTS-configured wrapper for the simulation method of the PHE model.
 
-        Extends the :meth:`_simulation`. Always apply methods
-        :meth:`set_regions`, :meth:`read_contact_data` and
-        :meth:`read_regional_data` before running the
+        Extends the :meth:`_split_simulate`. Always apply methods
+        :meth:`set_regions`, :meth:`set_age_groups`, :meth:`read_contact_data`
+        and :meth:`read_regional_data` before running the
         :meth:`PheSEIRModel.simulate`.
 
         Parameters
@@ -626,9 +652,6 @@ class PheSEIRModel(pints.ForwardModel):
         start_index = n_reg * (1 + (len(self._output_names)-1) * n_ages) + 1
         finish_index = start_index + n_reg * len(times)
 
-        self._check_input_simulate(
-            parameters, times, finish_index + 4, n_reg)
-
         # Read initial reproduction numbers
         initial_r = parameters[:n_reg]
 
@@ -660,82 +683,8 @@ class PheSEIRModel(pints.ForwardModel):
         # Add method
         method = parameters[finish_index + 3]
 
-        return self._simulate(my_parameters,
-                              times,
-                              initial_r,
-                              method)
-
-    def _check_input_simulate(
-            self, parameters, times, L, n_reg):
-        """
-        Check correct format of input of simulate method.
-
-        Parameters
-        ----------
-        parameters : list
-            Long vector format of the quantities that characterise the PHE
-            SEIR model in this order:
-            (1) initial values of the reproduction number
-            by region,
-            (2) index of region for which we wish to simulate,
-            (3) initial conditions matrices classifed by age (column name) and
-            region (row name) for each type of compartment (s, e1, e2, i1, i2,
-            r),
-            (4) temporal and regional fluctuation matrix :math:`\beta`,
-            (5) mean latent period :math:`d_L`,
-            (6) mean infection period :math:`d_I`,
-            (7) time step for the 'homemade' solver and
-            (8) (str) the type of solver implemented by the simulator.
-            Splited into the formats necessary for the :meth:`_simulate`
-            method.
-        times : list
-            List of time points at which we wish to evaluate the ODEs
-            system.
-        L : int
-            Number of parameters considered in the model.
-        n_reg : int
-            Number of regions considered in the model.
-
-        """
-        if not isinstance(times, list):
-            raise TypeError('Time points of evaluation must be given in a list \
-                format.')
-        for _ in times:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Time points of evaluation must be integer or \
-                    float.')
-            if _ <= 0:
-                raise ValueError('Time points of evaluation must be > 0.')
-
-        if not isinstance(parameters, list):
-            raise TypeError('Parameters must be given in a list format.')
-        if len(parameters) != L:
-            raise ValueError('List of parameters has wrong length.')
-        if not isinstance(parameters[n_reg], int):
-            raise TypeError('Index of region to evaluate must be integer.')
-        if parameters[n_reg] <= 0:
-            raise ValueError('Index of region to evaluate must be >= 1.')
-        if parameters[n_reg] > n_reg:
-            raise ValueError('Index of region to evaluate is out of bounds.')
-        if not isinstance(parameters[-4], (float, int)):
-            raise TypeError('Mean latent period must be float or integer.')
-        if parameters[-4] <= 0:
-            raise ValueError('Mean latent period must be > 0.')
-        if not isinstance(parameters[-3], (float, int)):
-            raise TypeError('Mean infection period must be float or integer.')
-        if parameters[-3] <= 0:
-            raise ValueError('Mean infection period must be > 0.')
-        if not isinstance(parameters[-2], (float, int)):
-            raise TypeError(
-                'Time step for ODE solver must be float or integer.')
-        if parameters[-2] <= 0:
-            raise ValueError('Time step for ODE solver must be > 0.')
-        if not isinstance(parameters[-1], str):
-            raise TypeError('Simulation method must be a string.')
-        if parameters[-1] not in (
-                'my-solver', 'RK45', 'RK23', 'Radau',
-                'BDF', 'LSODA', 'DOP853'):
-            raise ValueError('Simulation method not available.')
+        return self._split_simulate(
+            my_parameters, times, initial_r, method)
 
     def _check_output_format(self, output):
         """
@@ -902,8 +851,8 @@ class PheSEIRModel(pints.ForwardModel):
 
         # Check correct format for observed number of deaths
         if np.asarray(obs_death).ndim != 1:
-            raise ValueError('Observed number of deaths by age category storage \
-                format is 1-dimensional.')
+            raise ValueError('Observed number of deaths by age category \
+                storage format is 1-dimensional.')
         if np.asarray(obs_death).shape[0] != self._num_ages:
             raise ValueError('Wrong number of age groups for observed number \
                 of deaths.')
@@ -916,9 +865,9 @@ class PheSEIRModel(pints.ForwardModel):
         # Compute mean of negative-binomial
         return nbinom.logpmf(
             k=obs_death,
-            n=niu * self.mean_deaths(
+            n=(1/niu) * self.mean_deaths(
                 fatality_ratio, time_to_death, k, new_infections),
-            p=niu/(1+niu))
+            p=1/(1+niu))
 
     def check_death_format(
             self, new_infections, fatality_ratio, time_to_death, niu):
@@ -953,21 +902,21 @@ class PheSEIRModel(pints.ForwardModel):
             if not isinstance(_, (int, float)):
                 raise TypeError('Fatality ratio must be integer or \
                     float.')
-            if(_ < 0) or (_ > 1):
+            if (_ < 0) or (_ > 1):
                 raise ValueError('Fatality ratio must be => 0 and <=1.')
         if np.asarray(time_to_death).ndim != 1:
-            raise ValueError('Probabilities of death of individual k days after \
-                infection storage format is 1-dimensional.')
+            raise ValueError('Probabilities of death of individual k days \
+                after infection storage format is 1-dimensional.')
         if np.asarray(time_to_death).shape[0] != len(self._times):
-            raise ValueError('Wrong number of probabilities of death of individual\
-                k days after infection.')
+            raise ValueError('Wrong number of probabilities of death of \
+                individual k days after infection.')
         for _ in time_to_death:
             if not isinstance(_, (int, float)):
-                raise TypeError('Probabilities of death of individual k days after \
-                    infection must be integer or float.')
+                raise TypeError('Probabilities of death of individual k days \
+                    after infection must be integer or float.')
             if (_ < 0) or (_ > 1):
-                raise ValueError('Probabilities of death of individual k days after \
-                    infection must be => 0 and <=1.')
+                raise ValueError('Probabilities of death of individual k days \
+                    after infection must be => 0 and <=1.')
 
     def mean_deaths(self, fatality_ratio, time_to_death, k, d_infec):
         """
@@ -1059,9 +1008,9 @@ class PheSEIRModel(pints.ForwardModel):
 
         # Compute mean of negative-binomial
         return nbinom.rvs(
-            n=niu * self.mean_deaths(
+            n=(1/niu) * self.mean_deaths(
                 fatality_ratio, time_to_death, k, new_infections),
-            p=niu/(1+niu))
+            p=1/(1+niu))
 
     def loglik_positive_tests(self, obs_pos, output, tests, sens, spec, k):
         r"""
@@ -1124,18 +1073,18 @@ class PheSEIRModel(pints.ForwardModel):
 
         # Check correct format for observed number of positive results
         if np.asarray(obs_pos).ndim != 1:
-            raise ValueError('Observed number of postive tests results by age category \
-                storage format is 1-dimensional.')
+            raise ValueError('Observed number of postive tests results by age \
+                category storage format is 1-dimensional.')
         if np.asarray(obs_pos).shape[0] != self._num_ages:
             raise ValueError('Wrong number of age groups for observed number \
                 of postive tests results.')
         for _ in obs_pos:
             if not isinstance(_, (int, np.integer)):
-                raise TypeError('Observed number of postive tests results must be \
-                    integer.')
+                raise TypeError('Observed number of postive tests results must\
+                    be integer.')
             if _ < 0:
-                raise ValueError('Observed number of postive tests results must \
-                    be => 0.')
+                raise ValueError('Observed number of postive tests results \
+                    must be => 0.')
 
         # Check correct format for number of tests based on the observed number
         # of positive results
@@ -1158,14 +1107,14 @@ class PheSEIRModel(pints.ForwardModel):
 
     def _check_time_step_format(self, k):
         if not isinstance(k, int):
-            raise TypeError('Index of time of computation of the log-likelihood \
-                must be integer.')
+            raise TypeError('Index of time of computation of the \
+                log-likelihood must be integer.')
         if k < 0:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be >= 0.')
+            raise ValueError('Index of time of computation of the \
+                log-likelihood must be >= 0.')
         if k >= self._times.shape[0]:
-            raise ValueError('Index of time of computation of the log-likelihood \
-                must be within those considered in the output.')
+            raise ValueError('Index of time of computation of the \
+                log-likelihood must be within those considered in the output.')
 
     def check_positives_format(self, output, tests, sens, spec):
         """
@@ -1188,8 +1137,8 @@ class PheSEIRModel(pints.ForwardModel):
         """
         self._check_output_format(output)
         if np.asarray(tests).ndim != 2:
-            raise ValueError('Number of tests conducted by age category storage \
-                format is 2-dimensional.')
+            raise ValueError('Number of tests conducted by age category \
+                storage format is 2-dimensional.')
         if np.asarray(tests).shape[1] != self._num_ages:
             raise ValueError('Wrong number of age groups for observed number \
                 of tests conducted.')
