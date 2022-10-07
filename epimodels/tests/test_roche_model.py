@@ -819,7 +819,7 @@ class TestRocheSEIRModel(unittest.TestCase):
             model=model,
             Pa=0.658 * np.ones(len(age_groups)),
             Pss=0.0955,
-            Pd=0.05
+            Pd=1
         )
 
         # Set transmission parameters
@@ -837,7 +837,7 @@ class TestRocheSEIRModel(unittest.TestCase):
             model=model,
             region_index=1,
             method='RK45',
-            times=[1, 2]
+            times=np.arange(1, 11).tolist()
         )
 
         # Set all parameters in the controller
@@ -853,47 +853,48 @@ class TestRocheSEIRModel(unittest.TestCase):
         output = model.simulate(parameters)
 
         new_deaths = model.new_deaths(output)
+        print(output, new_deaths)
 
-        obs_death = [10, 12]
+        obs_death = [10] * model._num_ages
 
         self.assertEqual(
             model.loglik_deaths(
-                obs_death, new_deaths, 0.5, 1).shape,
+                obs_death, new_deaths, 10**(-5), 9).shape,
             (len(age_groups),))
 
         with self.assertRaises(ValueError):
             model.loglik_deaths(
-                obs_death, new_deaths, 0.5, -1)
+                obs_death, new_deaths, 10**(-5), -1)
 
         with self.assertRaises(TypeError):
             model.loglik_deaths(
-                obs_death, new_deaths, 0.5, '1')
+                obs_death, new_deaths, 10**(-5), '1')
 
         with self.assertRaises(ValueError):
             model.loglik_deaths(
-                obs_death, new_deaths, 0.5, 2)
+                obs_death, new_deaths, 10**(-5), 12)
 
         with self.assertRaises(ValueError):
             model.loglik_deaths(
-                0, new_deaths, 0.5, 1)
+                0, new_deaths, 10**(-5), 1)
 
         with self.assertRaises(ValueError):
             obs_death1 = np.array([5, 6, 0, 0])
 
             model.loglik_deaths(
-                obs_death1, new_deaths, 0.5, 1)
+                obs_death1, new_deaths, 10**(-5), 1)
 
         with self.assertRaises(TypeError):
             obs_death1 = np.array(['5', 6])
 
             model.loglik_deaths(
-                obs_death1, new_deaths, 0.5, 1)
+                obs_death1, new_deaths, 10**(-5), 1)
 
         with self.assertRaises(ValueError):
             obs_death1 = np.array([5, -1])
 
             model.loglik_deaths(
-                obs_death1, new_deaths, 0.5, 1)
+                obs_death1, new_deaths, 10**(-5), 1)
 
     def test_check_death_format(self):
         model = em.RocheSEIRModel()
@@ -1019,7 +1020,7 @@ class TestRocheSEIRModel(unittest.TestCase):
         new_deaths = model.new_deaths(output)
 
         with self.assertRaises(TypeError):
-            model.check_death_format(new_deaths, '0.5')
+            model.check_death_format(new_deaths, '10**(-5)')
 
         with self.assertRaises(ValueError):
             model.check_death_format(new_deaths, -2)
@@ -1027,27 +1028,27 @@ class TestRocheSEIRModel(unittest.TestCase):
         with self.assertRaises(ValueError):
             new_deaths1 = np.array([5, 6])
 
-            model.check_death_format(new_deaths1, 0.5)
+            model.check_death_format(new_deaths1, 10**(-5))
 
         with self.assertRaises(ValueError):
             new_deaths1 = np.array([
                 [5, 6, 0, 0],
                 [5, 6, 0, 0]])
 
-            model.check_death_format(new_deaths1, 0.5)
+            model.check_death_format(new_deaths1, 10**(-5))
 
         with self.assertRaises(ValueError):
             new_deaths1 = np.array([
                 [5, 6], [5, 6], [5, 6]])
 
-            model.check_death_format(new_deaths1, 0.5)
+            model.check_death_format(new_deaths1, 10**(-5))
 
         with self.assertRaises(TypeError):
             new_deaths1 = np.array([
                 ['5', 6],
                 [5, '0']])
 
-            model.check_death_format(new_deaths1, 0.5)
+            model.check_death_format(new_deaths1, 10**(-5))
 
     def test_samples_deaths(self):
         model = em.RocheSEIRModel()
@@ -1173,21 +1174,53 @@ class TestRocheSEIRModel(unittest.TestCase):
         new_deaths = model.new_deaths(output)
 
         self.assertEqual(
-            model.samples_deaths(new_deaths, 0.5, 41).shape,
+            model.samples_deaths(new_deaths, 10**(-5), 41).shape,
             (len(age_groups),))
 
         self.assertEqual(
-            model.samples_deaths(new_deaths, 0.5, 1).shape,
+            model.samples_deaths(new_deaths, 10**(-5), 1).shape,
             (len(age_groups),))
 
         with self.assertRaises(ValueError):
-            model.samples_deaths(new_deaths, 0.5, -1)
+            model.samples_deaths(new_deaths, 10**(-5), -1)
 
         with self.assertRaises(TypeError):
-            model.samples_deaths(new_deaths, 0.5, '1')
+            model.samples_deaths(new_deaths, 10**(-5), '1')
 
         with self.assertRaises(ValueError):
-            model.samples_deaths(new_deaths, 0.5, 62)
+            model.samples_deaths(new_deaths, 10**(-5), 62)
+
+        parameters.ICs = em.RocheICs(
+            model=model,
+            susceptibles_IC=[[5, 6], [7, 4]],
+            exposed_IC=[[0, 0], [0, 0]],
+            infectives_pre_IC=[[0, 0], [0, 0]],
+            infectives_asym_IC=[[0, 0], [0, 0]],
+            infectives_sym_IC=[[0, 0], [0, 0]],
+            infectives_pre_ss_IC=[[0, 0], [0, 0]],
+            infectives_asym_ss_IC=[[0, 0], [0, 0]],
+            infectives_sym_ss_IC=[[0, 0], [0, 0]],
+            infectives_q_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]],
+            recovered_asym_IC=[[0, 0], [0, 0]],
+            dead_IC=[[0, 0], [0, 0]]
+        )
+
+        output = model.simulate(parameters)
+
+        new_deaths = model.new_deaths(output)
+
+        self.assertEqual(
+            model.samples_deaths(new_deaths, 10**(-5), 41).shape,
+            (len(age_groups),))
+
+        npt.assert_array_equal(
+            model.samples_deaths(new_deaths, 10**(-5), 41),
+            np.zeros(len(age_groups)))
+
+        self.assertEqual(
+            model.samples_deaths(new_deaths, 10**(-5), 1).shape,
+            (len(age_groups),))
 
     def test_loglik_positive_tests(self):
         model = em.RocheSEIRModel()

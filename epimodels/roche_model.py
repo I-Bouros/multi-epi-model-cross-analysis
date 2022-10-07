@@ -1032,33 +1032,6 @@ class RocheSEIRModel(pints.ForwardModel):
                     raise TypeError(
                         'Model output elements must be integer or float.')
 
-    def _check_new_infections_format(self, new_infections):
-        """
-        Checks correct format of the new infections matrix.
-
-        Parameters
-        ----------
-        new_infections : numpy.array
-            Age-structured matrix of the number of new infections from the
-            simulation method for the RocheSEIRModel.
-
-        """
-        if np.asarray(new_infections).ndim != 2:
-            raise ValueError(
-                'Model new infections storage format must be 2-dimensional.')
-        if np.asarray(new_infections).shape[0] != self._times.shape[0]:
-            raise ValueError(
-                    'Wrong number of rows for the model new infections.')
-        if np.asarray(new_infections).shape[1] != self._num_ages:
-            raise ValueError(
-                    'Wrong number of columns for the model new infections.')
-        for r in np.asarray(new_infections):
-            for _ in r:
-                if not isinstance(_, (np.integer, np.floating)):
-                    raise TypeError(
-                        'Model new infections elements must be integer or \
-                            float.')
-
     def new_infections(self, output):
         """
         Computes number of new infections at each time step in specified
@@ -1257,12 +1230,15 @@ class RocheSEIRModel(pints.ForwardModel):
 
         # Compute mean of negative-binomial
         if k != 0:
-            return nbinom.logpmf(
-                k=obs_death,
-                n=(1/niu) * self.mean_deaths(k, new_deaths),
-                p=1/(1+niu))
+            if np.sum(self.mean_deaths(k, new_deaths)) != 0:
+                return nbinom.logpmf(
+                    k=obs_death,
+                    n=(1/niu) * self.mean_deaths(k, new_deaths),
+                    p=1/(1+niu))
+            else:
+                return np.zeros(self._num_ages)
         else:
-            return 0
+            return np.zeros(self._num_ages)
 
     def check_death_format(self, new_deaths, niu):
         """
@@ -1349,9 +1325,12 @@ class RocheSEIRModel(pints.ForwardModel):
 
         # Compute mean of negative-binomial
         if k != 0:
-            return nbinom.rvs(
-                n=(1/niu) * self.mean_deaths(k, new_deaths),
-                p=1/(1+niu))
+            if np.sum(self.mean_deaths(k, new_deaths)) != 0:
+                return nbinom.rvs(
+                    n=(1/niu) * self.mean_deaths(k, new_deaths),
+                    p=1/(1+niu))
+            else:
+                return np.zeros(self._num_ages)
         else:
             return np.zeros_like(self.mean_deaths(k, new_deaths))
 
