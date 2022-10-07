@@ -29,14 +29,19 @@ class TestRocheModel(em.RocheSEIRModel):
 
         # Populate the model
         regions = ['SW']
-        age_groups = ['65-75', '75+']
+        age_groups = [
+            '0-1', '1-5', '5-15', '15-25', '25-45', '45-65', '65-75', '75+']
 
         matrices_region = []
 
         # Initial state of the system
         weeks_matrices_region = []
         for r in regions:
-            region_data_matrix = np.array([[0.5025, 0.1977], [0.1514, 0.7383]])
+            path = os.path.join(
+                os.path.dirname(__file__),
+                '../../data/final_contact_matrices/BASE.csv')
+            region_data_matrix = pd.read_csv(
+                path, header=None, dtype=np.float64)
             regional = em.RegionMatrix(r, age_groups, region_data_matrix)
             weeks_matrices_region.append(regional)
 
@@ -74,7 +79,10 @@ class TestRocheModel(em.RocheSEIRModel):
 
     def set_initial_conditions(self):
         # Initial number of susceptibles
-        susceptibles = [[668999, 584130]]
+        susceptibles = [np.loadtxt(os.path.join(
+            os.path.dirname(__file__),
+            '../../data/england_population/England_population.csv'),
+            dtype=int, delimiter=',').tolist()[-1]]
 
         # Initial number of infectives
         ICs_multiplier = 40
@@ -147,7 +155,7 @@ class TestDeathData(object):
     """
     def __init__(self, total_days):
         # Toy values for data structures about death
-        self.deaths = [4 * np.ones((total_days, 2), dtype=int)]
+        self.deaths = [4 * np.ones((total_days, 8), dtype=int)]
         self.deaths_times = np.arange(1, total_days+1, 1).tolist()
 
     def __call__(self):
@@ -164,8 +172,8 @@ class TestSerologyData(object):
     """
     def __init__(self, total_days):
         # Toy values for data structures about serology
-        self.tests_data = [100 * np.ones((total_days, 2), dtype=int)]
-        self.positives_data = [10 * np.ones((total_days, 2), dtype=int)]
+        self.tests_data = [100 * np.ones((total_days, 8), dtype=int)]
+        self.positives_data = [10 * np.ones((total_days, 8), dtype=int)]
         self.serology_times = np.arange(1, total_days+1, 1).tolist()
         self.sens = 0.7
         self.spec = 0.95
@@ -227,8 +235,12 @@ class TestRocheLogLik(unittest.TestCase):
                 len(model.regions))()
 
         # Set toy model initial conditions
-        susceptibles_data = [[668999, 584130]]
-        infectives_data = [[40, 40]]
+        susceptibles_data = [np.loadtxt(os.path.join(
+            os.path.dirname(__file__),
+            '../../data/england_population/England_population.csv'),
+            dtype=int, delimiter=',').tolist()[-1]]
+        infectives_data = (40 * np.ones(
+            (len(model.regions), len(model.age_groups)))).tolist()
 
         # Set log-likelihood object
         log_lik = em.inference.RocheLogLik(
@@ -256,8 +268,12 @@ class TestRocheLogLik(unittest.TestCase):
                 len(model.regions))()
 
         # Set toy model initial conditions
-        susceptibles_data = [[668999, 584130]]
-        infectives_data = [[40, 40]]
+        susceptibles_data = [np.loadtxt(os.path.join(
+            os.path.dirname(__file__),
+            '../../data/england_population/England_population.csv'),
+            dtype=int, delimiter=',').tolist()[-1]]
+        infectives_data = (40 * np.ones(
+            (len(model.regions), len(model.age_groups)))).tolist()
 
         # Set log-likelihood object
         log_lik = em.inference.RocheLogLik(
@@ -342,8 +358,12 @@ class TestRocheSEIRInfer(unittest.TestCase):
                 len(model.regions))()
 
         # Set toy model initial conditions
-        susceptibles_data = [[668999, 584130]]
-        infectives_data = [[40, 40]]
+        susceptibles_data = [np.loadtxt(os.path.join(
+            os.path.dirname(__file__),
+            '../../data/england_population/England_population.csv'),
+            dtype=int, delimiter=',').tolist()[-1]]
+        infectives_data = (40 * np.ones(
+            (len(model.regions), len(model.age_groups)))).tolist()
 
         # Set up Roche Inference class
         inference = em.inference.RocheSEIRInfer(model)
@@ -352,9 +372,9 @@ class TestRocheSEIRInfer(unittest.TestCase):
         inference.read_model_data(susceptibles_data, infectives_data)
 
         self.assertEqual(
-            np.asarray(inference._susceptibles_data).shape, (1, 2))
+            np.asarray(inference._susceptibles_data).shape, (1, 8))
         self.assertEqual(
-            np.asarray(inference._infectives_data).shape, (1, 2))
+            np.asarray(inference._infectives_data).shape, (1, 8))
 
         self.assertEqual(inference._susceptibles_data, susceptibles_data)
         self.assertEqual(inference._infectives_data, infectives_data)
@@ -364,9 +384,9 @@ class TestRocheSEIRInfer(unittest.TestCase):
             tests_data, positives_data, serology_times, sens, spec)
 
         self.assertEqual(
-            np.asarray(inference._total_tests).shape, (1, len(times), 2))
+            np.asarray(inference._total_tests).shape, (1, len(times), 8))
         self.assertEqual(
-            np.asarray(inference._positive_tests).shape, (1, len(times), 2))
+            np.asarray(inference._positive_tests).shape, (1, len(times), 8))
 
         self.assertEqual(inference._total_tests, tests_data)
         self.assertEqual(inference._positive_tests, positives_data)
@@ -378,7 +398,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
         inference.read_deaths_data(deaths, deaths_times)
 
         self.assertEqual(
-            np.asarray(inference._deaths).shape, (1, len(times), 2))
+            np.asarray(inference._deaths).shape, (1, len(times), 8))
 
         self.assertEqual(inference._deaths, deaths)
         self.assertEqual(inference._deaths_times, times)
@@ -390,7 +410,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
         )
 
         self.assertEqual(
-            np.asarray(inference._deaths).shape, (1, len(times), 2))
+            np.asarray(inference._deaths).shape, (1, len(times), 8))
 
         self.assertEqual(inference._max_levels_npi, max_levels_npi)
         self.assertEqual(inference._targeted_npi, targeted_npi)
@@ -414,8 +434,12 @@ class TestRocheSEIRInfer(unittest.TestCase):
                 len(model.regions))()
 
         # Set toy model initial conditions
-        susceptibles_data = [[668999, 584130]]
-        infectives_data = [[40, 40]]
+        susceptibles_data = [np.loadtxt(os.path.join(
+            os.path.dirname(__file__),
+            '../../data/england_population/England_population.csv'),
+            dtype=int, delimiter=',').tolist()[-1]]
+        infectives_data = (40 * np.ones(
+            (len(model.regions), len(model.age_groups)))).tolist()
 
         # Set up Roche Inference class
         inference = em.inference.RocheSEIRInfer(model)
@@ -451,8 +475,12 @@ class TestRocheSEIRInfer(unittest.TestCase):
                 len(model.regions))()
 
         # Set toy model initial conditions
-        susceptibles_data = [[668999, 584130]]
-        infectives_data = [[40, 40]]
+        susceptibles_data = [np.loadtxt(os.path.join(
+            os.path.dirname(__file__),
+            '../../data/england_population/England_population.csv'),
+            dtype=int, delimiter=',').tolist()[-1]]
+        infectives_data = (40 * np.ones(
+            (len(model.regions), len(model.age_groups)))).tolist()
 
         # Set up Roche Inference class for optimisation
         optimisation = em.inference.RocheSEIRInfer(model)
@@ -489,8 +517,12 @@ class TestRocheSEIRInfer(unittest.TestCase):
                 len(model.regions))()
 
         # Set toy model initial conditions
-        susceptibles_data = [[668999, 584130]]
-        infectives_data = [[40, 40]]
+        susceptibles_data = [np.loadtxt(os.path.join(
+            os.path.dirname(__file__),
+            '../../data/england_population/England_population.csv'),
+            dtype=int, delimiter=',').tolist()[-1]]
+        infectives_data = (40 * np.ones(
+            (len(model.regions), len(model.age_groups)))).tolist()
 
         # Set up Roche Inference class
         inference = em.inference.RocheSEIRInfer(model)
