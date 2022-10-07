@@ -853,7 +853,6 @@ class TestRocheSEIRModel(unittest.TestCase):
         output = model.simulate(parameters)
 
         new_deaths = model.new_deaths(output)
-        print(output, new_deaths)
 
         obs_death = [10] * model._num_ages
 
@@ -1221,6 +1220,18 @@ class TestRocheSEIRModel(unittest.TestCase):
         self.assertEqual(
             model.samples_deaths(new_deaths, 10**(-5), 1).shape,
             (len(age_groups),))
+
+        npt.assert_array_equal(
+            model.samples_deaths(new_deaths, 10**(-5), 1),
+            np.zeros(len(age_groups)))
+
+        self.assertEqual(
+            model.samples_deaths(new_deaths, 10**(-5), 0).shape,
+            (len(age_groups),))
+
+        npt.assert_array_equal(
+            model.samples_deaths(new_deaths, 10**(-5), 41),
+            np.zeros(len(age_groups)))
 
     def test_loglik_positive_tests(self):
         model = em.RocheSEIRModel()

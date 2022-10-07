@@ -757,6 +757,30 @@ class RocheSEIRModel(pints.ForwardModel):
             increasing order.
 
         """
+        # Times of changes NPI flags:
+        if not isinstance(time_changes_flag, list):
+            raise TypeError('Time points of changes in non-pharmaceutical \
+                    interventions flags must be given in a list format.')
+        for _ in time_changes_flag:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of changes in non-pharmaceutical \
+                    interventions flags must be integer or float.')
+            if _ < 0:
+                raise ValueError('Time points of changes in non-pharmaceutical\
+                    interventions flags must be => 0.')
+
+        # Times of changes NPIs
+        if not isinstance(time_changes_npi, list):
+            raise TypeError('Time points of changes in non-pharmaceutical \
+                    interventions must be given in a list format.')
+        for _ in time_changes_npi:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of changes in non-pharmaceutical \
+                    interventions must be integer or float.')
+            if _ < 0:
+                raise ValueError('Time points of changes in\
+                non-pharmaceutical interventions must be => 0.')
+
         # Maximum Levels NPIs
         if not isinstance(max_levels_npi, list):
             raise TypeError('Maximum levels the non-pharmaceutical \
@@ -798,30 +822,6 @@ class RocheSEIRModel(pints.ForwardModel):
                 if not isinstance(_, bool):
                     raise TypeError('The general value of the \
                         non-pharmaceutical interventions must be boolean.')
-
-        # Times of changes NPIs
-        if not isinstance(time_changes_npi, list):
-            raise TypeError('Time points of changes in non-pharmaceutical \
-                    interventions must be given in a list format.')
-        for _ in time_changes_npi:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Time points of changes in non-pharmaceutical \
-                    interventions must be integer or float.')
-            if _ < 0:
-                raise ValueError('Time points of changes in\
-                non-pharmaceutical interventions must be => 0.')
-
-        # Times of changes NPI flags:
-        if not isinstance(time_changes_flag, list):
-            raise TypeError('Time points of changes in non-pharmaceutical \
-                    interventions flags must be given in a list format.')
-        for _ in time_changes_flag:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Time points of changes in non-pharmaceutical \
-                    interventions flags must be integer or float.')
-            if _ < 0:
-                raise ValueError('Time points of changes in non-pharmaceutical\
-                    interventions flags must be => 0.')
 
         # Regional time-dependent NPIs
         if not isinstance(reg_levels_npi, list):
