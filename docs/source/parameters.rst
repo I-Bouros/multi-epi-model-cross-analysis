@@ -12,23 +12,29 @@ Overview:
 - Initial Conditions Classes:
     - :class:`PheICs`
     - :class:`RocheICs`
+    - :class:`WarwickICs`
 
 - Regional and Time Dependent Parameters Classes:
     - :class:`PheRegParameters`
+    - :class:`WarwickRegParameters`
 
 - Disease Specific Parameters Classes:
     - :class:`PheDiseaseParameters`
     - :class:`RocheCompartmentTimes`
     - :class:`RocheProportions`
     - :class:`RocheTransmission`
+    - :class:`WarwickDiseaseParameters`
+    - :class:`WarwickTransmission`
 
 - Simulation Method Parameters Classes:
     - :class:`PheSimParameters`
     - :class:`RocheSimParameters`
+    - :class:`WarwickSimParameters`
 
 - Parameters Controller Classes:
     - :class:`PheParametersController`
     - :class:`RocheParametersController`
+    - :class:`WarwickParametersController`
 
 Parameter Classes for the PHE Model
 ***********************************
@@ -102,4 +108,44 @@ Parameters Controller
 *********************
 
 .. autoclass:: RocheParametersController
+  :members:
+
+Parameter Classes for the PHE Model
+***********************************
+    Below we list the methods for all the parameter classes associated with the forward simulation of the Warwick model.
+
+Initial Conditions Parameters
+*****************************
+
+.. autoclass:: WarwickICs
+  :members:
+
+Regional and Time Dependent Parameters
+**************************************
+
+.. autoclass:: WarwickRegParameters
+  :members:
+
+Disease Specific Parameters
+***************************
+
+.. autoclass:: WarwickDiseaseParameters
+  :members:
+
+Transmission Specific Parameters
+********************************
+
+.. autoclass:: WarwickTransmission
+  :members:
+
+Simulation Method Parameters
+****************************
+
+.. autoclass:: WarwickSimParameters
+  :members:
+
+Parameters Controller
+*********************
+
+.. autoclass:: WarwickParametersController
   :members:

@@ -26,6 +26,7 @@ from . import inference  # noqa
 # Import models
 from .phe_model import PheSEIRModel  # noqa
 from .roche_model import RocheSEIRModel  # noqa
+from .warwick_model import WarwickSEIRModel  # noqa
 
 # Import auxiliary matrices
 from ._setup_matrices import (  # noqa
@@ -54,4 +55,14 @@ from._parameters import (  # noqa
     RocheTransmission,
     RocheSimParameters,
     RocheParametersController
+)
+
+# For Warwick
+from._parameters import (  # noqa
+    WarwickICs,
+    WarwickRegParameters,
+    WarwickDiseaseParameters,
+    WarwickTransmission,
+    WarwickSimParameters,
+    WarwickParametersController
 )

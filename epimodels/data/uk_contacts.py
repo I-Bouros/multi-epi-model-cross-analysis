@@ -244,6 +244,8 @@ def main():
             index=['shop', 'grocery', 'parks', 'transit', 'work', 'home'])
         for w, week in enumerate(weeks):
             contact_matrix = np.zeros_like(baseline_matrices[0])
+            house_contact_matrix = np.zeros_like(baseline_matrices[0])
+            nonhouse_contact_matrix = np.zeros_like(baseline_matrices[0])
             to_replace = np.where(multipliers.iloc[week].mean().notna())[0]
             for _ in to_replace:
                 week_mean[_] = multipliers.iloc[week].mean()[_]
@@ -258,8 +260,14 @@ def main():
                 ])
             act_week_multi.index = activity
             for ind, a in enumerate(activity):
-                contact_matrix += act_week_multi.get(
-                    key=a) * baseline_matrices[ind]
+                if a == 'home':
+                    house_contact_matrix += act_week_multi.get(
+                        key=a) * baseline_matrices[ind]
+                else:
+                    nonhouse_contact_matrix += act_week_multi.get(
+                        key=a) * baseline_matrices[ind]
+
+                contact_matrix = house_contact_matrix + nonhouse_contact_matrix
 
             # Transform recorded matrix of serial intervals to csv file
             path_ = os.path.join(
@@ -267,11 +275,25 @@ def main():
             path = os.path.join(
                     path_,
                     '{}_W{}.csv'.format(region, w+1))
-            path1 = os.path.join(path_, 'BASE.csv')
+            path1 = os.path.join(
+                    path_,
+                    'house_{}_W{}.csv'.format(region, w+1))
+            path2 = os.path.join(
+                    path_,
+                    'nonhouse_{}_W{}.csv'.format(region, w+1))
+            path3 = os.path.join(path_, 'BASE.csv')
 
-            np.savetxt(path, change_age_groups(contact_matrix), delimiter=',')
             np.savetxt(
-                path1, change_age_groups(baseline_contact_matrix),
+                path, change_age_groups(contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path1, change_age_groups(house_contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path2, change_age_groups(nonhouse_contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path3, change_age_groups(baseline_contact_matrix),
                 delimiter=',')
 
 

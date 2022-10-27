@@ -46,7 +46,7 @@ class RocheSEIRModel(pints.ForwardModel):
     symptomatic or asymptomatic infectious. We also consider a population
     divided in age groups, as we expect people of different ages to interact
     diferently between themselves and to be affected differently by the virus,
-    i.e. have different death and recovery rates and propostions of
+    i.e. have different death and recovery rates and proportions of
     asymptomatic, dead an recovered individuals. The model structure now
     becomes, for each region:
 

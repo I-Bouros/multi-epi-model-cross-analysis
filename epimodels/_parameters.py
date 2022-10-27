@@ -1530,11 +1530,11 @@ class RocheParametersController(object):
         Class of the average-time-in-compartment parameters used in the
         simulation of the model.
     proportion_parameters : RocheProportions
-            Class of the proportions of asymptomatic, super-spreader and dead
-            cases parameters  used in the simulation of the model.
-    proportion_parameters : RocheProportions
-            Class of the proportions of asymptomatic, super-spreader and dead
-            cases parameters used in the simulation of the model.
+        Class of the proportions of asymptomatic, super-spreader and dead
+        cases parameters  used in the simulation of the model.
+    transmission_parameters : RocheTransmission
+        Class of the parameters used to compute transmission of virus used in
+        the simulation of the model.
     simulation_parameters : RocheSimParameters
         Class of the simulation method's parameters used in the simulation of
         the model.
@@ -1590,8 +1590,8 @@ class RocheParametersController(object):
             Class of the proportions of asymptomatic, super-spreader and dead
             cases parameters used in the simulation of the model.
         transmission_parameters : RocheTransmission
-            Class of the proportions of asymptomatic, super-spreader and dead
-            cases parameters used in the simulation of the model.
+            Class of the parameters used to compute transmission of virus used
+            in the simulation of the model.
         simulation_parameters : RocheSimParameters
             Class of the simulation method's parameters used in the simulation
             of the model.
@@ -1666,5 +1666,1004 @@ class RocheParametersController(object):
 
         # Add other simulation parameters
         parameters.append(self.simulation_parameters()[1])
+
+        return list(deepflatten(parameters, ignore=str))
+
+#
+# Wawrwick Model Parameter Classes
+#
+
+#
+# WarwickICs Class
+#
+
+
+class WarwickICs(object):
+    """WarwickICs:
+    Base class for the ICs of the Warwick model: a deterministic SEIR
+    developed by Univerity of Warwick to model the Covid-19 epidemic and
+    the effects of within-household dynamics on the epidemic trajectory in
+    different countries.
+
+    Parameters
+    ----------
+    susceptibles_IC : list of lists
+        Initial number of susceptibles classifed by age (column name) and
+        region (row name).
+    exposed_f_IC : list of lists
+        Initial number of exposed by a first household case classifed by
+        age (column name) and region (row name).
+    exposed_sd_IC : list of lists
+        Initial number of exposed by a subsequent detected household case
+        classifed by age (column name) and region (row name).
+    exposed_su_IC : list of lists
+        Initial number of exposed by a subsequent undetected household case
+        classifed by age (column name) and region (row name).
+    exposed_q_IC : list of lists
+        Initial number of exposed by a quarantined household case
+        classifed by age (column name) and region (row name).
+    detected_f_IC :list of lists
+        Initial number of detected infectives by a first household case
+        classifed by age (column name) and region (row name).
+    detected_qf_IC :list of lists
+        Initial number of detected infectives by a quarantined first
+        household case classifed by age (column name) and region
+        (row name).
+    detected_sd_IC :list of lists
+        Initial number of detected infectives by a subsequent detected
+        household case classifed by age (column name) and region
+        (row name).
+    detected_su_IC :list of lists
+        Initial number of detected infectives by a subsequent undetected
+        household case classifed by age (column name) and region
+        (row name).
+    detected_qs_IC :list of lists
+        Initial number of detected infectives by a quarantined subsequent
+        household case classifed by age (column name) and region
+        (row name).
+    undetected_f_IC :list of lists
+        Initial number of undetected infectives by a first household case
+        classifed by age (column name) and region (row name).
+    undetected_s_IC :list of lists
+        Initial number of undetected infectives by a subsequent household
+        case classifed by age (column name) and region (row name).
+    undetected_q_IC :list of lists
+        Initial number of undetected infectives by a quarantined household
+        case classifed by age (column name) and region (row name).
+    recovered_IC : list of lists
+        Initial number of recovered classifed by age (column name) and
+        region (row name).
+
+    """
+    def __init__(self, model, susceptibles_IC, exposed_f_IC,
+                 exposed_sd_IC, exposed_su_IC, exposed_q_IC, detected_f_IC,
+                 detected_qf_IC, detected_sd_IC, detected_su_IC,
+                 detected_qs_IC, undetected_f_IC, undetected_s_IC,
+                 undetected_q_IC, recovered_IC):
+        super(WarwickICs, self).__init__()
+
+        # Set model
+        if not isinstance(model, em.WarwickSEIRModel):
+            raise TypeError('The model must be a Warwick SEIR Model.')
+
+        self.model = model
+
+        # Check inputs format
+        self._check_parameters_input(
+            susceptibles_IC, exposed_f_IC,
+            exposed_sd_IC, exposed_su_IC, exposed_q_IC, detected_f_IC,
+            detected_qf_IC, detected_sd_IC, detected_su_IC,
+            detected_qs_IC, undetected_f_IC, undetected_s_IC,
+            undetected_q_IC, recovered_IC)
+
+        # Set ICs parameters
+        self.susceptibles = susceptibles_IC
+        self.exposed_f = exposed_f_IC
+        self.exposed_sd = exposed_sd_IC
+        self.exposed_su = exposed_su_IC
+        self.exposed_q = exposed_q_IC
+        self.detected_f = detected_f_IC
+        self.detected_qf = detected_qf_IC
+        self.detected_sd = detected_sd_IC
+        self.detected_su = detected_su_IC
+        self.detected_qs = detected_qs_IC
+        self.undetected_f = undetected_f_IC
+        self.undetected_s = undetected_s_IC
+        self.undetected_q = undetected_q_IC
+        self.recovered = recovered_IC
+
+    def _check_parameters_input(
+            self, susceptibles_IC, exposed_f_IC,
+            exposed_sd_IC, exposed_su_IC, exposed_q_IC, detected_f_IC,
+            detected_qf_IC, detected_sd_IC, detected_su_IC,
+            detected_qs_IC, undetected_f_IC, undetected_s_IC,
+            undetected_q_IC, recovered_IC):
+        """
+        Check correct format of ICs input.
+
+        Parameters
+        ----------
+        susceptibles_IC : list of lists
+            Initial number of susceptibles classifed by age (column name) and
+            region (row name).
+        exposed_f_IC : list of lists
+            Initial number of exposed by a first household case classifed by
+            age (column name) and region (row name).
+        exposed_sd_IC : list of lists
+            Initial number of exposed by a subsequent detected household case
+            classifed by age (column name) and region (row name).
+        exposed_su_IC : list of lists
+            Initial number of exposed by a subsequent undetected household case
+            classifed by age (column name) and region (row name).
+        exposed_q_IC : list of lists
+            Initial number of exposed by a quarantined household case
+            classifed by age (column name) and region (row name).
+        detected_f_IC :list of lists
+            Initial number of detected infectives by a first household case
+            classifed by age (column name) and region (row name).
+        detected_qf_IC :list of lists
+            Initial number of detected infectives by a quarantined first
+            household case classifed by age (column name) and region
+            (row name).
+        detected_sd_IC :list of lists
+            Initial number of detected infectives by a subsequent detected
+            household case classifed by age (column name) and region
+            (row name).
+        detected_su_IC :list of lists
+            Initial number of detected infectives by a subsequent undetected
+            household case classifed by age (column name) and region
+            (row name).
+        detected_qs_IC :list of lists
+            Initial number of detected infectives by a quarantined subsequent
+            household case classifed by age (column name) and region
+            (row name).
+        undetected_f_IC :list of lists
+            Initial number of undetected infectives by a first household case
+            classifed by age (column name) and region (row name).
+        undetected_s_IC :list of lists
+            Initial number of undetected infectives by a subsequent household
+            case classifed by age (column name) and region (row name).
+        undetected_q_IC :list of lists
+            Initial number of undetected infectives by a quarantined household
+            case classifed by age (column name) and region (row name).
+        recovered_IC : list of lists
+            Initial number of recovered classifed by age (column name) and
+            region (row name).
+
+        """
+        if np.asarray(susceptibles_IC).ndim != 2:
+            raise ValueError('The inital numbers of susceptibles storage \
+                format must be 2-dimensional.')
+        if np.asarray(susceptibles_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        susceptibles.')
+        if np.asarray(susceptibles_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        susceptibles.')
+        for ic in np.asarray(susceptibles_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of susceptibles must be integer or\
+                            float.')
+
+        if np.asarray(exposed_f_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a first \
+                household case storage format must be 2-dimensional.')
+        if np.asarray(exposed_f_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a first household case.')
+        if np.asarray(exposed_f_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a first household case.')
+        for ic in np.asarray(exposed_f_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a first household \
+                            case must be integer or float.')
+
+        if np.asarray(exposed_sd_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a subsequent \
+                detected household casee storage format must be \
+                    2-dimensional.')
+        if np.asarray(exposed_sd_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent detected household case.')
+        if np.asarray(exposed_sd_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent detected household case.')
+        for ic in np.asarray(exposed_sd_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a subsequent \
+                            detected household case must be integer or float.')
+
+        if np.asarray(exposed_su_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a subsequent \
+                undetected household case storage format must be \
+                    2-dimensional.')
+        if np.asarray(exposed_su_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent undetected household case.')
+        if np.asarray(exposed_su_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent undetected household case.')
+        for ic in np.asarray(exposed_su_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a subsequent \
+                            undetected household case must be integer or \
+                                float.')
+
+        if np.asarray(exposed_q_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a quarantined \
+                household case storage format must be 2-dimensional.')
+        if np.asarray(exposed_q_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a quarantined household case.')
+        if np.asarray(exposed_q_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a quarantined household case.')
+        for ic in np.asarray(exposed_q_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a quarantined \
+                            household case type must be integer or float.')
+
+        if np.asarray(detected_f_IC).ndim != 2:
+            raise ValueError('The inital numbers of detected infectives by a \
+                first household case storage format must be 2-dimensional.')
+        if np.asarray(detected_f_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        detected infectives by a first household case.')
+        if np.asarray(detected_f_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        detected infectives by a first household case.')
+        for ic in np.asarray(detected_f_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of detected infectives by a \
+                            first household case must be integer or float.')
+
+        if np.asarray(detected_sd_IC).ndim != 2:
+            raise ValueError('The inital numbers of detected infectives by a\
+                subsequent detected household case storage format must be \
+                    2-dimensional.')
+        if np.asarray(detected_sd_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        detected infectives by a subsequent detected \
+                            household case.')
+        if np.asarray(detected_sd_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        detected infectives by a subsequent detected\
+                            household case.')
+        for ic in np.asarray(detected_sd_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of detected infectives by a\
+                            subsequent detected household case must be integer\
+                                or float.')
+
+        if np.asarray(detected_su_IC).ndim != 2:
+            raise ValueError('The inital numbers of detected infectives by a \
+                subsequent undetected household case storage format must \
+                    be 2-dimensional.')
+        if np.asarray(detected_su_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        detected infectives by a subsequent undetected \
+                            household case.')
+        if np.asarray(detected_su_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        detected infectives by a subsequent undetected \
+                            household case.')
+        for ic in np.asarray(detected_su_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of detected infectives by \
+                            a subsequent detected household case\
+                            must be integer or float.')
+
+        if np.asarray(detected_qf_IC).ndim != 2:
+            raise ValueError('The inital numbers of detected infectives by a \
+                quarantined first household case storage format must be \
+                    2-dimensional.')
+        if np.asarray(detected_qf_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        detected infectives by a quarantined first household\
+                            case.')
+        if np.asarray(detected_qf_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        detected infectives by a quarantined first household\
+                        case.')
+        for ic in np.asarray(detected_qf_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of detected infectives by a \
+                            quarantined first household case must be integer\
+                                or float.')
+
+        if np.asarray(detected_qs_IC).ndim != 2:
+            raise ValueError('The inital numbers of detected infectives by a \
+                    quarantined subsequent household case storage format must \
+                        be 2-dimensional.')
+        if np.asarray(detected_qs_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        detected infectives by a quarantined subsequent\
+                            household case.')
+        if np.asarray(detected_qs_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        detected infectives by a quarantined subsequent\
+                            household case.')
+        for ic in np.asarray(detected_qs_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of detected infectives by a \
+                            quarantined subsequent household case\
+                                must be integer or float.')
+
+        if np.asarray(undetected_f_IC).ndim != 2:
+            raise ValueError('The inital numbers of undetected infectives \
+                by a first household case storage format must \
+                    be 2-dimensional.')
+        if np.asarray(undetected_f_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        undetected infectives by a first household case.')
+        if np.asarray(undetected_f_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        undetected infectives by a first household case.')
+        for ic in np.asarray(undetected_f_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of undetected infectives by a \
+                            first household case must be integer or float.')
+
+        if np.asarray(undetected_s_IC).ndim != 2:
+            raise ValueError('The inital undetected infectives by a subsequent\
+                household case storage format must be 2-dimensional.')
+        if np.asarray(undetected_s_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        undetected infectives by a subsequent household case.')
+        if np.asarray(undetected_s_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        undetected infectives by a subsequent household case.')
+        for ic in np.asarray(undetected_s_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of undetected infectives by a\
+                            subsequent household case must be integer or\
+                                float.')
+
+        if np.asarray(undetected_q_IC).ndim != 2:
+            raise ValueError('The inital numbers of undetected infectives by\
+                a quarantined household case storage format must be\
+                    2-dimensional.')
+        if np.asarray(undetected_q_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        undetected infectives by a quarantined household\
+                            case.')
+        if np.asarray(undetected_q_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        undetected infectives by a quarantined household\
+                            case.')
+        for ic in np.asarray(undetected_q_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of undetected infectives by\
+                            a quarantined household case must be integer or\
+                                float.')
+
+        if np.asarray(recovered_IC).ndim != 2:
+            raise ValueError('The inital numbers of recovered storage format \
+                must be 2-dimensional.')
+        if np.asarray(recovered_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        recovered.')
+        if np.asarray(recovered_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        recovered.')
+        for ic in np.asarray(recovered_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of recovered must be integer or \
+                            float.')
+
+    def __call__(self):
+        """
+        Returns the initial conditions of the :class:`WarwickSEIRModel` the
+        class relates to.
+
+        Returns
+        -------
+        List of lists
+            List of the initial conditions of the :class:`WarwickSEIRModel`
+            the class relates to.
+
+        """
+        return [self.susceptibles, self.exposed_f, self.exposed_sd,
+                self.exposed_su, self.exposed_q, self.detected_f,
+                self.detected_qf, self.detected_sd, self.detected_su,
+                self.detected_qs, self.undetected_f, self.undetected_s,
+                self.undetected_q, self.recovered]
+
+#
+# WarwickRegParameters Class
+#
+
+
+class WarwickRegParameters(object):
+    """WarwickRegParameters:
+    Base class for the regional and time dependent parameters of the Warwick
+    model: a deterministic SEIR developed by Univerity of Warwick to model
+    the Covid-19 epidemic and the effects of within-household dynamics on
+    the epidemic trajectory in different countries.
+
+    Parameters
+    ----------
+    region_index : int
+        Index of region for which we wish to simulate.
+    H : list
+        List of region dependent quarantine proportions.
+
+    """
+    def __init__(self, model, region_index, H):
+        super(WarwickRegParameters, self).__init__()
+
+        # Set model
+        if not isinstance(model, em.WarwickSEIRModel):
+            raise TypeError('The model must be a Warwick SEIR Model.')
+
+        self.model = model
+
+        # Check inputs format
+        self._check_parameters_input(region_index, H)
+
+        # Set regional and time dependent parameters
+        self.region_index = region_index
+        self.H = H
+
+    def _check_parameters_input(self, region_index, H):
+        """
+        Check correct format of the regional and time dependent parameters
+        input.
+
+        Parameters
+        ----------
+        region_index : int
+            Index of region for which we wish to simulate.
+        H : list
+            List of region-dependent household quarantine proportions.
+
+        """
+        if not isinstance(region_index, int):
+            raise TypeError('Index of region to evaluate must be integer.')
+        if region_index <= 0:
+            raise ValueError('Index of region to evaluate must be >= 1.')
+        if region_index > len(self.model.regions):
+            raise ValueError('Index of region to evaluate is out of bounds.')
+
+        if np.asarray(H).ndim != 1:
+            raise ValueError('The region-dependent household quarantine \
+                proportions storage format must be 1-dimensional.')
+        if np.asarray(H).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the region-dependent \
+                        household quarantine proportions.')
+        for h in H:
+            if not isinstance(h, (float, int)):
+                raise TypeError('The region-dependent household qurantine \
+                    proportions must be float or integer.')
+            if h < 0:
+                raise ValueError('The region-dependent household quarantine\
+                    proportions must be => 0.')
+            if h > 1:
+                raise ValueError('The region-dependent household quarantine\
+                    proportions must be <= 1.')
+
+    def __call__(self):
+        """
+        Returns the regional and time dependent parameters of the
+        :class:`WarwickSEIRModel` the class relates to.
+
+        Returns
+        -------
+        List of lists
+            List of the regional and time dependent parameters of the
+            :class:`WarwickSEIRModel` the class relates to.
+
+        """
+        return [self.region_index, self.H]
+
+#
+# WarwickDiseaseParameters Class
+#
+
+
+class WarwickDiseaseParameters(object):
+    """WarwickDiseaseParameters:
+    Base class for the disease-specific parameters of the Warwick model:
+    a deterministic SEIR developed by Univerity of Warwick to model the
+    Covid-19 epidemic and the effects of within-household dynamics on
+    the epidemic trajectory in different countries.
+
+    Parameters
+    ----------
+    tau : int or float
+        Reduction in transmission for an asymptomatic infectious compared
+        to the symptomatic case.
+    d : int or float or list
+        Age-dependent probabilities of dispalying symptoms.
+
+    """
+    def __init__(self, model, tau, d):
+        super(WarwickDiseaseParameters, self).__init__()
+
+        # Set model
+        if not isinstance(model, em.WarwickSEIRModel):
+            raise TypeError('The model must be a Warwick SEIR Model.')
+
+        self.model = model
+
+        # Check inputs format
+        self._check_parameters_input(tau, d)
+
+        # Set disease-specific parameters
+        self.tau = tau
+
+        if isinstance(d, (float, int)):
+            self.d = d * np.ones(self.model._num_ages)
+        else:
+            self.d = d
+
+    def _check_parameters_input(self, tau, d):
+        """
+        Check correct format of the disease-specific parameters input.
+
+        Parameters
+        ----------
+        tau : int or float
+            Reduction in transmission for an asymptomatic infectious compared
+            to the symptomatic case.
+        d : int or float or list
+            Age-dependent probabilities of dispalying symptoms.
+
+
+        """
+        if not isinstance(tau, (float, int)):
+            raise TypeError('Reduction in transmission must be float or\
+                integer.')
+        if tau < 0:
+            raise ValueError('Reduction in transmission must be => 0.')
+        if tau > 1:
+            raise ValueError('Reduction in transmission must be <= 1 .')
+
+        if isinstance(d, (float, int)):
+            d = [d]
+        if np.asarray(d).ndim != 1:
+            raise ValueError('The age-dependent probabilities of dispalying\
+                symptoms storage format must be 1-dimensional.')
+        if (np.asarray(d).shape[0] != self.model._num_ages) and (
+                np.asarray(d).shape[0] != 1):
+            raise ValueError(
+                    'Wrong number of age groups for the age-dependent \
+                        probabilities of dispalying symptoms.')
+        for _ in d:
+            if not isinstance(_, (float, int)):
+                raise TypeError('The age-dependent probabilities of dispalying\
+                    symptoms must be float or integer.')
+            if _ < 0:
+                raise ValueError('The age-dependent probabilities of \
+                    dispalying symptoms must be => 0.')
+            if _ > 1:
+                raise ValueError('The age-dependent probabilities of \
+                    dispalying symptoms must be <= 1.')
+
+    def __call__(self):
+        """
+        Returns the disease-specific parameters of the
+        :class:`WarwickSEIRModel` the class relates to.
+
+        Returns
+        -------
+        List of lists
+            List of the disease-specific parameters of the
+            :class:`WarwickSEIRModel` the class relates to.
+
+        """
+        return [self.tau, self.d]
+
+#
+# WarwickTransmission Class
+#
+
+
+class WarwickTransmission(object):
+    """RocheTransmission:
+    Base class for the transmission-specific parameters of the Warwick
+    model: a deterministic SEIR developed by Univerity of Warwick to model
+    the Covid-19 epidemic and the effects of within-household dynamics on
+    the epidemic trajectory in different countries.
+
+    Parameters
+    ----------
+    epsilon : int or float
+        Rate of progression to infection from exposed.
+    gamma : int or float
+        Rate of recovery.
+    sigma : int or float or list
+        Age-dependent susceptibility to infection.
+
+    """
+    def __init__(self, model, epsilon, gamma, sigma):
+        super(WarwickTransmission, self).__init__()
+
+        # Set model
+        if not isinstance(model, em.WarwickSEIRModel):
+            raise TypeError('The model must be a Warwick SEIR Model.')
+
+        self.model = model
+
+        # Check inputs format
+        self._check_parameters_input(epsilon, gamma, sigma)
+
+        # Set transmission-specific parameters
+        self.epsilon = epsilon
+        self.gamma = gamma
+
+        if isinstance(sigma, (float, int)):
+            self.sigma = sigma * np.ones(self.model._num_ages)
+        else:
+            self.sigma = sigma
+
+    def _check_parameters_input(self, epsilon, gamma, sigma):
+        """
+        Check correct format of the transmission-specific parameters input.
+
+        Parameters
+        ----------
+        epsilon : int or float
+            Rate of progression to infection from exposed.
+        gamma : int or float
+            Recovery rate.
+        sigma : int or float or list
+            Age-dependent susceptibility to infection.
+
+        """
+        if not isinstance(epsilon, (float, int)):
+            raise TypeError(
+                'The Rate of progression to infection from exposed must \
+                    be float or integer.')
+        if epsilon < 0:
+            raise ValueError('The rRate of progression to infection \
+                from exposed must be => 0.')
+
+        if not isinstance(gamma, (float, int)):
+            raise TypeError(
+                'The recovery rate must be float or integer.')
+        if gamma < 0:
+            raise ValueError('The recovery rate must be => 0.')
+
+        if isinstance(sigma, (float, int)):
+            sigma = [sigma]
+        if np.asarray(sigma).ndim != 1:
+            raise ValueError('The age-dependent susceptibility to infection\
+                storage format must be 1-dimensional.')
+        if (np.asarray(sigma).shape[0] != self.model._num_ages) and (
+                np.asarray(sigma).shape[0] != 1):
+            raise ValueError(
+                    'Wrong number of age groups for the age-dependent \
+                        susceptibility to infection.')
+        for _ in sigma:
+            if not isinstance(_, (float, int)):
+                raise TypeError('The age-dependent susceptibility to \
+                    infection must be float or integer.')
+            if _ < 0:
+                raise ValueError('The age-dependent susceptibility to \
+                    infection must be => 0.')
+
+    def __call__(self):
+        """
+        Returns the transmission-specific parameters of the
+        :class:`WarwickSEIRModel` the class relates to.
+
+        Returns
+        -------
+        List of lists
+            List of the transmission-specific parameters of the
+            :class:`WarwickSEIRModel` the class relates to.
+
+        """
+        return [self.epsilon, self.gamma, self.sigma]
+
+#
+# WarwickSimParameters Class
+#
+
+
+class WarwickSimParameters(object):
+    """WarwickSimParameters:
+    Base class for the simulation method's parameters of the Warwick
+    model: a deterministic SEIR developed by Univerity of Warwick to model
+    the Covid-19 epidemic and the effects of within-household dynamics on
+    the epidemic trajectory in different countries.
+
+    Parameters
+    ----------
+    method: str
+        The type of solver implemented by the simulator.
+    times : list
+        List of time points at which we wish to evaluate the ODEs
+        system.
+
+    """
+    def __init__(self, model, method, times):
+        super(WarwickSimParameters, self).__init__()
+
+        # Set model
+        if not isinstance(model, em.WarwickSEIRModel):
+            raise TypeError('The model must be a Warwick SEIR Model.')
+
+        self.model = model
+
+        # Check inputs format
+        self._check_parameters_input(method, times)
+
+        # Set other simulation parameters
+        self.method = method
+        self.times = times
+
+    def _check_parameters_input(self, method, times):
+        """
+        Check correct format of the simulation method's parameters input.
+
+        Parameters
+        ----------
+        method: str
+            The type of solver implemented by the simulator.
+        times : list
+            List of time points at which we wish to evaluate the ODEs
+            system.
+
+        """
+        if not isinstance(method, str):
+            raise TypeError('Simulation method must be a string.')
+        if method not in (
+                'my-solver', 'RK45', 'RK23', 'Radau',
+                'BDF', 'LSODA', 'DOP853'):
+            raise ValueError('Simulation method not available.')
+
+        # Check times format
+        if not isinstance(times, list):
+            raise TypeError('Time points of evaluation must be given in a list\
+                format.')
+        for _ in times:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of evaluation must be integer or \
+                    float.')
+            if _ <= 0:
+                raise ValueError('Time points of evaluation must be > 0.')
+
+    def __call__(self):
+        """
+        Returns the simulation method's parameters of the
+        :class:`WarwickSEIRModel` the class relates to.
+
+        Returns
+        -------
+        List of lists
+            List of the simulation method's parameters of the
+            :class:`WarwickSEIRModel` the class relates to.
+
+        """
+        return self.method
+
+#
+# WarwickParametersController Class
+#
+
+
+class WarwickParametersController(object):
+    """WarwickParametersController Class:
+    Base class for the paramaters of the Warwick model: a deterministic SEIR
+    developed by Univerity of Warwick to model the Covid-19 epidemic and
+    the effects of within-household dynamics on the epidemic trajectory in
+    different countries.
+
+    In order to simulate using the Warwick model, the following parameters are
+    required, which are stored as part of this class.
+
+    Parameters
+    ----------
+    model : WarwickSEIRModel
+        The model whose parameters are stored.
+    regional_parameters : WarwickRegParameters
+        Class of the regional and time dependent parameters used in the
+        simulation of the model.
+    ICs : WarwickICs
+        Class of the Ics used in the simulation of the model.
+    disease_parameters : WarwickDiseaseParameters
+        Class of the disease-specific parameters used in the simulation of
+        the model.
+    transmission_parameters : WarwickTransmission
+        Class of the rates of progression parameters used in the simulation of
+        the model.
+    simulation_parameters : WarwickSimParameters
+        Class of the simulation method's parameters used in the simulation of
+        the model.
+
+    """
+    def __init__(
+            self, model, regional_parameters, ICs, disease_parameters,
+            transmission_parameters, simulation_parameters):
+        # Instantiate class
+        super(WarwickParametersController, self).__init__()
+
+        # Set model
+        if not isinstance(model, em.WarwickSEIRModel):
+            raise TypeError('The model must be a Warwick SEIR Model.')
+
+        self.model = model
+
+        # Check inputs format
+        self._check_parameters_input(
+            regional_parameters, ICs, disease_parameters,
+            transmission_parameters, simulation_parameters)
+
+        # Set regional and time dependent parameters
+        self.regional_parameters = regional_parameters
+
+        # Set ICs parameters
+        self.ICs = ICs
+
+        # Set disease-specific parameters
+        self.disease_parameters = disease_parameters
+
+        # Set transmission-specific parameters
+        self.transmission_parameters = transmission_parameters
+
+        # Set other simulation parameters
+        self.simulation_parameters = simulation_parameters
+
+    def _check_parameters_input(
+            self, regional_parameters, ICs, disease_parameters,
+            transmission_parameters, simulation_parameters):
+        """
+        Check correct format of input of simulate method.
+
+        Parameters
+        ----------
+        model : WarwickSEIRModel
+            The model whose parameters are stored.
+        regional_parameters : WarwickRegParameters
+            Class of the regional and time dependent parameters used in the
+            simulation of the model.
+        ICs : WarwickICs
+            Class of the Ics used in the simulation of the model.
+        disease_parameters : WarwickDiseaseParameters
+            Class of the disease-specific parameters used in the simulation of
+            the model.
+        transmission_parameters : WarwickTransmission
+            Class of the rates of progression parameters used in the
+            simulation of the model.
+        simulation_parameters : WarwickSimParameters
+            Class of the simulation method's parameters used in the
+            simulation of the model.
+
+        """
+        if not isinstance(regional_parameters, WarwickRegParameters):
+            raise TypeError('The model`s regional and time dependent\
+                parameters must be of a Warwick SEIR Model.')
+        if regional_parameters.model != self.model:
+            raise ValueError('The regional and time dependent parameters do \
+                not correspond to the right model.')
+
+        if not isinstance(ICs, WarwickICs):
+            raise TypeError('The model`s ICs parameters must be of a Warwick\
+                SEIR Model.')
+        if ICs.model != self.model:
+            raise ValueError('ICs do not correspond to the right model.')
+
+        if not isinstance(disease_parameters, WarwickDiseaseParameters):
+            raise TypeError('The model`s disease-specific parameters must be \
+                of a Warwick SEIR Model.')
+        if disease_parameters.model != self.model:
+            raise ValueError('The disease-specific parameters do not \
+            correspond to the right model.')
+
+        if not isinstance(transmission_parameters, WarwickTransmission):
+            raise TypeError('The model`s transmission-specific parameters must\
+                be a of a Warwick SEIRD Model.')
+        if transmission_parameters.model != self.model:
+            raise ValueError('The transmission-specific parameters do not \
+                correspond to the right model.')
+
+        if not isinstance(simulation_parameters, WarwickSimParameters):
+            raise TypeError('The model`s simulation method`s parameters must\
+                be of a Warwick SEIR Model.')
+        if simulation_parameters.model != self.model:
+            raise ValueError('The simulation method`s parameters do not \
+                correspond to the right model.')
+
+    def __call__(self):
+        """
+        Returns the list of all the parameters used for the simulation of the
+        Warwick model in their order, which will be then separated within the
+        :class:`WarwickSEIRModel` class.
+
+        Returns
+        -------
+        list
+            List of all the parameters used for the simulation of the
+            Warwick model in their order.
+
+        """
+        parameters = []
+
+        # Add the regional and time dependent parameters
+        parameters.append(self.regional_parameters()[0])
+
+        # Add ICs
+        parameters.extend(self.ICs())
+
+        # Add sigma
+        parameters.extend(self.transmission_parameters()[2])
+
+        # Add tau
+        parameters.append(self.disease_parameters()[0])
+
+        # Add epsilon
+        parameters.append(self.transmission_parameters()[0])
+
+        # Add gamma
+        parameters.append(self.transmission_parameters()[1])
+
+        # Add d
+        parameters.extend(self.disease_parameters()[1])
+
+        # Add H
+        parameters.extend(self.regional_parameters()[1])
+
+        # Add other simulation parameters
+        parameters.append(self.simulation_parameters())
 
         return list(deepflatten(parameters, ignore=str))
