@@ -364,6 +364,9 @@ class WarwickSEIRModel(pints.ForwardModel):
             y[(9*a):(10*a)], y[(10*a):(11*a)], y[(11*a):(12*a)],
             y[(12*a):(13*a)], y[(13*a):])
 
+        # Read the social distancing parameters of the system
+        theta, phi, q_H, q_S, q_W, q_O = self.social_distancing_param
+
         # Read parameters of the system
         sig, tau, eps, gamma, d, h_all = c[:6]
 
@@ -372,8 +375,18 @@ class WarwickSEIRModel(pints.ForwardModel):
         # Identify the appropriate contact matrix for the ODE system
         house_cont_mat = \
             self.house_contacts_timeline.identify_current_contacts(r, t)
-        nonhouse_cont_mat = \
-            self.nonhouse_contacts_timeline.identify_current_contacts(r, t)
+        school_cont_mat = \
+            self.school_contacts_timeline.identify_current_contacts(r, t)
+        work_cont_mat = \
+            self.work_contacts_timeline.identify_current_contacts(r, t)
+        other_cont_mat = \
+            self.other_contacts_timeline.identify_current_contacts(r, t)
+
+        house_cont_mat = (1 - phi - phi * q_H) * house_cont_mat
+        nonhouse_cont_mat = (1 - phi - phi * q_S) * school_cont_mat + \
+            ((1 - phi - phi * q_W) *
+             (1 - theta + theta * (1 - phi - phi * q_O))) * work_cont_mat + \
+            ((1 - phi - phi * q_O)**2) * other_cont_mat
 
         # Write actual RHS
         lam_F = np.multiply(
@@ -501,11 +514,25 @@ class WarwickSEIRModel(pints.ForwardModel):
             self.house_matrices_region,
             self.time_changes_region)
 
-        self.nonhouse_contacts_timeline = em.MultiTimesContacts(
-            self.nonhouse_matrices_contact,
+        self.school_contacts_timeline = em.MultiTimesContacts(
+            self.school_matrices_contact,
             self.time_changes_contact,
             self.regions,
-            self.nonhouse_matrices_region,
+            self.school_matrices_region,
+            self.time_changes_region)
+
+        self.work_contacts_timeline = em.MultiTimesContacts(
+            self.work_matrices_contact,
+            self.time_changes_contact,
+            self.regions,
+            self.work_matrices_region,
+            self.time_changes_region)
+
+        self.other_contacts_timeline = em.MultiTimesContacts(
+            self.other_matrices_contact,
+            self.time_changes_contact,
+            self.regions,
+            self.other_matrices_region,
             self.time_changes_region)
 
         self._times = np.asarray(times)
@@ -551,7 +578,8 @@ class WarwickSEIRModel(pints.ForwardModel):
         return output.transpose()
 
     def read_contact_data(
-            self, house_matrices_contact, nonhouse_matrices_contact,
+            self, house_matrices_contact, school_matrices_contact,
+            work_matrices_contact, other_matrices_contact,
             time_changes_contact):
         """
         Reads in the timelines of contact data used for the modelling.
@@ -561,24 +589,39 @@ class WarwickSEIRModel(pints.ForwardModel):
         house_matrices_contact : list of ContactMatrix
             List of time-dependent contact matrices used for the modelling,
             underlying household interactions.
-        nonhouse_matrices_contact : list of ContactMatrix
+        school_matrices_contact : list of ContactMatrix
             List of time-dependent contact matrices used for the modelling,
-            underlying non-household interactions.
+            underlying school interactions.
+        work_matrices_contact : list of ContactMatrix
+            List of time-dependent contact matrices used for the modelling,
+            underlying workplace interactions.
+        other_matrices_contact : list of ContactMatrix
+            List of time-dependent contact matrices used for the modelling,
+            underlying other non-household interactions.
         time_changes_contact : list
             List of times at which the next contact matrix recorded starts to
             be used. In increasing order.
 
         """
-        if house_matrices_contact[0].ages != nonhouse_matrices_contact[0].ages:
+        if house_matrices_contact[0].ages != school_matrices_contact[0].ages:
+            raise ValueError(
+                'Contact matrices must refer to the same age groups.')
+        if house_matrices_contact[0].ages != work_matrices_contact[0].ages:
+            raise ValueError(
+                'Contact matrices must refer to the same age groups.')
+        if house_matrices_contact[0].ages != other_matrices_contact[0].ages:
             raise ValueError(
                 'Contact matrices must refer to the same age groups.')
 
         self.house_matrices_contact = house_matrices_contact
-        self.nonhouse_matrices_contact = nonhouse_matrices_contact
+        self.school_matrices_contact = school_matrices_contact
+        self.work_matrices_contact = work_matrices_contact
+        self.other_matrices_contact = other_matrices_contact
         self.time_changes_contact = time_changes_contact
 
     def read_regional_data(
-            self, house_matrices_region, nonhouse_matrices_region,
+            self, house_matrices_region, school_matrices_region,
+            work_matrices_region, other_matrices_region,
             time_changes_region):
         """
         Reads in the timelines of regional data used for the modelling.
@@ -588,9 +631,17 @@ class WarwickSEIRModel(pints.ForwardModel):
         house_matrices_region : lists of RegionMatrix
             List of time-dependent and region-specific relative susceptibility
             matrices used for the modelling, underlying household interactions.
-        nonhouse_matrices_region : lists of RegionMatrix
+        school_matrices_region : lists of RegionMatrix
             List of time-dependent and region-specific relative susceptibility
-            matrices used for the modelling, underlying non-household
+            matrices used for the modelling, underlying school
+            interactions.
+        work_matrices_region : lists of RegionMatrix
+            List of time-dependent and region-specific relative susceptibility
+            matrices used for the modelling, underlying workplace
+            interactions.
+        other_matrices_region : lists of RegionMatrix
+            List of time-dependent and region-specific relative susceptibility
+            matrices used for the modelling, underlying other non-household
             interactions.
         time_changes_region : list
             List of times at which the next instances of region-specific
@@ -599,16 +650,36 @@ class WarwickSEIRModel(pints.ForwardModel):
 
         """
         if house_matrices_region[0][0].ages != \
-                nonhouse_matrices_region[0][0].ages:
+                school_matrices_region[0][0].ages:
             raise ValueError(
                 'Regional matrices must refer to the same age groups.')
         if house_matrices_region[0][0].region != \
-                nonhouse_matrices_region[0][0].region:
+                school_matrices_region[0][0].region:
+            raise ValueError(
+                'Regional matrices must refer to the same region.')
+
+        if house_matrices_region[0][0].ages != \
+                work_matrices_region[0][0].ages:
+            raise ValueError(
+                'Regional matrices must refer to the same age groups.')
+        if house_matrices_region[0][0].region != \
+                work_matrices_region[0][0].region:
+            raise ValueError(
+                'Regional matrices must refer to the same region.')
+
+        if house_matrices_region[0][0].ages != \
+                other_matrices_region[0][0].ages:
+            raise ValueError(
+                'Regional matrices must refer to the same age groups.')
+        if house_matrices_region[0][0].region != \
+                other_matrices_region[0][0].region:
             raise ValueError(
                 'Regional matrices must refer to the same region.')
 
         self.house_matrices_region = house_matrices_region
-        self.nonhouse_matrices_region = nonhouse_matrices_region
+        self.school_matrices_region = school_matrices_region
+        self.work_matrices_region = work_matrices_region
+        self.other_matrices_region = other_matrices_region
         self.time_changes_region = time_changes_region
 
     def simulate(self, parameters):
@@ -634,6 +705,8 @@ class WarwickSEIRModel(pints.ForwardModel):
             region.
 
         """
+        self.social_distancing_param = parameters.soc_dist_parameters()
+
         return self._simulate(
             parameters(), parameters.simulation_parameters.times)
 
@@ -749,9 +822,9 @@ class WarwickSEIRModel(pints.ForwardModel):
 
     def new_infections(self, output):
         """
-        Computes number of new infections at each time step in specified
-        region, given the simulated timeline of susceptible number of
-        individuals, for all age groups in the model.
+        Computes number of new symptomatic infections at each time step in
+        specified region, given the simulated timeline of susceptible number
+        of individuals, for all age groups in the model.
 
         It uses an output of the simulation method for the WarwickSEIRModel,
         taking all the rest of the parameters necessary for the computation
@@ -766,8 +839,8 @@ class WarwickSEIRModel(pints.ForwardModel):
         Returns
         -------
         nunmpy.array
-            Age-structured matrix of the number of new infections from the
-            simulation method for the WarwickSEIRModel.
+            Age-structured matrix of the number of new symptomatic infections
+            from the simulation method for the WarwickSEIRModel.
 
         Notes
         -----

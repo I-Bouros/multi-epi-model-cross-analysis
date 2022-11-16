@@ -64,5 +64,6 @@ from._parameters import (  # noqa
     WarwickDiseaseParameters,
     WarwickTransmission,
     WarwickSimParameters,
+    WarwickSocDistParameters,
     WarwickParametersController
 )

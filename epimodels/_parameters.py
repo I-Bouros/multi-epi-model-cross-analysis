@@ -2468,7 +2468,7 @@ class WarwickSimParameters(object):
         if not isinstance(method, str):
             raise TypeError('Simulation method must be a string.')
         if method not in (
-                'my-solver', 'RK45', 'RK23', 'Radau',
+                'RK45', 'RK23', 'Radau',
                 'BDF', 'LSODA', 'DOP853'):
             raise ValueError('Simulation method not available.')
 
@@ -2496,6 +2496,148 @@ class WarwickSimParameters(object):
 
         """
         return self.method
+
+#
+# WarwickSimParameters Class
+#
+
+
+class WarwickSocDistParameters(object):
+    """WarwickSocDistParameters:
+    Base class for the ssocial distancing parameters of the Warwick
+    model: a deterministic SEIR developed by Univerity of Warwick to model
+    the Covid-19 epidemic and the effects of within-household dynamics on
+    the epidemic trajectory in different countries.
+
+    Parameters
+    ----------
+    theta: int or float
+        Proportion of work interactions in public-facing `industries`.
+    phi : int or float
+        Scaling factor between pre- and full-lockdown contact matrices.
+    q_H : int or float
+        Increase in the amonunt of household interactions during lockdown.
+    q_S : int or float
+        Reduction in attendance at school during lockdown.
+    q_W : int or float
+        Reduction in attendance at workplaces during lockdown.
+    q_O : int or float
+        Reduction in engagement with shopping and leisure activities during
+        lockdown.
+
+    """
+    def __init__(self, model, theta=0.3, phi=0, q_H=1.25,
+                 q_S=0.05, q_W=0.2, q_O=0.05):
+        super(WarwickSocDistParameters, self).__init__()
+
+        # Set model
+        if not isinstance(model, em.WarwickSEIRModel):
+            raise TypeError('The model must be a Warwick SEIR Model.')
+
+        self.model = model
+
+        # Check inputs format
+        self._check_parameters_input(theta, phi, q_H, q_S, q_W, q_O)
+
+        # Set other simulation parameters
+        self.theta = theta
+        self.phi = phi
+        self.q_H = q_H
+        self.q_S = q_S
+        self.q_W = q_W
+        self.q_O = q_O
+
+    def _check_parameters_input(self, theta, phi, q_H, q_S, q_W, q_O):
+        """
+        Check correct format of the simulation method's parameters input.
+
+        Parameters
+        ----------
+        theta: int or float
+            Proportion of work interactions in public-facing `industries`.
+        phi : int or float
+            Scaling factor between pre- and full-lockdown contact matrices.
+        q_H : int or float
+            Increase in the amonunt of household interactions during lockdown.
+        q_S : int or float
+            Reduction in attendance at school during lockdown.
+        q_W : int or float
+            Reduction in attendance at workplaces during lockdown.
+        q_O : int or float
+            Reduction in engagement with shopping and leisure activities during
+            lockdown.
+
+        """
+        if not isinstance(theta, (int, float)):
+            raise TypeError('The proportion of work interactions in \
+                public-facing `industries` must be integer or float.')
+        if theta < 0:
+            raise ValueError('The proportion of work interactions in \
+                public-facing `industries` must be >= 0.')
+        if theta > 1:
+            raise ValueError('The rproportion of work interactions in \
+                public-facing `industries` must be <= 1.')
+
+        if not isinstance(phi, (int, float)):
+            raise TypeError('The scaling factor between pre- and full-lockdown\
+                contact matrices must be integer or float.')
+        if phi < 0:
+            raise ValueError('The scaling factor between pre- and \
+                full-lockdown contact matrices must be >= 0.')
+        if phi > 1:
+            raise ValueError('The scaling factor between pre- and \
+                full-lockdown contact matrices must be <= 1.')
+
+        if not isinstance(q_H, (int, float)):
+            raise TypeError('The increase in the amonunt of household \
+                interactions during lockdown must be integer or float.')
+        if q_H < 1:
+            raise ValueError('The increase in the amonunt of household \
+                interactions during lockdown must be >= 1.')
+
+        if not isinstance(q_S, (int, float)):
+            raise TypeError('The reduction in attendance at school during\
+                lockdown must be integer or float.')
+        if q_S < 0:
+            raise ValueError('The reduction in attendance at school during\
+                lockdown must be >= 0.')
+        if q_S > 1:
+            raise ValueError('The reduction in attendance at school during\
+                lockdown must be <= 1.')
+
+        if not isinstance(q_W, (int, float)):
+            raise TypeError('The reduction in attendance at workplaces during\
+                lockdown must be integer or float.')
+        if q_W < 0:
+            raise ValueError('The reduction in attendance at workplaces during\
+                lockdown must be >= 0.')
+        if q_W > 1:
+            raise ValueError('The reduction in attendance at workplaces during\
+                lockdown must be <= 1.')
+
+        if not isinstance(q_O, (int, float)):
+            raise TypeError('The reduction in engagement with shopping and \
+                leisure activities during lockdown must be integer or float.')
+        if q_O < 0:
+            raise ValueError('The reduction in engagement with shopping and \
+                leisure activities during lockdown must be >= 0.')
+        if q_O > 1:
+            raise ValueError('The reduction in engagement with shopping and \
+                leisure activities during lockdown must be <= 1.')
+
+    def __call__(self):
+        """
+        Returns the social distancing parameters of the
+        :class:`WarwickSEIRModel` the class relates to.
+
+        Returns
+        -------
+        List of lists
+            List of the social distancing parameters of the
+            :class:`WarwickSEIRModel` the class relates to.
+
+        """
+        return [self.theta, self.phi, self.q_H, self.q_S, self.q_W, self.q_O]
 
 #
 # WarwickParametersController Class
@@ -2530,11 +2672,15 @@ class WarwickParametersController(object):
     simulation_parameters : WarwickSimParameters
         Class of the simulation method's parameters used in the simulation of
         the model.
+    soc_dist_parameters : WarwickSocDistParameters
+        Class of the social distancing parameters used in the simulation of
+        the model.
 
     """
     def __init__(
             self, model, regional_parameters, ICs, disease_parameters,
-            transmission_parameters, simulation_parameters):
+            transmission_parameters, simulation_parameters,
+            soc_dist_parameters=None):
         # Instantiate class
         super(WarwickParametersController, self).__init__()
 
@@ -2547,7 +2693,8 @@ class WarwickParametersController(object):
         # Check inputs format
         self._check_parameters_input(
             regional_parameters, ICs, disease_parameters,
-            transmission_parameters, simulation_parameters)
+            transmission_parameters, simulation_parameters,
+            soc_dist_parameters)
 
         # Set regional and time dependent parameters
         self.regional_parameters = regional_parameters
@@ -2564,9 +2711,16 @@ class WarwickParametersController(object):
         # Set other simulation parameters
         self.simulation_parameters = simulation_parameters
 
+        # Set social distancing parameters
+        if soc_dist_parameters is not None:
+            self.soc_dist_parameters = soc_dist_parameters
+        else:
+            self.soc_dist_parameters = WarwickSocDistParameters(model)
+
     def _check_parameters_input(
             self, regional_parameters, ICs, disease_parameters,
-            transmission_parameters, simulation_parameters):
+            transmission_parameters, simulation_parameters,
+            soc_dist_parameters):
         """
         Check correct format of input of simulate method.
 
@@ -2623,6 +2777,14 @@ class WarwickParametersController(object):
         if simulation_parameters.model != self.model:
             raise ValueError('The simulation method`s parameters do not \
                 correspond to the right model.')
+
+        if soc_dist_parameters is not None:
+            if not isinstance(soc_dist_parameters, WarwickSocDistParameters):
+                raise TypeError('The model`s social distancing parameters must\
+                    be of a Warwick SEIR Model.')
+            if soc_dist_parameters.model != self.model:
+                raise ValueError('The simulation method`s parameters do not \
+                    correspond to the right model.')
 
     def __call__(self):
         """

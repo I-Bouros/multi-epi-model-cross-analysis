@@ -31,6 +31,9 @@ Overview:
     - :class:`RocheSimParameters`
     - :class:`WarwickSimParameters`
 
+- Social Distancing Parameters Classes:
+    - :class:`WarwickSocDistParameters`
+
 - Parameters Controller Classes:
     - :class:`PheParametersController`
     - :class:`RocheParametersController`
@@ -142,6 +145,12 @@ Simulation Method Parameters
 ****************************
 
 .. autoclass:: WarwickSimParameters
+  :members:
+
+Social Distancing Parameters
+****************************
+
+.. autoclass:: WarwickSocDistParameters
   :members:
 
 Parameters Controller
