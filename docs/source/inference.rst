@@ -8,9 +8,17 @@ This section documents the classes used for the parameetr inference of epidemiol
 
 Overview:
 
-- :class:`PheSEIRInfer`
-- :class:`PHELogLik`
-- :class:`PHELogPrior`
+- Inference & Optimisation Controller Classes:
+    - :class:`PheSEIRInfer`
+    - :class:`RocheSEIRInfer`
+
+- Log-likelihood Initial Conditions Classes:
+    - :class:`PHELogLik`
+    - :class:`RocheLogLik`
+
+- Prior Classes:
+    - :class:`PHELogPrior`
+    - :class:`RocheLogPrior`
 
 Public Health England & Cambridge Model
 ***************************************
@@ -22,4 +30,16 @@ Public Health England & Cambridge Model
   :members:
 
 .. autoclass:: PHELogPrior
+  :members:
+
+Roche SEIRD Model
+*****************
+
+.. autoclass:: RocheSEIRInfer
+  :members:
+
+.. autoclass:: RocheLogLik
+  :members:
+
+.. autoclass:: RocheLogPrior
   :members:
