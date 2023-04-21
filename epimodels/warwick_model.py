@@ -1648,7 +1648,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         Returns
         -------
         numpy.array
-            Age-structured matrix of log-likelihoods for the obsereved number
+            Age-structured matrix of log-likelihoods for the observed number
             of positive test results for each age group in specified region at
             time :math:`t_k`.
 
