@@ -1156,7 +1156,6 @@ class RocheSEIRModel(pints.ForwardModel):
         # Check correct format of parameters
         self._check_output_format(output)
 
-        # Check correct format of parameters
         # Age-based total dead is dead 'd'
         n_daily_deaths = np.zeros((self._times.shape[0], self._num_ages))
         total_dead = output[:, (11*self._num_ages):(12*self._num_ages)]

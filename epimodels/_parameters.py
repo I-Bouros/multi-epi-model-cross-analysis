@@ -2498,7 +2498,7 @@ class WarwickSimParameters(object):
         return self.method
 
 #
-# WarwickSimParameters Class
+# WarwickSocDistParameters Class
 #
 
 
