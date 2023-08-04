@@ -1366,74 +1366,24 @@ class WarwickSEIRModel(pints.ForwardModel):
         Always run :meth:`WarwickSEIRModel.simulate` before running this one.
 
         """
-        n_daily_icu = np.zeros((self._times.shape[0], self._num_ages))
+        n_daily_icu_beds = np.zeros((self._times.shape[0], self._num_ages))
 
         for ind, _ in enumerate(self._times.tolist()):
             if ind >= 30:
-                n_daily_icu[ind, :] = np.array(pDtoI) * np.sum(np.matmul(
-                    np.diag(dDtoI[:31][::-1]),
-                    new_infections[(ind-30):(ind+1), :]), axis=0)
+                n_daily_icu_beds[ind, :] = np.sum(np.matmul(
+                    np.diag(tI[:31][::-1]),
+                    new_icu[(ind-30):(ind+1), :]), axis=0)
             else:
-                n_daily_icu[ind, :] = np.array(pDtoI) * np.sum(np.matmul(
-                    np.diag(dDtoI[:(ind+1)][::-1]),
-                    new_infections[:(ind+1), :]), axis=0)
+                n_daily_icu_beds[ind, :] = np.sum(np.matmul(
+                    np.diag(tI[:(ind+1)][::-1]),
+                    new_icu[:(ind+1), :]), axis=0)
 
         for ind, _ in enumerate(self._times.tolist()):  # pragma: no cover
-            if np.any(n_daily_icu[ind, :] < 0):
-                n_daily_icu[ind, :] = np.zeros_like(n_daily_icu[ind, :])
+            if np.any(n_daily_icu_beds[ind, :] < 0):
+                n_daily_icu_beds[ind, :] = np.zeros_like(n_daily_icu_beds[
+                    ind, :])
 
-        return n_daily_icu
-
-    def check_new_icu_format(self, new_infections, pDtoI, dDtoI):
-        """
-        Checks correct format of the inputs of number of ICU admissions
-        calculation.
-
-        Parameters
-        ----------
-        new_infections : numpy.array
-            Age-structured array of the daily number of new symptomatic
-            infections.
-        pDtoI : int or float
-            Age-dependent fractions of the number of symptomatic cases that
-            end up in ICU.
-        dDtoI : list
-            Distribution of the delay between onset of symptoms and
-            admission to ICU. Must be normalised.
-
-        """
-        self._check_new_infections_format(new_infections)
-
-        if np.asarray(pDtoI).ndim != 1:
-            raise ValueError('Fraction of the number of ICU admitted \
-                symptomatic cases storage format is 1-dimensional.')
-        if np.asarray(pDtoI).shape[0] != self._num_ages:
-            raise ValueError('Wrong number of fractions of the number of\
-                ICU admitted symptomatic cases .')
-        for _ in pDtoI:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Fraction of the number of ICU admitted \
-                    symptomatic cases must be integer or float.')
-            if (_ < 0) or (_ > 1):
-                raise ValueError('Fraction of the number of ICU admitted \
-                    symptomatic cases must be => 0 and <=1.')
-
-        if np.asarray(dDtoI).ndim != 1:
-            raise ValueError('Delays between onset of symptoms and \
-                ICU admission storage format is 1-dimensional.')
-        if np.asarray(dDtoI).shape[0] != len(self._times):
-            raise ValueError('Wrong number of delays between onset of \
-                symptoms and ICU admission.')
-        if np.sum(dDtoI) != 1:
-            raise ValueError('Distribution of delays between onset of\
-                symptoms and ICU admission must be normalised.')
-        for _ in pDtoI:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Delays between onset of symptoms and \
-                    ICU admission must be integer or float.')
-            if (_ < 0) or (_ > 1):
-                raise ValueError('Delays between onset of symptoms and \
-                    ICU admission must be => 0 and <=1.')
+        return n_daily_icu_beds
 
     def loglik_deaths(self, obs_death, new_deaths, niu, k):
         r"""

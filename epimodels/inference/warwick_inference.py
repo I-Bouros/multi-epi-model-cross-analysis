@@ -193,45 +193,53 @@ class WarwickLogLik(pints.LogPDF):
         # Initial Conditions
         susceptibles = self._susceptibles
 
-        exposed = np.zeros((
+        exposed_f = np.zeros((
             len(self._model.regions),
             self._model._num_ages)).tolist()
 
-        infectives_pre = np.zeros((
+        exposed_sd = np.zeros((
             len(self._model.regions),
             self._model._num_ages)).tolist()
 
-        infectives_pre_ss = np.zeros((
+        exposed_su = np.zeros((
             len(self._model.regions),
             self._model._num_ages)).tolist()
 
-        infectives_asym = np.zeros((
+        exposed_q = np.zeros((
             len(self._model.regions),
             self._model._num_ages)).tolist()
 
-        infectives_asym_ss = np.zeros((
+        detected_f = self._infectives
+
+        detected_qf = np.zeros((
             len(self._model.regions),
             self._model._num_ages)).tolist()
 
-        infectives_sym = self._infectives
-
-        infectives_sym_ss = np.zeros((
+        detected_sd = np.zeros((
             len(self._model.regions),
             self._model._num_ages)).tolist()
 
-        infectives_q = np.zeros((
+        detected_su = np.zeros((
+            len(self._model.regions),
+            self._model._num_ages)).tolist()
+
+        detected_qs = np.zeros((
+            len(self._model.regions),
+            self._model._num_ages)).tolist()
+
+        undetected_f = np.zeros((
+            len(self._model.regions),
+            self._model._num_ages)).tolist()
+
+        undetected_s = np.zeros((
+            len(self._model.regions),
+            self._model._num_ages)).tolist()
+
+        undetected_q = np.zeros((
             len(self._model.regions),
             self._model._num_ages)).tolist()
 
         recovered = np.zeros((
-            len(self._model.regions),
-            self._model._num_ages)).tolist()
-
-        recovered_asym = np.zeros((
-            len(self._model.regions),
-            self._model._num_ages)).tolist()
-
-        dead = np.zeros((
             len(self._model.regions),
             self._model._num_ages)).tolist()
 
@@ -259,10 +267,9 @@ class WarwickLogLik(pints.LogPDF):
         s50 = 50
 
         self._parameters = [
-            0, susceptibles, exposed, infectives_pre,
-            infectives_asym, infectives_sym, infectives_pre_ss,
-            infectives_asym_ss, infectives_sym_ss, infectives_q,
-            recovered, recovered_asym, dead,
+            0, susceptibles, exposed_f, exposed_sd, exposed_su,
+            exposed_q, detected_f, detected_qf, detected_sd, detected_su,
+            detected_qs, undetected_f, undetected_s, undetected_q, recovered,
             k, kS, kQ, kR, kRI, Pa, Pss, Pd,
             beta_min, beta_max, bss, gamma, s50, 'RK45'
         ]
