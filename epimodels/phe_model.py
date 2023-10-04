@@ -320,7 +320,7 @@ class PheSEIRModel(pints.ForwardModel):
         Returns
         -------
         numpy.array
-            Age-strictured matrix representation of the RHS of the ODEs system.
+            Age-structured matrix representation of the RHS of the ODEs system.
 
         """
         # Read in the number of age-groups

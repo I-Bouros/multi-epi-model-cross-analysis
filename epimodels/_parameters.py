@@ -1315,7 +1315,7 @@ class RocheTransmission(object):
         The maximum possible transmission rate of the virus.
     bss : int or float
         The relative increase in transmission of a super-spreader case.
-    gamma :  : int or float
+    gamma : int or float
         The sharpness of the intervention wave used for function continuity
         purposes.
     s50 : int or float
@@ -1530,11 +1530,11 @@ class RocheParametersController(object):
         Class of the average-time-in-compartment parameters used in the
         simulation of the model.
     proportion_parameters : RocheProportions
-            Class of the proportions of asymptomatic, super-spreader and dead
-            cases parameters  used in the simulation of the model.
-    proportion_parameters : RocheProportions
-            Class of the proportions of asymptomatic, super-spreader and dead
-            cases parameters used in the simulation of the model.
+        Class of the proportions of asymptomatic, super-spreader and dead
+        cases parameters  used in the simulation of the model.
+    transmission_parameters : RocheTransmission
+        Class of the parameters used in computation of the rates of
+        progression parameters used in the simulation of the model.
     simulation_parameters : RocheSimParameters
         Class of the simulation method's parameters used in the simulation of
         the model.
@@ -1590,8 +1590,8 @@ class RocheParametersController(object):
             Class of the proportions of asymptomatic, super-spreader and dead
             cases parameters used in the simulation of the model.
         transmission_parameters : RocheTransmission
-            Class of the proportions of asymptomatic, super-spreader and dead
-            cases parameters used in the simulation of the model.
+            Class of the parameters used in computation of the rates of
+            progression parameters used in the simulation of the model.
         simulation_parameters : RocheSimParameters
             Class of the simulation method's parameters used in the simulation
             of the model.
@@ -1660,6 +1660,500 @@ class RocheParametersController(object):
         # Add proportions of asymptomatic, super-spreader and dead
         # cases parameters
         parameters.extend(self.proportion_parameters())
+
+        # Add transmission-specific parameters
+        parameters.extend(self.transmission_parameters())
+
+        # Add other simulation parameters
+        parameters.append(self.simulation_parameters()[1])
+
+        return list(deepflatten(parameters, ignore=str))
+
+#
+# SEIRDICs Class
+#
+
+
+class SEIRDICs(object):
+    """SEIRDICs:
+    Base class for the ICs of the SEIRD model.
+
+    Parameters
+    ----------
+    susceptibles_IC : list of lists
+        Initial number of susceptibles classifed by age (column name) and
+        region (row name).
+    exposed_IC : list of lists
+        Initial number of exposed classifed by age (column name) and region
+        (row name).
+    infectives_IC :list of lists
+        Initial number of infectives classifed by age (column name) and
+        region (row name).
+    recovered_IC : list of lists
+        Initial number of recovered classifed by age (column name) and
+        region (row name).
+    dead_IC: list of lists
+        Initial number of dead classifed by age (column name) and region
+        (row name).
+
+    """
+    def __init__(self, model, susceptibles_IC, exposed_IC, infectives_IC,
+                 recovered_IC, dead_IC):
+        super(SEIRDICs, self).__init__()
+
+        # Set model
+        if not isinstance(model, em.SEIRDModel):
+            raise TypeError('The model must be a SEIRD Model.')
+
+        self.model = model
+
+        # Check inputs format
+        self._check_parameters_input(
+            susceptibles_IC, exposed_IC, infectives_IC, recovered_IC, dead_IC)
+
+        # Set ICs parameters
+        self.susceptibles = susceptibles_IC
+        self.exposed = exposed_IC
+        self.infectives = infectives_IC
+        self.recovered = recovered_IC
+        self.dead = dead_IC
+
+    def _check_parameters_input(self, susceptibles_IC, exposed_IC,
+                                infectives_IC, recovered_IC, dead_IC):
+        """
+        Check correct format of ICs input.
+
+        Parameters
+        ----------
+        susceptibles_IC : list of lists
+            Initial number of susceptibles classifed by age (column name) and
+            region (row name).
+        exposed_IC : list of lists
+            Initial number of exposed classifed by age (column name) and region
+            (row name).
+        infectives_IC :list of lists
+            Initial number of infectives classifed by age (column name) and
+            region (row name).
+        recovered_IC : list of lists
+            Initial number of recovered classifed by age (column name) and
+            region (row name).
+        dead_IC: list of lists
+            Initial number of dead classifed by age (column name) and region
+            (row name).
+
+        """
+        if np.asarray(susceptibles_IC).ndim != 2:
+            raise ValueError('The inital numbers of susceptibles storage \
+                format must be 2-dimensional.')
+        if np.asarray(susceptibles_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        susceptibles.')
+        if np.asarray(susceptibles_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        susceptibles.')
+        for ic in np.asarray(susceptibles_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of susceptibles must be integer or\
+                            float.')
+
+        if np.asarray(exposed_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed \
+                storage format must be 2-dimensional.')
+        if np.asarray(exposed_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed.')
+        if np.asarray(exposed_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed.')
+        for ic in np.asarray(exposed_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed must \
+                            be integer or float.')
+
+        if np.asarray(infectives_IC).ndim != 2:
+            raise ValueError('The inital numbers of infectives \
+                storage format must be 2-dimensional.')
+        if np.asarray(infectives_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        infectives.')
+        if np.asarray(infectives_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        infectives.')
+        for ic in np.asarray(infectives_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of infectives\
+                            must be integer or float.')
+
+        if np.asarray(recovered_IC).ndim != 2:
+            raise ValueError('The inital numbers of recovered storage format \
+                must be 2-dimensional.')
+        if np.asarray(recovered_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        recovered.')
+        if np.asarray(recovered_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        recovered.')
+        for ic in np.asarray(recovered_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of recovered must be integer or \
+                            float.')
+
+        if np.asarray(dead_IC).ndim != 2:
+            raise ValueError('The inital numbers of dead storage format \
+                must be 2-dimensional.')
+        if np.asarray(dead_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        dead.')
+        if np.asarray(dead_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        dead.')
+        for ic in np.asarray(dead_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of dead must be integer or \
+                            float.')
+
+    def __call__(self):
+        """
+        Returns the initial conditions of the :class:`SEIRDModel` the
+        class relates to.
+
+        Returns
+        -------
+        List of lists
+            List of the initial conditions of the :class:`SEIRDModel`
+            the class relates to.
+
+        """
+        return [self.susceptibles, self.exposed, self.infectives,
+                self.recovered, self.dead]
+
+#
+# SEIRDTransmission Class
+#
+
+
+class SEIRDTransmission(object):
+    """SEIRDTransmission:
+    Base class for the transmission-specific parameters of the SEIRD
+    model.
+
+    Parameters
+    ----------
+    beta : int or float
+        The transmission rate of the virus.
+    kappa : int or float
+        The rate of progression from exposed to infectious.
+    gamma : int or float
+        The rate of recovery from infectious to either recovered or dead.
+    Pd : int or float or list
+        Proportion of dead cases.
+
+    """
+    def __init__(self, model, beta, kappa, gamma, Pd):
+        super(SEIRDTransmission, self).__init__()
+
+        # Set model
+        if not isinstance(model, em.SEIRDModel):
+            raise TypeError('The model must be a SEIRD Model.')
+
+        self.model = model
+
+        # Check inputs format
+        self._check_parameters_input(beta, kappa, gamma, Pd)
+
+        # Set transmission-specific parameters
+        self.beta = beta
+        self.kappa = kappa
+        self.gamma = gamma
+        self.Pd = Pd
+
+    def _check_parameters_input(self, beta, kappa, gamma, Pd):
+        """
+        Check correct format of the transmission-specific parameters input.
+
+        Parameters
+        ----------
+        beta : int or float
+            The transmission rate of the virus.
+        kappa : int or float
+            The rate of progression from exposed to infectious.
+        gamma : int or float
+            The rate of recovery from infectious to either recovered or dead.
+        Pd : int or float or list
+            Proportion of dead cases.
+
+        """
+        if not isinstance(beta, (float, int)):
+            raise TypeError('The transmission rate must be float or integer.')
+        if beta <= 0:
+            raise ValueError('The transmission rate must be > 0.')
+
+        if not isinstance(kappa, (float, int)):
+            raise TypeError('The rate of progression from exposed to \
+                infectious must be float or integer.')
+        if kappa <= 0:
+            raise ValueError('The rate of progression from exposed to \
+                infectious must be > 0.')
+
+        if not isinstance(gamma, (float, int)):
+            raise TypeError('The rate of recovery from infectious to either \
+                recovered or dead must be float or integer.')
+        if gamma <= 0:
+            raise ValueError('The rate of recovery from infectious to either \
+                recovered or dead must be > 0.')
+
+        if isinstance(Pd, (float, int)):
+            Pd = [Pd]
+        if np.asarray(Pd).ndim != 1:
+            raise ValueError('The propotions of people that go on to be \
+                    dead storage format must be 1-dimensional.')
+        if (np.asarray(Pd).shape[0] != self.model._num_ages) and (
+                np.asarray(Pd).shape[0] != 1):
+            raise ValueError(
+                    'Wrong number of age groups for the propotions of people \
+                        that go on to be dead.')
+        for _ in Pd:
+            if not isinstance(_, (float, int)):
+                raise TypeError('The propotions of people that go on to be \
+                    dead must be float or integer.')
+            if _ < 0:
+                raise ValueError('The propotions of people that go on to be \
+                    dead must be >= 0.')
+            if _ > 1:
+                raise ValueError('The propotions of people that go on to be \
+                    dead must be <= 1.')
+
+    def __call__(self):
+        """
+        Returns the transmission-specific parameters of the
+        :class:`SEIRDModel` the class relates to.
+
+        Returns
+        -------
+        List of lists
+            List of the transmission-specific parameters of the
+            :class:`SEIRDModel` the class relates to.
+
+        """
+        return [self.beta, self.kappa, self.gamma, self.Pd]
+
+#
+# SEIRDSimParameters Class
+#
+
+
+class SEIRDSimParameters(object):
+    """SEIRDSimParameters:
+    Base class for the simulation method's parameters of the SEIRD
+    model.
+
+    Parameters
+    ----------
+    region_index : int
+        Index of region for which we wish to simulate.
+    method: str
+        The type of solver implemented by the simulator.
+    times : list
+        List of time points at which we wish to evaluate the ODEs
+        system.
+
+    """
+    def __init__(self, model, region_index, method, times):
+        super(SEIRDSimParameters, self).__init__()
+
+        # Set model
+        if not isinstance(model, em.SEIRDModel):
+            raise TypeError('The model must be a SEIRD Model.')
+
+        self.model = model
+
+        # Check inputs format
+        self._check_parameters_input(region_index, method, times)
+
+        # Set other simulation parameters
+        self.region_index = region_index
+        self.method = method
+        self.times = times
+
+    def _check_parameters_input(self, region_index, method, times):
+        """
+        Check correct format of the simulation method's parameters input.
+
+        Parameters
+        ----------
+        region_index : int
+            Index of region for which we wish to simulate.
+        method: str
+            The type of solver implemented by the simulator.
+        times : list
+            List of time points at which we wish to evaluate the ODEs
+            system.
+
+        """
+        if not isinstance(times, list):
+            raise TypeError('Time points of evaluation must be given in a list\
+                format.')
+        for _ in times:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of evaluation must be integer or \
+                    float.')
+            if _ <= 0:
+                raise ValueError('Time points of evaluation must be > 0.')
+
+        if not isinstance(region_index, int):
+            raise TypeError('Index of region to evaluate must be integer.')
+        if region_index <= 0:
+            raise ValueError('Index of region to evaluate must be >= 1.')
+        if region_index > len(self.model.regions):
+            raise ValueError('Index of region to evaluate is out of bounds.')
+
+        if not isinstance(method, str):
+            raise TypeError('Simulation method must be a string.')
+        if method not in (
+                'RK45', 'RK23', 'Radau', 'BDF', 'LSODA', 'DOP853'):
+            raise ValueError('Simulation method not available.')
+
+    def __call__(self):
+        """
+        Returns the simulation method's parameters of the
+        :class:`RocheSEIRModel` the class relates to.
+
+        Returns
+        -------
+        List of lists
+            List of the simulation method's parameters of the
+            :class:`RocheSEIRModel` the class relates to.
+
+        """
+        return [self.region_index, self.method]
+
+#
+# SEIRDParametersController Class
+#
+
+
+class SEIRDParametersController(object):
+    """SEIRDParametersController Class:
+    Base class for the paramaters of the SEIRD model.
+
+    In order to simulate using the SEIRD model, the following parameters are
+    required, which are stored as part of this class.
+
+    Parameters
+    ----------
+    model : SEIRDModel
+        The model whose parameters are stored.
+    ICs : SEIRDICs
+        Class of the Ics used in the simulation of the model.
+    transmission_parameters : SEIRDTransmission
+        Class of the rates of progression parameters used in the simulation of
+        the model.
+    simulation_parameters : SEIRDSimParameters
+        Class of the simulation method's parameters used in the simulation of
+        the model.
+
+    """
+    def __init__(
+            self, model, ICs, transmission_parameters, simulation_parameters):
+        # Instantiate class
+        super(SEIRDParametersController, self).__init__()
+
+        # Set model
+        if not isinstance(model, em.SEIRDModel):
+            raise TypeError('The model must be a SEIRD Model.')
+
+        self.model = model
+
+        # Check inputs format
+        self._check_parameters_input(
+            ICs, transmission_parameters, simulation_parameters)
+
+        # Set ICs parameters
+        self.ICs = ICs
+
+        # Set transmission-specific parameters
+        self.transmission_parameters = transmission_parameters
+
+        # Set other simulation parameters
+        self.simulation_parameters = simulation_parameters
+
+    def _check_parameters_input(
+            self, ICs, transmission_parameters, simulation_parameters):
+        """
+        Check correct format of input of simulate method.
+
+        Parameters
+        ----------
+        ICs : SEIRDICs
+            Class of the Ics used in the simulation of the model.
+        transmission_parameters : SEIRDTransmission
+            Class of the rates of progression parameters used in the
+            simulation of the model.
+        simulation_parameters : SEIRDSimParameters
+            Class of the simulation method's parameters used in the simulation
+            of the model.
+
+        """
+        if not isinstance(ICs, SEIRDICs):
+            raise TypeError('The model`s ICs parameters must be of a \
+                SEIRD Model.')
+        if ICs.model != self.model:
+            raise ValueError('ICs do not correspond to the right model.')
+
+        if not isinstance(transmission_parameters, SEIRDTransmission):
+            raise TypeError('The model`s transmission-specific parameters must\
+                be a SEIRD Model.')
+        if transmission_parameters.model != self.model:
+            raise ValueError('The transmission-specific parameters do not \
+                correspond to the right model.')
+
+        if not isinstance(simulation_parameters, SEIRDSimParameters):
+            raise TypeError('The model`s simulation method`s parameters must \
+                be of a SEIRD Model.')
+        if simulation_parameters.model != self.model:
+            raise ValueError('The simulation method`s parameters do not \
+                correspond to the right model.')
+
+    def __call__(self):
+        """
+        Returns the list of all the parameters used for the simulation of the
+        SEIRD model in their order, which will be then separated within the
+        :class:`SEIRDModel` class.
+
+        Returns
+        -------
+        list
+            List of all the parameters used for the simulation of the
+            SEIRD model in their order.
+
+        """
+        parameters = []
+
+        # Add the region index parameters
+        parameters.append(self.simulation_parameters()[0])
+
+        # Add ICs
+        parameters.extend(self.ICs())
 
         # Add transmission-specific parameters
         parameters.extend(self.transmission_parameters())

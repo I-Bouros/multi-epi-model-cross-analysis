@@ -24,6 +24,7 @@ from .version_info import VERSION_INT, VERSION  # noqa
 from . import inference  # noqa
 
 # Import models
+from .seird_model import SEIRDModel  # noqa
 from .phe_model import PheSEIRModel  # noqa
 from .roche_model import RocheSEIRModel  # noqa
 
@@ -54,4 +55,12 @@ from._parameters import (  # noqa
     RocheTransmission,
     RocheSimParameters,
     RocheParametersController
+)
+
+# For SEIRD
+from._parameters import (  # noqa
+    SEIRDICs,
+    SEIRDTransmission,
+    SEIRDSimParameters,
+    SEIRDParametersController
 )
