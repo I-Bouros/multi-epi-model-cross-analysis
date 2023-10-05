@@ -11,8 +11,6 @@ This script contains code for modelling the simple SEIRD model.
 
 """
 
-from itertools import chain
-
 import numpy as np
 import pints
 from scipy.stats import nbinom, binom
@@ -129,19 +127,6 @@ class SEIRDModel(pints.ForwardModel):
         """
         self.regions = regions
 
-    def set_age_groups(self, age_groups):
-        """
-        Sets age group names and counts their number.
-
-        Parameters
-        ----------
-        age_groups : list
-            List of age group names considered by the model.
-
-        """
-        self.age_groups = age_groups
-        self._num_ages = len(self.age_groups)
-
     def region_names(self):
         """
         Returns the regions names.
@@ -153,18 +138,6 @@ class SEIRDModel(pints.ForwardModel):
 
         """
         return self.regions
-
-    def age_groups_names(self):
-        """
-        Returns the age group names.
-
-        Returns
-        -------
-        list
-            List of the age group names.
-
-        """
-        return self.age_groups
 
     def set_outputs(self, outputs):
         """
@@ -190,7 +163,7 @@ class SEIRDModel(pints.ForwardModel):
         self._output_indices = output_indices
         self._n_outputs = len(outputs)
 
-    def _right_hand_side(self, t, r, y, c, num_a_groups):
+    def _right_hand_side(self, t, r, y, c):
         r"""
         Constructs the RHS of the equations of the system of ODEs for given a
         region and time point.
@@ -203,18 +176,15 @@ class SEIRDModel(pints.ForwardModel):
             The index of the region to which the current instance of the ODEs
             system refers.
         y : numpy.array
-            Array of all the compartments of the ODE system, segregated
-            by age-group. It assumes y = [S, E, I, R, D] where each
-            letter actually refers to all compartment of that type. (e.g. S
-            refers to the compartments of all ages of susceptibles).
+            Array of all the compartments of the ODE system. It assumes
+            y = [S, E, I, R, D] where each letter actually refers to all
+            compartment of that type. (e.g. S refers to the compartments
+            of susceptibles).
         c : list
             List of values used to compute the parameters of the ODEs
             system. It assumes c = [beta, kappa, gamma, Pd], where :math:`beta,
-            kappa, gamma` represent the transmission rates for all ages,
-            :math:`Pd` is the propotion of infectious people that go on to die.
-        num_a_groups : int
-            Number of age groups in which the population is split. It
-            refers to the number of compartments of each type.
+            kappa, gamma` represent the transmission rates and :math:`Pd` is
+            the propotion of infectious people that go on to die.
 
         Returns
         -------
@@ -222,29 +192,25 @@ class SEIRDModel(pints.ForwardModel):
             Age-structured matrix representation of the RHS of the ODEs system.
 
         """
-        # Read in the number of age-groups
-        a = num_a_groups
 
         # Split compartments into their types
-        s, e, i, _, d = (  # noqa
-            y[:a], y[a:(2*a)], y[(2*a):(3*a)], y[(3*a):(4*a)], y[(4*a):])
+        s, e, i, _, d = y
 
         # Read parameters of the system
         beta, kappa, gamma, Pd = c
 
         # Write actual RHS
-        dydt = np.concatenate((
-            -beta * np.multiply(s, np.multiply(1 / self._N, i)),
-            beta * np.multiply(s, np.multiply(
-                1 / self._N, i)) - kappa * np.asarray(e),
-            kappa * np.asarray(e) - gamma * np.asarray(i),
-            gamma * np.multiply(1 - np.asarray(Pd), i),
-            gamma * np.multiply(Pd, i),
-            ))
+        dydt = np.array([
+            -beta * s * i / self._N,
+            beta * s * i / self._N - kappa * e,
+            kappa * e - gamma * i,
+            gamma * (1 - Pd) * i,
+            gamma * Pd * i,
+        ])
 
         return dydt
 
-    def _scipy_solver(self, times, num_a_groups, method):
+    def _scipy_solver(self, times, method):
         """
         Computes the values in each compartment of the SEIRD ODEs system using
         the 'off-the-shelf' solver of the IVP from :module:`scipy`.
@@ -253,9 +219,6 @@ class SEIRDModel(pints.ForwardModel):
         ----------
         times : list
             List of time points at which we wish to evaluate the ODEs system.
-        num_a_groups : int
-            Number of age groups in which the population is split. It
-            refers to the number of compartments of each type.
         method : str
             The type of solver implemented by the :meth:`scipy.solve_ivp`.
 
@@ -266,16 +229,12 @@ class SEIRDModel(pints.ForwardModel):
 
         """
         # Initial conditions
-        si, ei, ii, _i, di = np.asarray(self._y_init)[:, self._region-1]
-        init_cond = list(
-            chain(
-                si.tolist(), ei.tolist(), ii.tolist(), _i.tolist(),
-                di.tolist()))
+        init_cond = np.asarray(self._y_init)[:, self._region-1].tolist()
 
         # Solve the system of ODEs
         sol = solve_ivp(
             lambda t, y: self._right_hand_side(
-                t, self._region, y, self._c, num_a_groups),
+                t, self._region, y, self._c),
             [times[0], times[-1]], init_cond, method=method, t_eval=times)
         return sol
 
@@ -316,35 +275,27 @@ class SEIRDModel(pints.ForwardModel):
         self._times = np.asarray(times)
 
         # Select method of simulation
-        sol = self._scipy_solver(times, self._num_ages, method)
+        sol = self._scipy_solver(times, method)
 
         output = sol['y']
 
         # Age-based total infected is infectious 'i' plus recovered 'r'
-        total_infected = output[
-            (2*self._num_ages):(3*self._num_ages), :] + output[
-            (3*self._num_ages):(4*self._num_ages), :]
+        total_infected = output[2, :] + output[3, :]
 
         # Number of incidences is the increase in total_infected
         # between the time points (add a 0 at the front to
         # make the length consistent with the solution
-        n_incidence = np.zeros((self._num_ages, len(times)))
-        n_incidence[:, 1:] = total_infected[:, 1:] - total_infected[:, :-1]
+        n_incidence = np.zeros(len(times))
+        n_incidence[1:] = total_infected[1:] - total_infected[:-1]
 
         # Append n_incidence to output
         # Output is a matrix with rows being S, E1, I1, R1 and Incidence
-        output = np.concatenate((output, n_incidence), axis=0)
+        output = np.vstack((output, n_incidence))
 
         # Get the selected outputs
         self._output_indices = np.arange(self._n_outputs)
 
-        output_indices = []
-        for i in self._output_indices:
-            output_indices.extend(
-                np.arange(i*self._num_ages, (i+1)*self._num_ages)
-            )
-
-        output = output[output_indices, :]
+        output = output[self._output_indices, :]
 
         return output.transpose()
 
@@ -354,7 +305,7 @@ class SEIRDModel(pints.ForwardModel):
         for the model parameters.
 
         Extends the :meth:`_split_simulate`. Always apply methods
-        :meth:`set_regions`, :meth:`set_age_groups`, :meth:`read_contact_data`
+        :meth:`set_regions`, :meth:`read_contact_data`
         and :meth:`read_regional_data` before running the
         :meth:`SEIRDModel.simulate`.
 
@@ -367,7 +318,7 @@ class SEIRDModel(pints.ForwardModel):
         Returns
         -------
         numpy.array
-            Age-structured output matrix of the simulation for the specified
+            Output matrix of the simulation for the specified
             region.
 
         """
@@ -379,7 +330,7 @@ class SEIRDModel(pints.ForwardModel):
         PINTS-configured wrapper for the simulation method of the SEIRD model.
 
         Extends the :meth:`_split_simulate`. Always apply methods
-        :meth:`set_regions`, :meth:`set_age_groups`, :meth:`read_contact_data`
+        :meth:`set_regions`, :meth:`read_contact_data`
         and :meth:`read_regional_data` before running the
         :meth:`SEIRDModel.simulate`.
 
@@ -389,9 +340,8 @@ class SEIRDModel(pints.ForwardModel):
             Long vector format of the quantities that characterise the SEIRD
             model in this order:
             (1) index of region for which we wish to simulate,
-            (2) initial conditions matrices classifed by age (column name) and
-            region (row name) for each type of compartment (s, e, i, r, d),
-            r),
+            (2) initial conditions matrices classifed by region (row name) for
+            each type of compartment (s, e, i, r, d),
             (3) the rates of progression to different infection stages (beta,
             kappa, gamma) and
             (4) the propotion of infectious people that go on to die (Pd).
@@ -407,12 +357,9 @@ class SEIRDModel(pints.ForwardModel):
 
         """
         # Number of regions and age groups
-        self._num_ages = len(self.age_groups)
-
-        n_ages = self._num_ages
         n_reg = len(self.regions)
 
-        start_index = n_reg * ((len(self._output_names)-1) * n_ages) + 1
+        start_index = n_reg * (len(self._output_names)-1) + 1
 
         # Separate list of parameters into the structures needed for the
         # simulation
@@ -425,18 +372,16 @@ class SEIRDModel(pints.ForwardModel):
         for c in range(len(self._output_names)-1):
             initial_cond_comp = []
             for r in range(n_reg):
-                ind = r * n_ages + n_reg * c * n_ages + 1
+                ind = r + n_reg * c + 1
                 initial_cond_comp.append(
-                    parameters[ind:(ind + n_ages)])
+                    parameters[ind])
             my_parameters.append(initial_cond_comp)
 
         # Add other parameters
-        my_parameters.extend(parameters[start_index:(start_index + 3)])
-        my_parameters.append(parameters[
-            (start_index + 3):(start_index + 3 + n_ages)])
+        my_parameters.extend(parameters[start_index:(start_index + 4)])
 
         # Add method
-        method = parameters[start_index + 3 + n_ages]
+        method = parameters[start_index + 4]
 
         return self._split_simulate(my_parameters,
                                     times,
@@ -449,7 +394,7 @@ class SEIRDModel(pints.ForwardModel):
         Parameters
         ----------
         output : numpy.array
-            Age-structured output matrix of the simulation method
+            Output matrix of the simulation method
             for the SEIRDModel.
 
         """
@@ -459,7 +404,7 @@ class SEIRDModel(pints.ForwardModel):
         if np.asarray(output).shape[0] != self._times.shape[0]:
             raise ValueError(
                     'Wrong number of rows for the model output.')
-        if np.asarray(output).shape[1] != 6 * self._num_ages:
+        if np.asarray(output).shape[1] != 6:
             raise ValueError(
                     'Wrong number of columns for the model output.')
         for r in np.asarray(output):
@@ -472,7 +417,7 @@ class SEIRDModel(pints.ForwardModel):
         """
         Computes number of new infections at each time step in specified
         region, given the simulated timeline of susceptible number of
-        individuals, for all age groups in the model.
+        individuals.
 
         It uses an output of the simulation method for the SEIRDModel,
         taking all the rest of the parameters necessary for the computation
@@ -481,13 +426,13 @@ class SEIRDModel(pints.ForwardModel):
         Parameters
         ----------
         output : numpy.array
-            Age-structured output of the simulation method for the
+            Output of the simulation method for the
             SEIRDModel.
 
         Returns
         -------
         nunmpy.array
-            Age-structured matrix of the number of new infections from the
+            Matrix of the number of new infections from the
             simulation method for the SEIRDModel.
 
         Notes
@@ -499,17 +444,17 @@ class SEIRDModel(pints.ForwardModel):
         self._check_output_format(output)
 
         kappa = self._c[1]
-        d_infec = np.empty((self._times.shape[0], self._num_ages))
+        d_infec = np.empty(self._times.shape[0])
 
         for ind, t in enumerate(self._times.tolist()):
             # Read from output
-            e = output[ind, :][self._num_ages:(2*self._num_ages)]
+            e = output[ind][1]
 
             # fraction of new infectives in delta_t time step
-            d_infec[ind, :] = kappa * e
+            d_infec[ind] = kappa * e
 
-            if np.any(d_infec[ind, :] < 0):  # pragma: no cover
-                d_infec[ind, :] = np.zeros_like(d_infec[ind, :])
+            if np.any(d_infec[ind] < 0):  # pragma: no cover
+                d_infec[ind] = np.zeros_like(d_infec[ind])
 
         return d_infec
 
@@ -520,31 +465,27 @@ class SEIRDModel(pints.ForwardModel):
         Parameters
         ----------
         new_deaths : numpy.array
-            Age-structured matrix of the number of new deaths from the
+            Matrix of the number of new deaths from the
             simulation method for the SEIRDModel.
 
         """
-        if np.asarray(new_deaths).ndim != 2:
+        if np.asarray(new_deaths).ndim != 1:
             raise ValueError(
-                'Model new infections storage format must be 2-dimensional.')
+                'Model new infections storage format must be 1-dimensional.')
         if np.asarray(new_deaths).shape[0] != self._times.shape[0]:
             raise ValueError(
                     'Wrong number of rows for the model new infections.')
-        if np.asarray(new_deaths).shape[1] != self._num_ages:
-            raise ValueError(
-                    'Wrong number of columns for the model new infections.')
-        for r in np.asarray(new_deaths):
-            for _ in r:
-                if not isinstance(_, (np.integer, np.floating)):
-                    raise TypeError(
-                        'Model new infections elements must be integer or \
-                            float.')
+        for _ in np.asarray(new_deaths):
+            if not isinstance(_, (np.integer, np.floating)):
+                raise TypeError(
+                    'Model new deaths elements must be integer or \
+                        float.')
 
     def new_deaths(self, output):
         """
         Computes number of new deaths at each time step in specified
         region, given the simulated timeline of susceptible number of
-        individuals, for all age groups in the model.
+        individuals.
 
         It uses an output of the simulation method for the SEIRDModel,
         taking all the rest of the parameters necessary for the computation
@@ -553,13 +494,13 @@ class SEIRDModel(pints.ForwardModel):
         Parameters
         ----------
         output : numpy.array
-            Age-structured output of the simulation method for the
+            Output of the simulation method for the
             SEIRDModel.
 
         Returns
         -------
         nunmpy.array
-            Age-structured matrix of the number of new deaths from the
+            Matrix of the number of new deaths from the
             simulation method for the SEIRDModel.
 
         Notes
@@ -572,13 +513,13 @@ class SEIRDModel(pints.ForwardModel):
 
         # Check correct format of parameters
         # Age-based total dead is dead 'd'
-        n_daily_deaths = np.zeros((self._times.shape[0], self._num_ages))
-        total_dead = output[:, (4*self._num_ages):(5*self._num_ages)]
-        n_daily_deaths[1:, :] = total_dead[1:, :] - total_dead[:-1, :]
+        n_daily_deaths = np.zeros(self._times.shape[0])
+        total_dead = output[:, 4]
+        n_daily_deaths[1:] = total_dead[1:] - total_dead[:-1]
 
         for ind, t in enumerate(self._times.tolist()):  # pragma: no cover
-            if np.any(n_daily_deaths[ind, :] < 0):
-                n_daily_deaths[ind, :] = np.zeros_like(n_daily_deaths[ind, :])
+            if np.any(n_daily_deaths[ind] < 0):
+                n_daily_deaths[ind] = np.zeros_like(n_daily_deaths[ind])
 
         return n_daily_deaths
 
@@ -586,7 +527,7 @@ class SEIRDModel(pints.ForwardModel):
         r"""
         Computes the log-likelihood for the number of deaths at time step
         :math:`k` in specified region, given the simulated timeline of
-        susceptible number of individuals, for all age groups in the model.
+        susceptible number of individuals.
 
         The number of deaths is assumed to be distributed according to
         a negative binomial distribution with mean :math:`\mu_{r,t_k,i}`
@@ -600,10 +541,10 @@ class SEIRDModel(pints.ForwardModel):
 
         Parameters
         ----------
-        obs_death : list
-            List of number of observed deaths by age group at time point k.
+        obs_death : int or float
+            Number of observed deaths at time point k.
         new_deaths : numpy.array
-            Age-structured matrix of the number of new deaths from the
+            Matrix of the number of new deaths from the
             simulation method for the SEIRDModel.
         niu : float
             Dispersion factor for the negative binomial distribution.
@@ -614,7 +555,7 @@ class SEIRDModel(pints.ForwardModel):
         Returns
         -------
         numpy.array
-            Age-structured matrix of log-likelihoods for the observed number
+            Matrix of log-likelihoods for the observed number
             of deaths in specified region at time :math:`t_k`.
 
         Notes
@@ -626,21 +567,14 @@ class SEIRDModel(pints.ForwardModel):
         self._check_time_step_format(k)
 
         # Check correct format for observed number of deaths
-        if np.asarray(obs_death).ndim != 1:
-            raise ValueError('Observed number of deaths by age category \
-                storage format is 1-dimensional.')
-        if np.asarray(obs_death).shape[0] != self._num_ages:
-            raise ValueError('Wrong number of age groups for observed number \
-                of deaths.')
-        for _ in obs_death:
-            if not isinstance(_, (int, np.integer)):
-                raise TypeError('Observed number of deaths must be integer.')
-            if _ < 0:
-                raise ValueError('Observed number of deaths must be => 0.')
+        if not isinstance(obs_death, (int, np.integer)):
+            raise TypeError('Observed number of deaths must be integer.')
+        if obs_death < 0:
+            raise ValueError('Observed number of deaths must be => 0.')
 
         if not hasattr(self, 'actual_deaths'):
             self.actual_deaths = [0] * 150
-        self.actual_deaths[k] = sum(self.mean_deaths(k, new_deaths))
+        self.actual_deaths[k] = self.mean_deaths(k, new_deaths)
 
         # Compute mean of negative-binomial
         if k != 0:
@@ -650,9 +584,9 @@ class SEIRDModel(pints.ForwardModel):
                     n=(1/niu) * self.mean_deaths(k, new_deaths),
                     p=1/(1+niu))
             else:
-                return np.zeros(self._num_ages)
+                return np.zeros(1)
         else:
-            return np.zeros(self._num_ages)
+            return np.zeros(1)
 
     def check_death_format(self, new_deaths, niu):
         """
@@ -661,7 +595,7 @@ class SEIRDModel(pints.ForwardModel):
         Parameters
         ----------
         new_deaths : numpy.array
-            Age-structured matrix of the number of new deaths from the
+            Matrix of the number of new deaths from the
             simulation method for the SEIRDModel.
         niu : float
             Dispersion factor for the negative binomial distribution.
@@ -676,7 +610,7 @@ class SEIRDModel(pints.ForwardModel):
     def mean_deaths(self, k, new_deaths):
         """
         Computes the mean of the negative binomial distribution used to
-        calculate number of deaths for specified age group.
+        calculate number of deaths.
 
         Parameters
         ----------
@@ -684,23 +618,23 @@ class SEIRDModel(pints.ForwardModel):
             Index of day for which we intend to sample the number of deaths for
             by age group.
         new_deaths : numpy.array
-            Age-structured matrix of the number of new deaths from the
+            Matrix of the number of new deaths from the
             simulation method for the SEIRDModel.
 
         Returns
         -------
         numpy.array
-            Age-structured matrix of the expected number of deaths to be
+            Matrix of the expected number of deaths to be
             observed in specified region at time :math:`t_k`.
 
         """
-        return new_deaths[k, :] + 1e-20
+        return new_deaths[k] + 1e-20
 
     def samples_deaths(self, new_deaths, niu, k):
         r"""
         Computes samples for the number of deaths at time step
         :math:`k` in specified region, given the simulated timeline of
-        susceptible number of individuals, for all age groups in the model.
+        susceptible number of individuals.
 
         The number of deaths is assumed to be distributed according to
         a negative binomial distribution with mean :math:`\mu_{r,t_k,i}`
@@ -715,7 +649,7 @@ class SEIRDModel(pints.ForwardModel):
         Parameters
         ----------
         new_deaths : numpy.array
-            Age-structured matrix of the number of new deaths from the
+            Matrix of the number of new deaths from the
             simulation method for the SEIRDModel.
         niu : float
             Dispersion factor for the negative binomial distribution.
@@ -726,8 +660,8 @@ class SEIRDModel(pints.ForwardModel):
         Returns
         -------
         numpy.array
-            Age-structured matrix of sampled number of deaths in specified
-            region at time :math:`t_k`.
+            Matrix of sampled number of deaths in specified region at time
+            :math:`t_k`.
 
         Notes
         -----
@@ -744,7 +678,7 @@ class SEIRDModel(pints.ForwardModel):
                     n=(1/niu) * self.mean_deaths(k, new_deaths),
                     p=1/(1+niu))
             else:
-                return np.zeros(self._num_ages)
+                return np.zeros(1)
         else:
             return np.zeros_like(self.mean_deaths(k, new_deaths))
 
@@ -752,7 +686,7 @@ class SEIRDModel(pints.ForwardModel):
         r"""
         Computes the log-likelihood for the number of positive tests at time
         step :math:`k` in specified region, given the simulated timeline of
-        susceptible number of individuals, for all age groups in the model.
+        susceptible number of individuals.
 
         The number of positive tests is assumed to be distributed according to
         a binomial distribution with parameters :math:`n = n_{r,t_k,i}` and
@@ -775,15 +709,13 @@ class SEIRDModel(pints.ForwardModel):
 
         Parameters
         ----------
-        obs_pos : list
-            List of number of observed positive test results by age group at
+        obs_pos : int or float
+            Number of observed positive test results by age group at
             time point k.
         output : numpy.array
-            Age-structured output matrix of the simulation method
-            for the SEIRDModel.
-        tests : list
-            List of conducted tests in specified region and at time point k
-            classifed by age groups.
+            Output matrix of the simulation method for the SEIRDModel.
+        tests : int or float
+            Conducted tests in specified region and at time point k.
         sens : float or int
             Sensitivity of the test (or ratio of true positives).
         spec : float or int
@@ -795,7 +727,7 @@ class SEIRDModel(pints.ForwardModel):
         Returns
         -------
         numpy.array
-            Age-structured matrix of log-likelihoods for the obsereved number
+            Matrix of log-likelihoods for the obsereved number
             of positive test results for each age group in specified region at
             time :math:`t_k`.
 
@@ -808,33 +740,22 @@ class SEIRDModel(pints.ForwardModel):
         self._check_time_step_format(k)
 
         # Check correct format for observed number of positive results
-        if np.asarray(obs_pos).ndim != 1:
-            raise ValueError('Observed number of postive tests results by age \
-                category storage format is 1-dimensional.')
-        if np.asarray(obs_pos).shape[0] != self._num_ages:
-            raise ValueError('Wrong number of age groups for observed number \
-                of postive tests results.')
-        for _ in obs_pos:
-            if not isinstance(_, (int, np.integer)):
-                raise TypeError('Observed number of postive tests results must\
-                    be integer.')
-            if _ < 0:
-                raise ValueError('Observed number of postive tests results \
-                    must be => 0.')
+        if not isinstance(obs_pos, (int, np.integer)):
+            raise TypeError('Observed number of postive tests results must\
+                be integer.')
+        if obs_pos < 0:
+            raise ValueError('Observed number of postive tests results \
+                must be => 0.')
 
         # Check correct format for number of tests based on the observed number
         # of positive results
-        for i, _ in enumerate(tests):
-            if _ < obs_pos[i]:
-                raise ValueError('Not enough performed tests for the number \
-                    of observed positives.')
+        if tests < obs_pos:
+            raise ValueError('Not enough performed tests for the number \
+                of observed positives.')
 
-        a = self._num_ages
         # Compute parameters of binomial
-        suscep = output[k, :a]
-        pop = 0
-        for i in range(6):
-            pop += output[k, (i*a):((i+1)*a)]
+        suscep = output[k, 0]
+        pop = np.sum(output[k, :6])
 
         return binom.logpmf(
             k=obs_pos,
@@ -860,11 +781,10 @@ class SEIRDModel(pints.ForwardModel):
         Parameters
         ----------
         output : numpy.array
-            Age-structured output matrix of the simulation method
+            Output matrix of the simulation method
             for the SEIRDModel.
         tests : list
-            List of conducted tests in specified region and at time point k
-            classifed by age groups.
+            List of conducted tests in specified region and at time point k.
         sens : float or int
             Sensitivity of the test (or ratio of true positives).
         spec : float or int
@@ -872,20 +792,16 @@ class SEIRDModel(pints.ForwardModel):
 
         """
         self._check_output_format(output)
-        if np.asarray(tests).ndim != 2:
-            raise ValueError('Number of tests conducted by age category \
-                storage format is 2-dimensional.')
-        if np.asarray(tests).shape[1] != self._num_ages:
-            raise ValueError('Wrong number of age groups for observed number \
-                of tests conducted.')
-        for i in tests:
-            for _ in i:
-                if not isinstance(_, (int, np.integer)):
-                    raise TypeError('Number of tests conducted must be \
-                        integer.')
-                if _ < 0:
-                    raise ValueError('Number of tests conducted ratio must \
-                        be => 0.')
+        if np.asarray(tests).ndim != 1:
+            raise ValueError('Number of tests conducted storage format is \
+                1-dimensional.')
+        for _ in tests:
+            if not isinstance(_, (int, np.integer)):
+                raise TypeError('Number of tests conducted must be \
+                    integer.')
+            if _ < 0:
+                raise ValueError('Number of tests conducted ratio must \
+                    be => 0.')
         if not isinstance(sens, (int, float)):
             raise TypeError('Sensitivity must be integer or float.')
         if (sens < 0) or (sens > 1):
@@ -907,27 +823,26 @@ class SEIRDModel(pints.ForwardModel):
         spec : float or int
             Specificity of the test (or ratio of true negatives).
         suscep : numpy.array
-            Age-structured matrix of the current number of susceptibles
+            Matrix of the current number of susceptibles
             in the population.
         pop : numpy.array
-            Age-structured matrix of the current number of individuals
+            Matrix of the current number of individuals
             in the population.
 
         Returns
         -------
         numpy.array
-            Age-structured matrix of the expected number of positive test
+            Matrix of the expected number of positive test
             results to be observed in specified region at time :math:`t_k`.
 
         """
-        return sens * (1-np.divide(suscep, pop)) + (1-spec) * np.divide(
-            suscep, pop)
+        return sens * (1 - suscep / pop) + (1 - spec) * suscep / pop
 
     def samples_positive_tests(self, output, tests, sens, spec, k):
         r"""
         Computes the samples for the number of positive tests at time
         step :math:`k` in specified region, given the simulated timeline of
-        susceptible number of individuals, for all age groups in the model.
+        susceptible number of individuals.
 
         The number of positive tests is assumed to be distributed according to
         a binomial distribution with parameters :math:`n = n_{r,t_k,i}` and
@@ -951,11 +866,10 @@ class SEIRDModel(pints.ForwardModel):
         Parameters
         ----------
         output : numpy.array
-            Age-structured output matrix of the simulation method
+            Output matrix of the simulation method
             for the SEIRDModel.
         tests : list
-            List of conducted tests in specified region and at time point k
-            classifed by age groups.
+            List of conducted tests in specified region and at time point k.
         sens : float or int
             Sensitivity of the test (or ratio of true positives).
         spec : float or int
@@ -967,7 +881,7 @@ class SEIRDModel(pints.ForwardModel):
         Returns
         -------
         numpy.array
-            Age-structured matrix of sampled number of positive test results
+            Matrix of sampled number of positive test results
             in specified region at time :math:`t_k`.
 
         Notes
@@ -978,12 +892,9 @@ class SEIRDModel(pints.ForwardModel):
         """
         self._check_time_step_format(k)
 
-        a = self._num_ages
         # Compute parameters of binomial
-        suscep = output[k, :a]
-        pop = 0
-        for i in range(6):
-            pop += output[k, (i*a):((i+1)*a)]
+        suscep = output[k, 0]
+        pop = np.sum(output[k, :6])
 
         return binom.rvs(
             n=tests,

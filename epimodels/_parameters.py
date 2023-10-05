@@ -1680,21 +1680,16 @@ class SEIRDICs(object):
 
     Parameters
     ----------
-    susceptibles_IC : list of lists
-        Initial number of susceptibles classifed by age (column name) and
-        region (row name).
-    exposed_IC : list of lists
-        Initial number of exposed classifed by age (column name) and region
-        (row name).
-    infectives_IC :list of lists
-        Initial number of infectives classifed by age (column name) and
-        region (row name).
-    recovered_IC : list of lists
-        Initial number of recovered classifed by age (column name) and
-        region (row name).
-    dead_IC: list of lists
-        Initial number of dead classifed by age (column name) and region
-        (row name).
+    susceptibles_IC : list
+        Initial number of susceptibles classifed by region (column name).
+    exposed_IC : list
+        Initial number of exposed classifed by region (column name).
+    infectives_IC :list
+        Initial number of infectives classifed by region (column name).
+    recovered_IC : list
+        Initial number of recovered classifed by region (column name).
+    dead_IC: list
+        Initial number of dead classifed by region (column name).
 
     """
     def __init__(self, model, susceptibles_IC, exposed_IC, infectives_IC,
@@ -1725,112 +1720,82 @@ class SEIRDICs(object):
 
         Parameters
         ----------
-        susceptibles_IC : list of lists
-            Initial number of susceptibles classifed by age (column name) and
-            region (row name).
-        exposed_IC : list of lists
-            Initial number of exposed classifed by age (column name) and region
-            (row name).
-        infectives_IC :list of lists
-            Initial number of infectives classifed by age (column name) and
-            region (row name).
-        recovered_IC : list of lists
-            Initial number of recovered classifed by age (column name) and
-            region (row name).
-        dead_IC: list of lists
-            Initial number of dead classifed by age (column name) and region
-            (row name).
+        susceptibles_IC : list
+            Initial number of susceptibles classifed by region (column name).
+        exposed_IC : list
+            Initial number of exposed classifed by region (column name).
+        infectives_IC :list
+            Initial number of infectives classifed by region (column name).
+        recovered_IC : list
+            Initial number of recovered classifed by region (column name).
+        dead_IC: list
+            Initial number of dead classifed by region (column name).
 
         """
-        if np.asarray(susceptibles_IC).ndim != 2:
+        if np.asarray(susceptibles_IC).ndim != 1:
             raise ValueError('The inital numbers of susceptibles storage \
-                format must be 2-dimensional.')
+                format must be 1-dimensional.')
         if np.asarray(susceptibles_IC).shape[0] != len(self.model.regions):
             raise ValueError(
-                    'Wrong number of rows for the inital numbers of \
+                    'Wrong number of columns for the inital numbers of \
                         susceptibles.')
-        if np.asarray(susceptibles_IC).shape[1] != self.model._num_ages:
-            raise ValueError(
-                    'Wrong number of rows for the inital numbers of \
-                        susceptibles.')
-        for ic in np.asarray(susceptibles_IC):
-            for _ in ic:
-                if not isinstance(_, (np.integer, np.floating)):
-                    raise TypeError(
-                        'The inital numbers of susceptibles must be integer or\
+        for _ in np.asarray(susceptibles_IC):
+            if not isinstance(_, (np.integer, np.floating)):
+                raise TypeError(
+                    'The inital numbers of susceptibles must be integer or\
                             float.')
 
-        if np.asarray(exposed_IC).ndim != 2:
+        if np.asarray(exposed_IC).ndim != 1:
             raise ValueError('The inital numbers of exposed \
-                storage format must be 2-dimensional.')
+                storage format must be 1-dimensional.')
         if np.asarray(exposed_IC).shape[0] != len(self.model.regions):
             raise ValueError(
-                    'Wrong number of rows for the inital numbers of \
+                    'Wrong number of columns for the inital numbers of \
                         exposed.')
-        if np.asarray(exposed_IC).shape[1] != self.model._num_ages:
-            raise ValueError(
-                    'Wrong number of rows for the inital numbers of \
-                        exposed.')
-        for ic in np.asarray(exposed_IC):
-            for _ in ic:
-                if not isinstance(_, (np.integer, np.floating)):
-                    raise TypeError(
-                        'The inital numbers of exposed must \
-                            be integer or float.')
+        for _ in np.asarray(exposed_IC):
+            if not isinstance(_, (np.integer, np.floating)):
+                raise TypeError(
+                    'The inital numbers of exposed must \
+                        be integer or float.')
 
-        if np.asarray(infectives_IC).ndim != 2:
+        if np.asarray(infectives_IC).ndim != 1:
             raise ValueError('The inital numbers of infectives \
-                storage format must be 2-dimensional.')
+                storage format must be 1-dimensional.')
         if np.asarray(infectives_IC).shape[0] != len(self.model.regions):
             raise ValueError(
-                    'Wrong number of rows for the inital numbers of \
-                        infectives.')
-        if np.asarray(infectives_IC).shape[1] != self.model._num_ages:
-            raise ValueError(
-                    'Wrong number of rows for the inital numbers of \
+                    'Wrong number of clumns for the inital numbers of \
                         infectives.')
         for ic in np.asarray(infectives_IC):
-            for _ in ic:
-                if not isinstance(_, (np.integer, np.floating)):
-                    raise TypeError(
-                        'The inital numbers of infectives\
-                            must be integer or float.')
+            if not isinstance(_, (np.integer, np.floating)):
+                raise TypeError(
+                    'The inital numbers of infectives\
+                        must be integer or float.')
 
-        if np.asarray(recovered_IC).ndim != 2:
+        if np.asarray(recovered_IC).ndim != 1:
             raise ValueError('The inital numbers of recovered storage format \
                 must be 2-dimensional.')
         if np.asarray(recovered_IC).shape[0] != len(self.model.regions):
             raise ValueError(
-                    'Wrong number of rows for the inital numbers of \
+                    'Wrong number of columns for the inital numbers of \
                         recovered.')
-        if np.asarray(recovered_IC).shape[1] != self.model._num_ages:
-            raise ValueError(
-                    'Wrong number of rows for the inital numbers of \
-                        recovered.')
-        for ic in np.asarray(recovered_IC):
-            for _ in ic:
-                if not isinstance(_, (np.integer, np.floating)):
-                    raise TypeError(
-                        'The inital numbers of recovered must be integer or \
-                            float.')
+        for _ in np.asarray(recovered_IC):
+            if not isinstance(_, (np.integer, np.floating)):
+                raise TypeError(
+                    'The inital numbers of recovered must be integer or \
+                        float.')
 
-        if np.asarray(dead_IC).ndim != 2:
+        if np.asarray(dead_IC).ndim != 1:
             raise ValueError('The inital numbers of dead storage format \
                 must be 2-dimensional.')
         if np.asarray(dead_IC).shape[0] != len(self.model.regions):
             raise ValueError(
-                    'Wrong number of rows for the inital numbers of \
+                    'Wrong number of columns for the inital numbers of \
                         dead.')
-        if np.asarray(dead_IC).shape[1] != self.model._num_ages:
-            raise ValueError(
-                    'Wrong number of rows for the inital numbers of \
-                        dead.')
-        for ic in np.asarray(dead_IC):
-            for _ in ic:
-                if not isinstance(_, (np.integer, np.floating)):
-                    raise TypeError(
-                        'The inital numbers of dead must be integer or \
-                            float.')
+        for _ in np.asarray(dead_IC):
+            if not isinstance(_, (np.integer, np.floating)):
+                raise TypeError(
+                    'The inital numbers of dead must be integer or \
+                        float.')
 
     def __call__(self):
         """
@@ -1839,7 +1804,7 @@ class SEIRDICs(object):
 
         Returns
         -------
-        List of lists
+        List of list
             List of the initial conditions of the :class:`SEIRDModel`
             the class relates to.
 
@@ -1865,7 +1830,7 @@ class SEIRDTransmission(object):
         The rate of progression from exposed to infectious.
     gamma : int or float
         The rate of recovery from infectious to either recovered or dead.
-    Pd : int or float or list
+    Pd : int or float
         Proportion of dead cases.
 
     """
@@ -1922,26 +1887,15 @@ class SEIRDTransmission(object):
             raise ValueError('The rate of recovery from infectious to either \
                 recovered or dead must be > 0.')
 
-        if isinstance(Pd, (float, int)):
-            Pd = [Pd]
-        if np.asarray(Pd).ndim != 1:
+        if not isinstance(Pd, (float, int)):
+            raise TypeError('The propotions of people that go on to be \
+                dead must be float or integer.')
+        if Pd < 0:
             raise ValueError('The propotions of people that go on to be \
-                    dead storage format must be 1-dimensional.')
-        if (np.asarray(Pd).shape[0] != self.model._num_ages) and (
-                np.asarray(Pd).shape[0] != 1):
-            raise ValueError(
-                    'Wrong number of age groups for the propotions of people \
-                        that go on to be dead.')
-        for _ in Pd:
-            if not isinstance(_, (float, int)):
-                raise TypeError('The propotions of people that go on to be \
-                    dead must be float or integer.')
-            if _ < 0:
-                raise ValueError('The propotions of people that go on to be \
-                    dead must be >= 0.')
-            if _ > 1:
-                raise ValueError('The propotions of people that go on to be \
-                    dead must be <= 1.')
+                dead must be >= 0.')
+        if Pd > 1:
+            raise ValueError('The propotions of people that go on to be \
+                dead must be <= 1.')
 
     def __call__(self):
         """

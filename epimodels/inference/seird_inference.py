@@ -11,9 +11,7 @@ This script contains code for parameter inference of the simple SEIRD model.
 
 """
 
-import os
 import numpy as np
-import pandas as pd
 import pints
 from iteration_utilities import deepflatten
 
@@ -55,6 +53,8 @@ class SEIRDLogLik(pints.LogPDF):
         Sensitivity of the test (or ratio of true positives).
     spec : float or int
         Specificity of the test (or ratio of true negatives).
+    Pd : float or int
+        Proportion of dead cases.
     wd : float or int
         Proportion of the contribution of the deaths data to the
         log-likelihood.
@@ -66,7 +66,7 @@ class SEIRDLogLik(pints.LogPDF):
     def __init__(self, model, susceptibles_data, infectives_data, times,
                  deaths, deaths_times,
                  tests_data, positives_data, serology_times, sens, spec,
-                 wd=1, wp=1):
+                 Pd, wd=1, wp=1):
         # Set the prerequisites for the inference wrapper
         # Model and ICs data
         self._model = model
@@ -86,6 +86,9 @@ class SEIRDLogLik(pints.LogPDF):
         self._sens = sens
         self._spec = spec
 
+        # Probability of dying
+        self._Pd = Pd
+
         # Contribution parameters
         self._wd = wd
         self._wp = wp
@@ -103,7 +106,7 @@ class SEIRDLogLik(pints.LogPDF):
             Number of parameters for log-likelihood object.
 
         """
-        return 3
+        return 2
 
     def _log_likelihood(self, var_parameters):
         """
@@ -128,8 +131,8 @@ class SEIRDLogLik(pints.LogPDF):
         self._parameters[-5] = var_parameters[0]
         # kappa
         self._parameters[-4] = var_parameters[1]
-        # gamma
-        self._parameters[-3] = var_parameters[2]
+        # # gamma
+        # self._parameters[-3] = var_parameters[1]
 
         total_log_lik = 0
 
@@ -156,7 +159,7 @@ class SEIRDLogLik(pints.LogPDF):
                 # Log-likelihood contribution from death data
                 for t, time in enumerate(self._deaths_times):
                     total_log_lik += self._wd * self._model.loglik_deaths(
-                        obs_death=self._deaths[r][t, :],
+                        obs_death=self._deaths[r][t],
                         new_deaths=model_new_deaths,
                         niu=self._niu,
                         k=time-1
@@ -166,9 +169,9 @@ class SEIRDLogLik(pints.LogPDF):
                 for t, time in enumerate(self._serology_times):
                     total_log_lik += self._wp * \
                         self._model.loglik_positive_tests(
-                            obs_pos=self._positive_tests[r][t, :],
+                            obs_pos=self._positive_tests[r][t],
                             output=model_output,
-                            tests=self._total_tests[r][t, :],
+                            tests=self._total_tests[r][t],
                             sens=self._sens,
                             spec=self._spec,
                             k=time-1
@@ -191,35 +194,22 @@ class SEIRDLogLik(pints.LogPDF):
         # Initial Conditions
         susceptibles = self._susceptibles
 
-        exposed = np.zeros((
-            len(self._model.regions),
-            self._model._num_ages)).tolist()
+        exposed = np.zeros(len(self._model.regions)).tolist()
 
         infectives = self._infectives
 
-        recovered = np.zeros((
-            len(self._model.regions),
-            self._model._num_ages)).tolist()
+        recovered = np.zeros(len(self._model.regions)).tolist()
 
-        dead = np.zeros((
-            len(self._model.regions),
-            self._model._num_ages)).tolist()
+        dead = np.zeros(len(self._model.regions)).tolist()
 
         # Transmission parameters
-        beta = 0.25
-        kappa = 1.7
-        gamma = 0.01
-
-        # Proportion of dead cases
-        Pd = pd.read_csv(
-            os.path.join(
-                os.path.dirname(__file__),
-                '../data/fatality_ratio_data/CFR.csv'),
-            usecols=['cfr'], dtype=np.float64)['cfr'].values.tolist()
+        beta = 5
+        kappa = 6
+        gamma = 7.7
 
         self._parameters = [
             0, susceptibles, exposed, infectives,
-            recovered, dead, beta, kappa, gamma, Pd, 'RK45'
+            recovered, dead, beta, kappa, gamma, self._Pd, 'RK45'
         ]
 
     def __call__(self, x):
@@ -276,7 +266,7 @@ class SEIRDLogPrior(pints.LogPrior):
             Number of parameters for log-prior object.
 
         """
-        return 3
+        return 2
 
     def __call__(self, x):
         """
@@ -298,10 +288,10 @@ class SEIRDLogPrior(pints.LogPrior):
         log_prior = pints.UniformLogPrior([0], [20])(x[0])
 
         # Prior contribution of kappa
-        log_prior += pints.UniformLogPrior([0], [10])(x[1])
+        log_prior += pints.UniformLogPrior([0], [20])(x[1])
 
-        # Prior contribution of gamma
-        log_prior += pints.UniformLogPrior([0], [10])(x[2])
+        # # Prior contribution of gamma
+        # log_prior += pints.UniformLogPrior([0], [20])(x[1])
 
         return log_prior
 
@@ -319,9 +309,11 @@ class SEIRDInfer(object):
     ----------
     model : SEIRDModel
         The model for which we solve the optimisation or inference problem.
+    Pd : float or int
+        Proportion of dead cases.
 
     """
-    def __init__(self, model):
+    def __init__(self, model, Pd):
         super(SEIRDInfer, self).__init__()
 
         # Assign model for inference or optimisation
@@ -329,6 +321,7 @@ class SEIRDInfer(object):
             raise TypeError('Wrong model type for parameters inference.')
 
         self._model = model
+        self._Pd = Pd
 
     def read_model_data(
             self, susceptibles_data, infectives_data):
@@ -422,7 +415,7 @@ class SEIRDInfer(object):
             self._model, self._susceptibles_data, self._infectives_data, times,
             self._deaths, self._deaths_times,
             self._total_tests, self._positive_tests, self._serology_times,
-            self._sens, self._spec, wd, wp)
+            self._sens, self._spec, self._Pd, wd, wp)
         return loglikelihood(x)
 
     def _create_posterior(self, times, wd, wp):
@@ -447,7 +440,7 @@ class SEIRDInfer(object):
             self._model, self._susceptibles_data, self._infectives_data, times,
             self._deaths, self._deaths_times,
             self._total_tests, self._positive_tests, self._serology_times,
-            self._sens, self._spec, wd, wp)
+            self._sens, self._spec, self._Pd, wd, wp)
 
         # Create a prior
         log_prior = SEIRDLogPrior(self._model, times)
@@ -496,7 +489,7 @@ class SEIRDInfer(object):
         chains = mcmc.run()
         print('Done!')
 
-        param_names = ['kappa', 'gamma']
+        param_names = ['beta', 'kappa']
 
         # Check convergence and other properties of chains
         results = pints.MCMCSummary(
@@ -535,11 +528,11 @@ class SEIRDInfer(object):
         self._create_posterior(times, wd, wp)
 
         # Starting points
-        x0 = [7, 0.3, 0.1]
+        x0 = [5, 5]
 
         # Create optimisation routine
         optimiser = pints.OptimisationController(
-            self._log_posterior, x0, method=pints.SNES)
+            self._log_posterior, x0, method=pints.CMAES)
 
         optimiser.set_max_unchanged_iterations(100, 1)
 
