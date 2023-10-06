@@ -442,42 +442,6 @@ class WarwickSEIRInfer(object):
         self._deaths = deaths_data
         self._deaths_times = deaths_times
 
-    def read_npis_data(self, max_levels_npi, targeted_npi, general_npi,
-                       reg_levels_npi, time_changes_npi, time_changes_flag):
-        """
-        Sets the non-pharmaceutical interventions data used for the model's
-        parameters inference.
-
-        Parameters
-        ----------
-        max_levels_npi : list of int
-            List of maximum levels the non-pharmaceutical interventions can
-            reach.
-        targeted_npi : list of bool
-            List of the targeted non-pharmaceutical interventions.
-        general_npi : list of list of int
-            List of the general values of the targeted non-pharmaceutical
-            interventions. In chronological order.
-        reg_levels_npi : list of list of int
-            List of region-specific levels the non-pharmaceutical interventions
-            changes. In chronological order.
-        time_changes_npi : list
-            List of times at which the next instances of region-specific
-            non-pharmaceutical interventions start to be used. In
-            increasing order.
-        time_changes_flag : list
-            List of times at which the next instances of region-specific
-            non-pharmaceutical interventions start to be used. In
-            increasing order.
-
-        """
-        self._max_levels_npi = max_levels_npi
-        self._targeted_npi = targeted_npi
-        self._general_npi = general_npi
-        self._reg_levels_npi = reg_levels_npi
-        self._time_changes_npi = time_changes_npi
-        self._time_changes_flag = time_changes_flag
-
     def return_loglikelihood(self, times, x, wd=1, wp=1):
         """
         Return the log-likelihood used for the optimisation or inference.
@@ -507,10 +471,7 @@ class WarwickSEIRInfer(object):
             self._model, self._susceptibles_data, self._infectives_data, times,
             self._deaths, self._deaths_times,
             self._total_tests, self._positive_tests, self._serology_times,
-            self._sens, self._spec,
-            self._max_levels_npi, self._targeted_npi, self._general_npi,
-            self._reg_levels_npi, self._time_changes_npi,
-            self._time_changes_flag, wd, wp)
+            self._sens, self._spec, wd, wp)
         return loglikelihood(x)
 
     def _create_posterior(self, times, wd, wp):
@@ -535,10 +496,7 @@ class WarwickSEIRInfer(object):
             self._model, self._susceptibles_data, self._infectives_data, times,
             self._deaths, self._deaths_times,
             self._total_tests, self._positive_tests, self._serology_times,
-            self._sens, self._spec,
-            self._max_levels_npi, self._targeted_npi, self._general_npi,
-            self._reg_levels_npi, self._time_changes_npi,
-            self._time_changes_flag, wd, wp)
+            self._sens, self._spec, wd, wp)
 
         # Create a prior
         log_prior = WarwickLogPrior(self._model, times)
@@ -587,14 +545,7 @@ class WarwickSEIRInfer(object):
         chains = mcmc.run()
         print('Done!')
 
-        # param_names = ['Initial Pss']
-        # for age in self._model.age_groups:
-        #     param_names.append('kR_{}'.format(age))
-
-        # for age in self._model.age_groups:
-        #     param_names.append('Pa_{}'.format(age))
-
-        param_names = ['beta_min', 'bss']
+        param_names = ['alpha', 'tau', 'epsilon']
 
         # Check convergence and other properties of chains
         results = pints.MCMCSummary(
