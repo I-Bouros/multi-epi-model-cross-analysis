@@ -236,10 +236,10 @@ class WarwickLogLik(pints.LogPDF):
         self._parameters[-5] = var_parameters[-1]
 
         # Compute Q
-        Q_guess = [
+        Q_guess = np.array([
             0.0185, 0.0019, 0.0029, 0.0041, 0.0200, 0.0355, 0.0383,
             0.0319, 0.0368, 0.0507, 0.0947, 0.1497, 0.1939, 0.4396,
-            0.5789, 0.4939, 0.7038, 0.9309, 0.9818, 0.8767, 1.0000]
+            0.5789, 0.4939, 0.7038, 0.9309, 0.9818, 0.8767, 1.0000])
 
         for _ in range(100):
             Q_guess, transmission = self._compute_updated_Q(
@@ -252,7 +252,8 @@ class WarwickLogLik(pints.LogPDF):
         sigma = (1/0.9) * np.power(Q_guess, alpha)
 
         # Compute gamma
-        self._parameters[-4] = transmission[-1]
+        self._parameters[-4] = transmission[-1] / (
+            2.7 * self._extended_infectives[-1])
 
         # Recompute d and sigma with correct number of age groups
         self._parameters[-3] = self._update_age_groups(d)
@@ -369,7 +370,7 @@ class WarwickLogLik(pints.LogPDF):
             self._model._num_ages)).tolist()
 
         # Regional household quarantine proportions
-        h = [0.8, 0.8]
+        h = [0.8] * len(self._model.regions)
 
         # Disease-specific parameters
         tau = 0.4

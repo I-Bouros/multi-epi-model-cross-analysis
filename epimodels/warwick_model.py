@@ -1148,8 +1148,8 @@ class WarwickSEIRModel(pints.ForwardModel):
             if ind >= 30:
                 n_daily_deaths[ind, :] = np.array(pHtoDeath) * np.sum(
                     np.matmul(
-                        np.diag(dHtoDeath[:31][::-1]),
-                        new_hospitalisation[(ind-30):(ind+1), :]), axis=0)
+                        np.diag(dHtoDeath[:30][::-1]),
+                        new_hospitalisation[(ind-29):(ind+1), :]), axis=0)
             else:
                 n_daily_deaths[ind, :] = np.array(pHtoDeath) * np.sum(
                     np.matmul(
@@ -1257,18 +1257,18 @@ class WarwickSEIRModel(pints.ForwardModel):
         for ind, _ in enumerate(self._times.tolist()):
             if ind >= 30:
                 n_hosp_occ[ind, :] = np.sum(np.matmul(
-                    np.diag(tH[:31][::-1]),
-                    new_hospitalisations[(ind-30):(ind+1), :]) +
+                    np.diag(tH[:30][::-1]),
+                    new_hospitalisations[(ind-20):(ind+1), :]) +
                     np.matmul(
-                    np.diag(tItoH[:31][::-1]),
-                    new_icu[(ind-30):(ind+1), :]), axis=0)
+                    np.diag(tItoH[:30][::-1]),
+                    new_icu[(ind-20):(ind+1), :]), axis=0)
             else:
                 n_hosp_occ[ind, :] = np.sum(np.matmul(
                     np.diag(tH[:(ind+1)][::-1]),
                     new_hospitalisations[:(ind+1), :]) +
                     np.matmul(
-                    np.diag(tItoH[:31][::-1]),
-                    new_icu[(ind-30):(ind+1), :]), axis=0)
+                    np.diag(tItoH[:30][::-1]),
+                    new_icu[(ind-29):(ind+1), :]), axis=0)
 
         for ind, _ in enumerate(self._times.tolist()):  # pragma: no cover
             if np.any(n_hosp_occ[ind, :] < 0):
@@ -1323,7 +1323,7 @@ class WarwickSEIRModel(pints.ForwardModel):
             raise ValueError('Weighting distribution of the times spent in\
                 icu before being moved to a non-icu bed storage format is\
                 1-dimensional.')
-        if np.asarray(tItoH).shape[0] != len(self._times):
+        if np.asarray(tItoH).shape[0] < 30:
             raise ValueError('Wrong number of weighting distribution of\
                 the times spent in icu before being moved to a non-icu bed.')
         if np.sum(tItoH) != 1:
@@ -1374,8 +1374,8 @@ class WarwickSEIRModel(pints.ForwardModel):
         for ind, _ in enumerate(self._times.tolist()):
             if ind >= 30:
                 n_daily_icu_beds[ind, :] = np.sum(np.matmul(
-                    np.diag(tI[:31][::-1]),
-                    new_icu[(ind-30):(ind+1), :]), axis=0)
+                    np.diag(tI[:30][::-1]),
+                    new_icu[(ind-29):(ind+1), :]), axis=0)
             else:
                 n_daily_icu_beds[ind, :] = np.sum(np.matmul(
                     np.diag(tI[:(ind+1)][::-1]),
