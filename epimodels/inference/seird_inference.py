@@ -204,8 +204,8 @@ class SEIRDLogLik(pints.LogPDF):
 
         # Transmission parameters
         beta = 5
-        kappa = 6
-        gamma = 7.7
+        kappa = 0.25
+        gamma = 0.25
 
         self._parameters = [
             0, susceptibles, exposed, infectives,
@@ -480,7 +480,7 @@ class SEIRDInfer(object):
 
         # Create MCMC routine
         mcmc = pints.MCMCController(
-            self._log_posterior, 3, x0, method=pints.NoUTurnMCMC)
+            self._log_posterior, 3, x0)
         mcmc.set_max_iterations(num_iter)
         mcmc.set_log_to_screen(True)
         mcmc.set_parallel(True)
@@ -528,7 +528,7 @@ class SEIRDInfer(object):
         self._create_posterior(times, wd, wp)
 
         # Starting points
-        x0 = [5, 5]
+        x0 = [4, 0.2]
 
         # Create optimisation routine
         optimiser = pints.OptimisationController(
