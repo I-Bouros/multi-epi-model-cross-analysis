@@ -933,11 +933,14 @@ class WarwickSEIRModel(pints.ForwardModel):
         """
         n_daily_hosp = np.zeros((self._times.shape[0], self._num_ages))
 
+        # Normalise dItoH
+        dDtoH = ((1/np.sum(dDtoH)) * np.asarray(dDtoH)).tolist()
+
         for ind, _ in enumerate(self._times.tolist()):
             if ind >= 30:
                 n_daily_hosp[ind, :] = np.array(pDtoH) * np.sum(np.matmul(
-                    np.diag(dDtoH[:31][::-1]),
-                    new_infections[(ind-30):(ind+1), :]), axis=0)
+                    np.diag(dDtoH[:30][::-1]),
+                    new_infections[(ind-29):(ind+1), :]), axis=0)
             else:
                 n_daily_hosp[ind, :] = np.array(pDtoH) * np.sum(np.matmul(
                     np.diag(dDtoH[:(ind+1)][::-1]),
@@ -1090,7 +1093,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         if np.asarray(dDtoI).ndim != 1:
             raise ValueError('Delays between onset of symptoms and \
                 ICU admission storage format is 1-dimensional.')
-        if np.asarray(dDtoI).shape[0] != len(self._times):
+        if np.asarray(dDtoI).shape[0] < 30:
             raise ValueError('Wrong number of delays between onset of \
                 symptoms and ICU admission.')
         if np.sum(dDtoI) != 1:
@@ -1197,7 +1200,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         if np.asarray(dHtoDeath).ndim != 1:
             raise ValueError('Delays between hospital admission and \
                 death storage format is 1-dimensional.')
-        if np.asarray(dHtoDeath).shape[0] != len(self._times):
+        if np.asarray(dHtoDeath).shape[0] < 30:
             raise ValueError('Wrong number of delays between hospital \
                 admission and death.')
         if np.sum(dHtoDeath) != 1:

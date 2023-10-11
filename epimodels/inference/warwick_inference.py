@@ -16,9 +16,7 @@ matrices.
 
 """
 
-import os
 import numpy as np
-import pandas as pd
 import pints
 from iteration_utilities import deepflatten
 
@@ -34,6 +32,22 @@ class WarwickLogLik(pints.LogPDF):
     ----------
     model : WarwickSEIRModel
         The model for which we solve the optimisation or inference problem.
+    extended_susceptibles
+
+    extended_infectives
+
+    extended_house_cont_mat : ContactMatrix
+        Initial contact matrix with more age groups used for the modelling,
+        underlying household interactions.
+    extended_school_cont_mat : ContactMatrix
+        Initial contact matrix with more age groups used for the modelling,
+        underlying school interactions.
+    extended_work_cont_mat : ContactMatrix
+            Initial contact matrix with more age groups used for the modelling,
+        underlying workplace interactions.
+    extended_other_cont_mat : ContactMatrix
+        Initial contact matrix with more age groups used for the modelling,
+        underlying other non-household interactions.
     susceptibles_data : list
         List of regional age-structured lists of the initial number of
         susceptibles.
@@ -68,7 +82,10 @@ class WarwickLogLik(pints.LogPDF):
         log-likelihood.
 
     """
-    def __init__(self, model, susceptibles_data, infectives_data, times,
+    def __init__(self, model, extended_susceptibles, extended_infectives,
+                 extended_house_cont_mat, extended_school_cont_mat,
+                 extended_work_cont_mat, extended_other_cont_mat,
+                 susceptibles_data, infectives_data, times,
                  deaths, deaths_times, tests_data, positives_data,
                  serology_times, sens, spec, wd=1, wp=1):
         # Set the prerequisites for the inference wrapper
@@ -97,6 +114,26 @@ class WarwickLogLik(pints.LogPDF):
         # Set fixed parameters of the model
         self.set_fixed_parameters()
 
+        # Extended population structure and contact matrices
+        self._extended_susceptibles = np.array(extended_susceptibles)
+        self._extended_infectives = np.array(extended_infectives)
+        self._pop = self._extended_susceptibles + self._extended_susceptibles
+
+        # Identify the appropriate contact matrix for the ODE system
+        house_cont_mat = extended_house_cont_mat
+        school_cont_mat = extended_school_cont_mat
+        work_cont_mat = extended_work_cont_mat
+        other_cont_mat = extended_other_cont_mat
+
+        # Read the social distancing parameters of the system
+        theta, phi, q_H, q_S, q_W, q_O = self._model.social_distancing_param
+
+        house_cont_mat = (1 - phi - phi * q_H) * house_cont_mat
+        self._nonhouse_cont_mat = (1 - phi - phi * q_S) * school_cont_mat + \
+            ((1 - phi - phi * q_W) *
+             (1 - theta + theta * (1 - phi - phi * q_O))) * work_cont_mat + \
+            ((1 - phi - phi * q_O)**2) * other_cont_mat
+
     def n_parameters(self):
         """
         Returns number of parameters for log-likelihood object.
@@ -107,7 +144,70 @@ class WarwickLogLik(pints.LogPDF):
             Number of parameters for log-likelihood object.
 
         """
-        return 2
+        return 3
+
+    def _update_age_groups(self, parameter_vector):
+        """
+        """
+        new_vector = np.empty(8)
+
+        ind_old = [
+            np.array([0]),
+            np.array([0]),
+            np.array(range(1, 3)),
+            np.array(range(3, 5)),
+            np.array(range(5, 9)),
+            np.array(range(9, 13)),
+            np.array(range(13, 15)),
+            np.array(range(15, 21))]
+
+        for _ in range(8):
+            new_vector[_] = np.average(
+                parameter_vector[ind_old[_][:, None]],
+                weights=self._pop[ind_old[_][:, None]])
+
+        return new_vector
+
+    def _compute_updated_Q(self, Q, alpha, tau):
+        """
+        Updates step-wise the current guess of the auxiliary parameter value Q
+        used in computing the model parameters for the guesses of alpha and
+        tau.
+
+        Parameters
+        ----------
+        Q : int or float
+            The current guess of the auxiliary parameter value Q.
+        alpha : int or float
+            The current guess of the auxiliary scenario weight parameter alpha.
+        tau : int or float
+            The current guess of the reduction in the transmission rate of
+            infection for asymptomatic individuals.
+
+        Returns
+        -------
+        tuple of lists
+            Tuple of the updated guess of the auxiliary parameter value Q
+            and force of infection vector.
+        """
+        symp_cases = self._extended_infectives
+        # Compute symptom probability vector
+        d = np.power(Q, 1-alpha)
+
+        # Compute asymptomatic cases U from known symptomatic cases D
+        asymp_cases = np.matmul(np.divide(1-d, d), symp_cases)
+
+        # New unnormalised value for Q
+        transmission = np.dot(
+            self._nonhouse_cont_mat, symp_cases + tau * asymp_cases)
+        nQ = np.divide(symp_cases, transmission)
+
+        # Normalise new value of Q
+        nQ = nQ / np.max(nQ)
+
+        # Return updated guess of Q based on prior value and transmission
+        # vector
+        return 0.9 * Q + 0.1 * nQ, transmission
 
     def _log_likelihood(self, var_parameters):
         """
@@ -128,10 +228,35 @@ class WarwickLogLik(pints.LogPDF):
 
         """
         # Update parameters
-        # beta_min
+        # alpha
+        alpha = var_parameters[-3]
+        # tau
         self._parameters[-6] = var_parameters[-2]
-        # bss
-        self._parameters[-4] = var_parameters[-1]
+        # epsilon
+        self._parameters[-5] = var_parameters[-1]
+
+        # Compute Q
+        Q_guess = [
+            0.0185, 0.0019, 0.0029, 0.0041, 0.0200, 0.0355, 0.0383,
+            0.0319, 0.0368, 0.0507, 0.0947, 0.1497, 0.1939, 0.4396,
+            0.5789, 0.4939, 0.7038, 0.9309, 0.9818, 0.8767, 1.0000]
+
+        for _ in range(100):
+            Q_guess, transmission = self._compute_updated_Q(
+                Q_guess, alpha, self._parameters[-6])
+
+        # Compute d
+        d = 0.9 * np.power(Q_guess, 1-alpha)
+
+        # Compute sigma
+        sigma = (1/0.9) * np.power(Q_guess, alpha)
+
+        # Compute gamma
+        self._parameters[-4] = transmission[-1]
+
+        # Recompute d and sigma with correct number of age groups
+        self._parameters[-3] = self._update_age_groups(d)
+        self._parameters[-7] = self._update_age_groups(sigma)
 
         total_log_lik = 0
 
@@ -243,35 +368,23 @@ class WarwickLogLik(pints.LogPDF):
             len(self._model.regions),
             self._model._num_ages)).tolist()
 
-        # Average times in compartments
-        k = 6.8
-        kS = 5
-        kQ = 2.5
-        kR = 8 * np.ones(self._model._num_ages)
-        kRI = 10.5 * np.ones(self._model._num_ages)
+        # Regional household quarantine proportions
+        h = [0.8, 0.8]
 
-        # Proportion of asymptomatic, super-spreader and dead cases
-        Pa = 0.6 * np.ones(self._model._num_ages)
-        Pss = 0.15
-        Pd = pd.read_csv(
-            os.path.join(
-                os.path.dirname(__file__),
-                '../data/fatality_ratio_data/CFR.csv'),
-            usecols=['cfr'], dtype=np.float64)['cfr'].values.tolist()
+        # Disease-specific parameters
+        tau = 0.4
+        d = 0.4 * np.ones(self._model._num_ages)
 
         # Transmission parameters
-        beta_min = 0.228
-        beta_max = 1.8
-        bss = 3.11
-        gamma = 12
-        s50 = 50
+        epsilon = 0.5
+        gamma = 1
+        sigma = 0.5 * np.ones(self._model._num_ages)
 
         self._parameters = [
             0, susceptibles, exposed_f, exposed_sd, exposed_su,
             exposed_q, detected_f, detected_qf, detected_sd, detected_su,
             detected_qs, undetected_f, undetected_s, undetected_q, recovered,
-            k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-            beta_min, beta_max, bss, gamma, s50, 'RK45'
+            sigma, tau, epsilon, gamma, d, h, 'RK45'
         ]
 
     def __call__(self, x):
@@ -328,7 +441,7 @@ class WarwickLogPrior(pints.LogPrior):
             Number of parameters for log-prior object.
 
         """
-        return 2
+        return 3
 
     def __call__(self, x):
         """
@@ -346,11 +459,14 @@ class WarwickLogPrior(pints.LogPrior):
             parameter space.
 
         """
-        # Prior contribution of beta_min
+        # Prior contribution of alpha
         log_prior = pints.UniformLogPrior([0], [1])(x[0])
 
-        # Prior contribution of bss
+        # Prior contribution of tau
         log_prior += pints.UniformLogPrior([0], [10])(x[1])
+
+        # Prior contribution of epsilon
+        log_prior += pints.UniformLogPrior([0], [10])(x[2])
 
         return log_prior
 
@@ -382,7 +498,7 @@ class WarwickSEIRInfer(object):
     def read_model_data(
             self, susceptibles_data, infectives_data):
         """
-        Sets the serology data used for the model's parameters optimisation or
+        Sets the initial data used for the model's parameters optimisation or
         inference.
 
         Parameters
@@ -397,6 +513,53 @@ class WarwickSEIRInfer(object):
         """
         self._susceptibles_data = susceptibles_data
         self._infectives_data = infectives_data
+
+    def read_extended_population_structure(
+            self, extended_susceptibles, extended_infectives):
+        """
+        Sets the initial data with more age groups used for the model's
+        parameters optimisation or inference.
+
+        Parameters
+        ----------
+        extended_susceptibles : list
+            List of regional age-structured lists of the initial number of
+            susceptibles with more age groups.
+        extended_infectives : list
+            List of regional age-structured lists of the initial number of
+            infectives with more age groups.
+
+        """
+        self._extended_susceptibles = extended_susceptibles
+        self._extended_infectives = extended_infectives
+
+    def read_extended_contact_matrices(
+            self, extended_house_cont_mat, extended_school_cont_mat,
+            extended_work_cont_mat, extended_other_cont_mat):
+        """
+        Sets the initial contact matrix with more age groups used
+        for the model's parameters optimisation or inference.
+
+        Parameters
+        ----------
+        extended_house_cont_mat : ContactMatrix
+            Initial contact matrix with more age groups used for the modelling,
+            underlying household interactions.
+        extended_school_cont_mat : ContactMatrix
+            Initial contact matrix with more age groups used for the modelling,
+            underlying school interactions.
+        extended_work_cont_mat : ContactMatrix
+            Initial contact matrix with more age groups used for the modelling,
+            underlying workplace interactions.
+        extended_other_cont_mat : ContactMatrix
+            Initial contact matrix with more age groups used for the modelling,
+            underlying other non-household interactions.
+
+        """
+        self._extended_house_cont_mat = extended_house_cont_mat
+        self._extended_school_cont_mat = extended_school_cont_mat
+        self._extended_work_cont_mat = extended_work_cont_mat
+        self._extended_other_cont_mat = extended_other_cont_mat
 
     def read_serology_data(
             self, tests_data, positives_data, serology_times, sens, spec):
@@ -468,7 +631,11 @@ class WarwickSEIRInfer(object):
 
         """
         loglikelihood = WarwickLogLik(
-            self._model, self._susceptibles_data, self._infectives_data, times,
+            self._model, self._extended_susceptibles,
+            self._extended_infectives, self._extended_house_cont_mat,
+            self._extended_school_cont_mat, self._extended_work_cont_mat,
+            self._extended_other_cont_mat,
+            self._susceptibles_data, self._infectives_data, times,
             self._deaths, self._deaths_times,
             self._total_tests, self._positive_tests, self._serology_times,
             self._sens, self._spec, wd, wp)
@@ -493,7 +660,11 @@ class WarwickSEIRInfer(object):
         """
         # Create a likelihood
         loglikelihood = WarwickLogLik(
-            self._model, self._susceptibles_data, self._infectives_data, times,
+            self._model, self._extended_susceptibles,
+            self._extended_infectives, self._extended_house_cont_mat,
+            self._extended_school_cont_mat, self._extended_work_cont_mat,
+            self._extended_other_cont_mat,
+            self._susceptibles_data, self._infectives_data, times,
             self._deaths, self._deaths_times,
             self._total_tests, self._positive_tests, self._serology_times,
             self._sens, self._spec, wd, wp)
@@ -584,7 +755,7 @@ class WarwickSEIRInfer(object):
         self._create_posterior(times, wd, wp)
 
         # Starting points
-        x0 = [0.228, 3]
+        x0 = [1, 0, 0.5]
 
         # Create optimisation routine
         optimiser = pints.OptimisationController(
