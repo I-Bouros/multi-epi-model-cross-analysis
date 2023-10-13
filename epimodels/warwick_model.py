@@ -914,7 +914,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         new_infections : numpy.array
             Age-structured array of the daily number of new symptomatic
             infections.
-        pDtoH : int or float
+        pDtoH : list
             Age-dependent fractions of the number of symptomatic cases that
             end up hospitalised.
         dDtoH : list
@@ -962,7 +962,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         new_infections : numpy.array
             Age-structured array of the daily number of new symptomatic
             infections.
-        pDtoH : int or float
+        pDtoH : list
             Age-dependent fractions of the number of symptomatic cases that
             end up hospitalised.
         dDtoH : list
@@ -1021,7 +1021,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         new_infections : numpy.array
             Age-structured array of the daily number of new symptomatic
             infections.
-        pDtoI : int or float
+        pDtoI : list
             Age-dependent fractions of the number of symptomatic cases that
             end up in ICU.
         dDtoI : list
@@ -1066,7 +1066,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         new_infections : numpy.array
             Age-structured array of the daily number of new symptomatic
             infections.
-        pDtoI : int or float
+        pDtoI : list
             Age-dependent fractions of the number of symptomatic cases that
             end up in ICU.
         dDtoI : list
@@ -1124,7 +1124,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         new_hospitalisation : numpy.array
             Age-structured array of the daily number of new hospitalised
             cases.
-        pHtoDeath : int or float
+        pHtoDeath : list
             Age-dependent fractions of the number of hospitalised cases that
             die.
         dHtoDeath : list
@@ -1173,7 +1173,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         new_hospitalisation : numpy.array
             Age-structured array of the daily number of new hospitalised
             cases.
-        pHtoDeath : int or float
+        pHtoDeath : list
             Age-dependent fractions of the number of hospitalised cases that
             die.
         dHtoDeath : list
@@ -1473,7 +1473,7 @@ class WarwickSEIRModel(pints.ForwardModel):
             Dispersion factor for the negative binomial distribution.
 
         """
-        self._check_new_deaths_format(new_deaths)
+        self._check_new_infections_format(new_deaths)
         if not isinstance(niu, (int, float)):
             raise TypeError('Dispersion factor must be integer or float.')
         if niu <= 0:

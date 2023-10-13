@@ -48,6 +48,18 @@ class WarwickLogLik(pints.LogPDF):
     extended_other_cont_mat : ContactMatrix
         Initial contact matrix with more age groups used for the modelling,
         underlying other non-household interactions.
+    pDtoH : list
+        Age-dependent fractions of the number of symptomatic cases that
+        end up hospitalised.
+    dDtoH : list
+        Distribution of the delay between onset of symptoms and
+        hospitalisation. Must be normalised.
+    pHtoDeath : list
+        Age-dependent fractions of the number of hospitalised cases that
+        die.
+    dHtoDeath : list
+        Distribution of the delay between onset of hospitalisation and
+        death. Must be normalised.
     susceptibles_data : list
         List of regional age-structured lists of the initial number of
         susceptibles.
@@ -85,6 +97,7 @@ class WarwickLogLik(pints.LogPDF):
     def __init__(self, model, extended_susceptibles, extended_infectives,
                  extended_house_cont_mat, extended_school_cont_mat,
                  extended_work_cont_mat, extended_other_cont_mat,
+                 pDtoH, dDtoH, pHtoDeath, dHtoDeath,
                  susceptibles_data, infectives_data, times,
                  deaths, deaths_times, tests_data, positives_data,
                  serology_times, sens, spec, wd=1, wp=1):
@@ -95,6 +108,12 @@ class WarwickLogLik(pints.LogPDF):
 
         self._susceptibles = susceptibles_data
         self._infectives = infectives_data
+
+        # Probablities and delay distributions to hospitalisation and death
+        self._pDtoH = pDtoH
+        self._dDtoH = dDtoH
+        self._pHtoDeath = pHtoDeath
+        self._dHtoDeath = dHtoDeath
 
         # Death data
         self._deaths = deaths
@@ -189,6 +208,7 @@ class WarwickLogLik(pints.LogPDF):
         tuple of lists
             Tuple of the updated guess of the auxiliary parameter value Q
             and force of infection vector.
+
         """
         symp_cases = self._extended_infectives
         # Compute symptom probability vector
@@ -235,29 +255,17 @@ class WarwickLogLik(pints.LogPDF):
         # epsilon
         self._parameters[-5] = var_parameters[-1]
 
-        # Compute Q
-        Q_guess = np.array([
-            0.0185, 0.0019, 0.0029, 0.0041, 0.0200, 0.0355, 0.0383,
-            0.0319, 0.0368, 0.0507, 0.0947, 0.1497, 0.1939, 0.4396,
-            0.5789, 0.4939, 0.7038, 0.9309, 0.9818, 0.8767, 1.0000])
+        d, sigma, gamma = self.compute_updated_param(
+            alpha, self._parameters[-6])
 
-        for _ in range(100):
-            Q_guess, transmission = self._compute_updated_Q(
-                Q_guess, alpha, self._parameters[-6])
+        # gamma
+        self._parameters[-4] = gamma
 
-        # Compute d
-        d = 0.9 * np.power(Q_guess, 1-alpha)
+        # d
+        self._parameters[-3] = d
 
-        # Compute sigma
-        sigma = (1/0.9) * np.power(Q_guess, alpha)
-
-        # Compute gamma
-        self._parameters[-4] = transmission[-1] / (
-            2.7 * self._extended_infectives[-1])
-
-        # Recompute d and sigma with correct number of age groups
-        self._parameters[-3] = self._update_age_groups(d)
-        self._parameters[-7] = self._update_age_groups(sigma)
+        # sigma
+        self._parameters[-7] = sigma
 
         total_log_lik = 0
 
@@ -270,7 +278,12 @@ class WarwickLogLik(pints.LogPDF):
                     parameters=list(deepflatten(self._parameters, ignore=str)),
                     times=self._times
                     )
-                model_new_deaths = self._model.new_deaths(model_output)
+
+                model_new_infec = self._model.new_infections(model_output)
+                model_new_hosp = self._model.new_hospitalisations(
+                    model_new_infec, self._pDtoH, self._dDtoH)
+                model_new_deaths = self._model.new_deaths(
+                    model_new_hosp, self._pHtoDeath, self._dHtoDeath)
 
                 # Check the input of log-likelihoods fixed data
                 self._model.check_death_format(model_new_deaths, self._niu)
@@ -306,6 +319,52 @@ class WarwickLogLik(pints.LogPDF):
 
         except ValueError:  # pragma: no cover
             return -np.inf
+
+    def compute_updated_param(self, alpha, tau):
+        """
+        Computes updated parameters values based on current values of
+        alpha and tau.
+
+        Parameters
+        ----------
+        alpha : int or float
+            The current guess of the auxiliary scenario weight parameter alpha.
+        tau : int or float
+            The current guess of the reduction in the transmission rate of
+            infection for asymptomatic individuals.
+
+        Returns
+        -------
+        tuple of lists
+            Tuple of the updated values of the d, sdigma and gamma parameters
+            of the model.
+
+        """
+        # Compute Q
+        Q_guess = np.array([
+            0.0185, 0.0019, 0.0029, 0.0041, 0.0200, 0.0355, 0.0383,
+            0.0319, 0.0368, 0.0507, 0.0947, 0.1497, 0.1939, 0.4396,
+            0.5789, 0.4939, 0.7038, 0.9309, 0.9818, 0.8767, 1.0000])
+
+        for _ in range(100):
+            Q_guess, transmission = self._compute_updated_Q(
+                Q_guess, alpha, tau)
+
+        # Compute d
+        d = 0.9 * np.power(Q_guess, 1-alpha)
+
+        # Compute sigma
+        sigma = (1/0.9) * np.power(Q_guess, alpha)
+
+        # Compute gamma
+        gamma = transmission[-1] * d[-1] * sigma[-1] / (
+            2.7 * self._extended_infectives[-1])
+
+        # Recompute d and sigma with correct number of age groups
+        d = self._update_age_groups(d)
+        sigma = self._update_age_groups(sigma)
+
+        return d, sigma, gamma
 
     def set_fixed_parameters(self):
         """
@@ -589,6 +648,31 @@ class WarwickSEIRInfer(object):
         self._sens = sens
         self._spec = spec
 
+    def read_delay_data(self, pDtoH, dDtoH, pHtoDeath, dHtoDeath):
+        """
+        Sets the hosptitalisation and death delays data used for the model's
+        parameters inference.
+
+        Parameters
+        ----------
+        pDtoH : list
+            Age-dependent fractions of the number of symptomatic cases that
+            end up hospitalised.
+        dDtoH : list
+            Distribution of the delay between onset of symptoms and
+            hospitalisation. Must be normalised.
+        pHtoDeath : list
+            Age-dependent fractions of the number of hospitalised cases that
+            die.
+        dHtoDeath : list
+            Distribution of the delay between onset of hospitalisation and
+            death. Must be normalised.
+        """
+        self._pDtoH = pDtoH
+        self._dDtoH = dDtoH
+        self._pHtoDeath = pHtoDeath
+        self._dHtoDeath = dHtoDeath
+
     def read_deaths_data(
             self, deaths_data, deaths_times):
         """
@@ -636,6 +720,7 @@ class WarwickSEIRInfer(object):
             self._extended_infectives, self._extended_house_cont_mat,
             self._extended_school_cont_mat, self._extended_work_cont_mat,
             self._extended_other_cont_mat,
+            self._pDtoH, self._dDtoH, self._pHtoDeath, self._dHtoDeath,
             self._susceptibles_data, self._infectives_data, times,
             self._deaths, self._deaths_times,
             self._total_tests, self._positive_tests, self._serology_times,
@@ -665,6 +750,7 @@ class WarwickSEIRInfer(object):
             self._extended_infectives, self._extended_house_cont_mat,
             self._extended_school_cont_mat, self._extended_work_cont_mat,
             self._extended_other_cont_mat,
+            self._pDtoH, self._dDtoH, self._pHtoDeath, self._dHtoDeath,
             self._susceptibles_data, self._infectives_data, times,
             self._deaths, self._deaths_times,
             self._total_tests, self._positive_tests, self._serology_times,
@@ -756,7 +842,7 @@ class WarwickSEIRInfer(object):
         self._create_posterior(times, wd, wp)
 
         # Starting points
-        x0 = [1, 0, 0.5]
+        x0 = [0.9, 0, 0.5]
 
         # Create optimisation routine
         optimiser = pints.OptimisationController(
