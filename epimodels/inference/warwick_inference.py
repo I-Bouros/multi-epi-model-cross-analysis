@@ -138,6 +138,8 @@ class WarwickLogLik(pints.LogPDF):
         self._extended_infectives = np.array(extended_infectives)
         self._pop = self._extended_susceptibles + self._extended_susceptibles
 
+        self._N = np.sum(self._pop)
+
         # Identify the appropriate contact matrix for the ODE system
         house_cont_mat = extended_house_cont_mat
         school_cont_mat = extended_school_cont_mat
@@ -218,7 +220,7 @@ class WarwickLogLik(pints.LogPDF):
         asymp_cases = np.matmul(np.divide(1-d, d), symp_cases)
 
         # New unnormalised value for Q
-        transmission = np.dot(
+        transmission = (1 / self._N) * np.dot(
             self._nonhouse_cont_mat, symp_cases + tau * asymp_cases)
         nQ = np.divide(symp_cases, transmission)
 
