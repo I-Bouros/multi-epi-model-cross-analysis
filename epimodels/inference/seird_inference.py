@@ -476,11 +476,11 @@ class SEIRDInfer(object):
 
         """
         # Starting points using optimisation object
-        x0 = [self.optimisation_problem_setup(times, wd, wp)[0].tolist()]*3
+        x0 = [self.optimisation_problem_setup(times, wd, wp)[0].tolist()]*1
 
         # Create MCMC routine
         mcmc = pints.MCMCController(
-            self._log_posterior, 3, x0)
+            self._log_posterior, 1, x0)
         mcmc.set_max_iterations(num_iter)
         mcmc.set_log_to_screen(True)
         mcmc.set_parallel(True)
