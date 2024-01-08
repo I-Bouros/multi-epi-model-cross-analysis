@@ -1690,18 +1690,42 @@ class WarwickICs(object):
     susceptibles_IC : list of lists
         Initial number of susceptibles classifed by age (column name) and
         region (row name).
-    exposed_f_IC : list of lists
+    exposed_1_f_IC : list of lists
         Initial number of exposed by a first household case classifed by
-        age (column name) and region (row name).
-    exposed_sd_IC : list of lists
+        age (column name) and region (row name) in compartment 1.
+    exposed_1_sd_IC : list of lists
         Initial number of exposed by a subsequent detected household case
-        classifed by age (column name) and region (row name).
-    exposed_su_IC : list of lists
+        classifed by age (column name) and region (row name) in compartment 1.
+    exposed_1_su_IC : list of lists
         Initial number of exposed by a subsequent undetected household case
-        classifed by age (column name) and region (row name).
-    exposed_q_IC : list of lists
+        classifed by age (column name) and region (row name) in compartment 1.
+    exposed_1_q_IC : list of lists
         Initial number of exposed by a quarantined household case
-        classifed by age (column name) and region (row name).
+        classifed by age (column name) and region (row name) in compartment 1.
+    exposed_2_f_IC : list of lists
+        Initial number of exposed by a first household case classifed by
+        age (column name) and region (row name) in compartment 2.
+    exposed_2_sd_IC : list of lists
+        Initial number of exposed by a subsequent detected household case
+        classifed by age (column name) and region (row name) in compartment 2.
+    exposed_2_su_IC : list of lists
+        Initial number of exposed by a subsequent undetected household case
+        classifed by age (column name) and region (row name) in compartment 2.
+    exposed_2_q_IC : list of lists
+        Initial number of exposed by a quarantined household case
+        classifed by age (column name) and region (row name) in compartment 2.
+    exposed_3_f_IC : list of lists
+        Initial number of exposed by a first household case classifed by
+        age (column name) and region (row name) in compartment 3.
+    exposed_3_sd_IC : list of lists
+        Initial number of exposed by a subsequent detected household case
+        classifed by age (column name) and region (row name) in compartment 3.
+    exposed_3_su_IC : list of lists
+        Initial number of exposed by a subsequent undetected household case
+        classifed by age (column name) and region (row name) in compartment 3.
+    exposed_3_q_IC : list of lists
+        Initial number of exposed by a quarantined household case
+        classifed by age (column name) and region (row name) in compartment 3.
     detected_f_IC :list of lists
         Initial number of detected infectives by a first household case
         classifed by age (column name) and region (row name).
@@ -1735,8 +1759,11 @@ class WarwickICs(object):
         region (row name).
 
     """
-    def __init__(self, model, susceptibles_IC, exposed_f_IC,
-                 exposed_sd_IC, exposed_su_IC, exposed_q_IC, detected_f_IC,
+    def __init__(self, model, susceptibles_IC, exposed_1_f_IC,
+                 exposed_1_sd_IC, exposed_1_su_IC, exposed_1_q_IC,
+                 exposed_2_f_IC, exposed_2_sd_IC, exposed_2_su_IC,
+                 exposed_2_q_IC, exposed_3_f_IC, exposed_3_sd_IC,
+                 exposed_3_su_IC, exposed_3_q_IC, detected_f_IC,
                  detected_qf_IC, detected_sd_IC, detected_su_IC,
                  detected_qs_IC, undetected_f_IC, undetected_s_IC,
                  undetected_q_IC, recovered_IC):
@@ -1750,18 +1777,29 @@ class WarwickICs(object):
 
         # Check inputs format
         self._check_parameters_input(
-            susceptibles_IC, exposed_f_IC,
-            exposed_sd_IC, exposed_su_IC, exposed_q_IC, detected_f_IC,
+            susceptibles_IC, exposed_1_f_IC,
+            exposed_1_sd_IC, exposed_1_su_IC, exposed_1_q_IC,
+            exposed_2_f_IC, exposed_2_sd_IC, exposed_2_su_IC,
+            exposed_2_q_IC, exposed_3_f_IC, exposed_3_sd_IC,
+            exposed_3_su_IC, exposed_3_q_IC, detected_f_IC,
             detected_qf_IC, detected_sd_IC, detected_su_IC,
             detected_qs_IC, undetected_f_IC, undetected_s_IC,
             undetected_q_IC, recovered_IC)
 
         # Set ICs parameters
         self.susceptibles = susceptibles_IC
-        self.exposed_f = exposed_f_IC
-        self.exposed_sd = exposed_sd_IC
-        self.exposed_su = exposed_su_IC
-        self.exposed_q = exposed_q_IC
+        self.exposed_1_f = exposed_1_f_IC
+        self.exposed_1_sd = exposed_1_sd_IC
+        self.exposed_1_su = exposed_1_su_IC
+        self.exposed_1_q = exposed_1_q_IC
+        self.exposed_2_f = exposed_2_f_IC
+        self.exposed_2_sd = exposed_2_sd_IC
+        self.exposed_2_su = exposed_2_su_IC
+        self.exposed_2_q = exposed_3_q_IC
+        self.exposed_3_f = exposed_3_f_IC
+        self.exposed_3_sd = exposed_3_sd_IC
+        self.exposed_3_su = exposed_3_su_IC
+        self.exposed_3_q = exposed_3_q_IC
         self.detected_f = detected_f_IC
         self.detected_qf = detected_qf_IC
         self.detected_sd = detected_sd_IC
@@ -1773,8 +1811,10 @@ class WarwickICs(object):
         self.recovered = recovered_IC
 
     def _check_parameters_input(
-            self, susceptibles_IC, exposed_f_IC,
-            exposed_sd_IC, exposed_su_IC, exposed_q_IC, detected_f_IC,
+            self, susceptibles_IC, exposed_1_f_IC,
+            exposed_1_sd_IC, exposed_1_su_IC, exposed_1_q_IC, exposed_2_f_IC,
+            exposed_2_sd_IC, exposed_2_su_IC, exposed_2_q_IC, exposed_3_f_IC,
+            exposed_3_sd_IC, exposed_3_su_IC, exposed_3_q_IC, detected_f_IC,
             detected_qf_IC, detected_sd_IC, detected_su_IC,
             detected_qs_IC, undetected_f_IC, undetected_s_IC,
             undetected_q_IC, recovered_IC):
@@ -1786,18 +1826,51 @@ class WarwickICs(object):
         susceptibles_IC : list of lists
             Initial number of susceptibles classifed by age (column name) and
             region (row name).
-        exposed_f_IC : list of lists
+        exposed_1_f_IC : list of lists
             Initial number of exposed by a first household case classifed by
-            age (column name) and region (row name).
-        exposed_sd_IC : list of lists
+            age (column name) and region (row name) in compartment 1.
+        exposed_1_sd_IC : list of lists
             Initial number of exposed by a subsequent detected household case
-            classifed by age (column name) and region (row name).
-        exposed_su_IC : list of lists
+            classifed by age (column name) and region (row name) in
+            compartment 1.
+        exposed_1_su_IC : list of lists
             Initial number of exposed by a subsequent undetected household case
-            classifed by age (column name) and region (row name).
-        exposed_q_IC : list of lists
+            classifed by age (column name) and region (row name) in
+            compartment 1.
+        exposed_1_q_IC : list of lists
             Initial number of exposed by a quarantined household case
-            classifed by age (column name) and region (row name).
+            classifed by age (column name) and region (row name) in
+            compartment 1.
+        exposed_2_f_IC : list of lists
+            Initial number of exposed by a first household case classifed by
+            age (column name) and region (row name) in compartment 2.
+        exposed_2_sd_IC : list of lists
+            Initial number of exposed by a subsequent detected household case
+            classifed by age (column name) and region (row name) in
+            compartment 2.
+        exposed_2_su_IC : list of lists
+            Initial number of exposed by a subsequent undetected household case
+            classifed by age (column name) and region (row name) in
+            compartment 2.
+        exposed_2_q_IC : list of lists
+            Initial number of exposed by a quarantined household case
+            classifed by age (column name) and region (row name) in
+            compartment 2.
+        exposed_3_f_IC : list of lists
+            Initial number of exposed by a first household case classifed by
+            age (column name) and region (row name) in compartment 3.
+        exposed_3_sd_IC : list of lists
+            Initial number of exposed by a subsequent detected household case
+            classifed by age (column name) and region (row name) in
+            compartment 3.
+        exposed_3_su_IC : list of lists
+            Initial number of exposed by a subsequent undetected household case
+            classifed by age (column name) and region (row name) in
+            compartment 3.
+        exposed_3_q_IC : list of lists
+            Initial number of exposed by a quarantined household case
+            classifed by age (column name) and region (row name) in
+            compartment 3.
         detected_f_IC :list of lists
             Initial number of detected infectives by a first household case
             classifed by age (column name) and region (row name).
@@ -1849,56 +1922,56 @@ class WarwickICs(object):
                         'The inital numbers of susceptibles must be integer or\
                             float.')
 
-        if np.asarray(exposed_f_IC).ndim != 2:
+        if np.asarray(exposed_1_f_IC).ndim != 2:
             raise ValueError('The inital numbers of exposed by a first \
                 household case storage format must be 2-dimensional.')
-        if np.asarray(exposed_f_IC).shape[0] != len(self.model.regions):
+        if np.asarray(exposed_1_f_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
                         exposed by a first household case.')
-        if np.asarray(exposed_f_IC).shape[1] != self.model._num_ages:
+        if np.asarray(exposed_1_f_IC).shape[1] != self.model._num_ages:
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
                         exposed by a first household case.')
-        for ic in np.asarray(exposed_f_IC):
+        for ic in np.asarray(exposed_1_f_IC):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
                         'The inital numbers of exposed by a first household \
                             case must be integer or float.')
 
-        if np.asarray(exposed_sd_IC).ndim != 2:
+        if np.asarray(exposed_1_sd_IC).ndim != 2:
             raise ValueError('The inital numbers of exposed by a subsequent \
                 detected household casee storage format must be \
                     2-dimensional.')
-        if np.asarray(exposed_sd_IC).shape[0] != len(self.model.regions):
+        if np.asarray(exposed_1_sd_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
                         exposed by a subsequent detected household case.')
-        if np.asarray(exposed_sd_IC).shape[1] != self.model._num_ages:
+        if np.asarray(exposed_1_sd_IC).shape[1] != self.model._num_ages:
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
                         exposed by a subsequent detected household case.')
-        for ic in np.asarray(exposed_sd_IC):
+        for ic in np.asarray(exposed_1_sd_IC):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
                         'The inital numbers of exposed by a subsequent \
                             detected household case must be integer or float.')
 
-        if np.asarray(exposed_su_IC).ndim != 2:
+        if np.asarray(exposed_1_su_IC).ndim != 2:
             raise ValueError('The inital numbers of exposed by a subsequent \
                 undetected household case storage format must be \
                     2-dimensional.')
-        if np.asarray(exposed_su_IC).shape[0] != len(self.model.regions):
+        if np.asarray(exposed_1_su_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
                         exposed by a subsequent undetected household case.')
-        if np.asarray(exposed_su_IC).shape[1] != self.model._num_ages:
+        if np.asarray(exposed_1_su_IC).shape[1] != self.model._num_ages:
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
                         exposed by a subsequent undetected household case.')
-        for ic in np.asarray(exposed_su_IC):
+        for ic in np.asarray(exposed_1_su_IC):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
@@ -1906,18 +1979,168 @@ class WarwickICs(object):
                             undetected household case must be integer or \
                                 float.')
 
-        if np.asarray(exposed_q_IC).ndim != 2:
+        if np.asarray(exposed_1_q_IC).ndim != 2:
             raise ValueError('The inital numbers of exposed by a quarantined \
                 household case storage format must be 2-dimensional.')
-        if np.asarray(exposed_q_IC).shape[0] != len(self.model.regions):
+        if np.asarray(exposed_1_q_IC).shape[0] != len(self.model.regions):
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
                         exposed by a quarantined household case.')
-        if np.asarray(exposed_q_IC).shape[1] != self.model._num_ages:
+        if np.asarray(exposed_1_q_IC).shape[1] != self.model._num_ages:
             raise ValueError(
                     'Wrong number of rows for the inital numbers of \
                         exposed by a quarantined household case.')
-        for ic in np.asarray(exposed_q_IC):
+        for ic in np.asarray(exposed_1_q_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a quarantined \
+                            household case type must be integer or float.')
+
+        if np.asarray(exposed_2_f_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a first \
+                household case storage format must be 2-dimensional.')
+        if np.asarray(exposed_2_f_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a first household case.')
+        if np.asarray(exposed_2_f_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a first household case.')
+        for ic in np.asarray(exposed_2_f_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a first household \
+                            case must be integer or float.')
+
+        if np.asarray(exposed_2_sd_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a subsequent \
+                detected household casee storage format must be \
+                    2-dimensional.')
+        if np.asarray(exposed_2_sd_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent detected household case.')
+        if np.asarray(exposed_2_sd_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent detected household case.')
+        for ic in np.asarray(exposed_2_sd_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a subsequent \
+                            detected household case must be integer or float.')
+
+        if np.asarray(exposed_2_su_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a subsequent \
+                undetected household case storage format must be \
+                    2-dimensional.')
+        if np.asarray(exposed_2_su_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent undetected household case.')
+        if np.asarray(exposed_2_su_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent undetected household case.')
+        for ic in np.asarray(exposed_2_su_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a subsequent \
+                            undetected household case must be integer or \
+                                float.')
+
+        if np.asarray(exposed_2_q_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a quarantined \
+                household case storage format must be 2-dimensional.')
+        if np.asarray(exposed_2_q_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a quarantined household case.')
+        if np.asarray(exposed_2_q_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a quarantined household case.')
+        for ic in np.asarray(exposed_2_q_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a quarantined \
+                            household case type must be integer or float.')
+
+        if np.asarray(exposed_3_f_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a first \
+                household case storage format must be 2-dimensional.')
+        if np.asarray(exposed_3_f_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a first household case.')
+        if np.asarray(exposed_3_f_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a first household case.')
+        for ic in np.asarray(exposed_3_f_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a first household \
+                            case must be integer or float.')
+
+        if np.asarray(exposed_3_sd_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a subsequent \
+                detected household casee storage format must be \
+                    2-dimensional.')
+        if np.asarray(exposed_3_sd_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent detected household case.')
+        if np.asarray(exposed_3_sd_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent detected household case.')
+        for ic in np.asarray(exposed_3_sd_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a subsequent \
+                            detected household case must be integer or float.')
+
+        if np.asarray(exposed_3_su_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a subsequent \
+                undetected household case storage format must be \
+                    2-dimensional.')
+        if np.asarray(exposed_3_su_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent undetected household case.')
+        if np.asarray(exposed_3_su_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a subsequent undetected household case.')
+        for ic in np.asarray(exposed_3_su_IC):
+            for _ in ic:
+                if not isinstance(_, (np.integer, np.floating)):
+                    raise TypeError(
+                        'The inital numbers of exposed by a subsequent \
+                            undetected household case must be integer or \
+                                float.')
+
+        if np.asarray(exposed_3_q_IC).ndim != 2:
+            raise ValueError('The inital numbers of exposed by a quarantined \
+                household case storage format must be 2-dimensional.')
+        if np.asarray(exposed_3_q_IC).shape[0] != len(self.model.regions):
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a quarantined household case.')
+        if np.asarray(exposed_3_q_IC).shape[1] != self.model._num_ages:
+            raise ValueError(
+                    'Wrong number of rows for the inital numbers of \
+                        exposed by a quarantined household case.')
+        for ic in np.asarray(exposed_3_q_IC):
             for _ in ic:
                 if not isinstance(_, (np.integer, np.floating)):
                     raise TypeError(
@@ -2120,11 +2343,14 @@ class WarwickICs(object):
             the class relates to.
 
         """
-        return [self.susceptibles, self.exposed_f, self.exposed_sd,
-                self.exposed_su, self.exposed_q, self.detected_f,
-                self.detected_qf, self.detected_sd, self.detected_su,
-                self.detected_qs, self.undetected_f, self.undetected_s,
-                self.undetected_q, self.recovered]
+        return [self.susceptibles, self.exposed_1_f, self.exposed_1_sd,
+                self.exposed_1_su, self.exposed_1_q, self.exposed_2_f,
+                self.exposed_2_sd, self.exposed_2_su, self.exposed_2_q,
+                self.exposed_3_f, self.exposed_3_sd, self.exposed_3_su,
+                self.exposed_3_q, self.detected_f, self.detected_qf,
+                self.detected_sd, self.detected_su, self.detected_qs,
+                self.undetected_f, self.undetected_s, self.undetected_q,
+                self.recovered]
 
 #
 # WarwickRegParameters Class

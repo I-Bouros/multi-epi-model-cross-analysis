@@ -141,20 +141,28 @@ def compute_contact_matrices(
             'time', 'shop', 'grocery', 'parks', 'transit', 'work', 'home'
         ]]
 
-    activities = ['shop', 'grocery', 'parks', 'transit', 'work', 'home']
+    activities = [
+        'shop', 'grocery', 'parks', 'transit', 'work', 'home', 'school']
     multipliers = pd.DataFrame(columns=activities)
     for t in data['time'].unique():
         daily_data = data[data['time'] == t]
         daily_data = daily_data[daily_data['sub_region_2'].isna()]
         newrow = {}
         for a in activities:
-            daily_data['{}_subtotal'.format(a)] = daily_data[
-                'population'] * daily_data[a]
+            if a == 'school':
+                daily_data['{}_subtotal'.format(a)] = daily_data[
+                    'population'] * daily_data['work']
 
-            newrow[a] = daily_data['{}_subtotal'.format(
-                a)].sum() / daily_data['population'].sum()
+                newrow[a] = daily_data['{}_subtotal'.format(
+                    a)].sum() / daily_data['population'].sum()
+            else:
+                daily_data['{}_subtotal'.format(a)] = daily_data[
+                    'population'] * daily_data[a]
 
-        multipliers = multipliers.append(newrow, ignore_index=True)
+                newrow[a] = daily_data['{}_subtotal'.format(
+                    a)].sum() / daily_data['population'].sum()
+
+        multipliers.loc[len(multipliers)] = newrow
 
     return multipliers
 
@@ -253,8 +261,10 @@ def main():
         days = range(multipliers.shape[0])
         weeks = [days[x:x+7] for x in range(0, len(days), 7)]
         week_mean = pd.Series(
-            np.zeros(6),
-            index=['shop', 'grocery', 'parks', 'transit', 'work', 'home'])
+            np.zeros(7),
+            index=[
+                'shop', 'grocery', 'parks', 'transit', 'work', 'home',
+                'school'])
         for w, week in enumerate(weeks):
             contact_matrix = np.zeros_like(baseline_matrices[0])
             house_contact_matrix = np.zeros_like(baseline_matrices[0])

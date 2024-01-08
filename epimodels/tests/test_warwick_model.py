@@ -22,38 +22,42 @@ class TestWarwickSEIRModel(unittest.TestCase):
 
         self.assertEqual(
             model._output_names, [
-                'S', 'Ef', 'Esd', 'Esu', 'Eq', 'Df', 'Dsd', 'Dsu', 'Dqf',
+                'S', 'E1f', 'E1sd', 'E1su', 'E1q', 'E2f', 'E2sd', 'E2su',
+                'E2q', 'E3f', 'E3sd', 'E3su', 'E3q', 'Df', 'Dsd', 'Dsu', 'Dqf',
                 'Dqs', 'Uf', 'Us', 'Uq', 'R', 'Incidence'])
         self.assertEqual(
             model._parameter_names, [
-                'S0', 'Ef0', 'Esd0', 'Esu0', 'Eq0', 'Df0', 'Dsd0', 'Dsu0',
-                'Dqf0', 'Dqs0', 'Uf0', 'Us0', 'Uq0', 'R0', 'sig', 'tau',
-                'eps', 'gamma', 'd', 'H'])
-        self.assertEqual(model._n_outputs, 15)
-        self.assertEqual(model._n_parameters, 20)
+                'S0', 'E1f0', 'E1sd0', 'E1su0', 'E1q0', 'E2f0', 'E2sd0',
+                'E2su0', 'E2q0', 'E3f0', 'E3sd0', 'E3su0', 'E3q0', 'Df0',
+                'Dsd0', 'Dsu0', 'Dqf0', 'Dqs0', 'Uf0', 'Us0', 'Uq0', 'R0',
+                'sig', 'tau', 'eps', 'gamma', 'd', 'H'])
+        self.assertEqual(model._n_outputs, 23)
+        self.assertEqual(model._n_parameters, 28)
 
     def test_n_outputs(self):
         model = em.WarwickSEIRModel()
-        self.assertEqual(model.n_outputs(), 15)
+        self.assertEqual(model.n_outputs(), 23)
 
     def test_n_parameters(self):
         model = em.WarwickSEIRModel()
-        self.assertEqual(model.n_parameters(), 20)
+        self.assertEqual(model.n_parameters(), 28)
 
     def test_output_names(self):
         model = em.WarwickSEIRModel()
         self.assertEqual(
             model.output_names(),
-            ['S', 'Ef', 'Esd', 'Esu', 'Eq', 'Df', 'Dsd', 'Dsu', 'Dqf', 'Dqs',
-             'Uf', 'Us', 'Uq', 'R', 'Incidence'])
+            ['S', 'E1f', 'E1sd', 'E1su', 'E1q', 'E2f', 'E2sd', 'E2su',
+             'E2q', 'E3f', 'E3sd', 'E3su', 'E3q', 'Df', 'Dsd', 'Dsu', 'Dqf',
+             'Dqs', 'Uf', 'Us', 'Uq', 'R', 'Incidence'])
 
     def test_parameter_names(self):
         model = em.WarwickSEIRModel()
         self.assertEqual(
             model.parameter_names(),
-            ['S0', 'Ef0', 'Esd0', 'Esu0', 'Eq0', 'Df0', 'Dsd0', 'Dsu0', 'Dqf0',
-             'Dqs0', 'Uf0', 'Us0', 'Uq0', 'R0', 'sig', 'tau', 'eps', 'gamma',
-             'd', 'H'])
+            ['S0', 'E1f0', 'E1sd0', 'E1su0', 'E1q0', 'E2f0', 'E2sd0', 'E2su0',
+             'E2q0', 'E3f0', 'E3sd0', 'E3su0', 'E3q0', 'Df0', 'Dsd0', 'Dsu0',
+             'Dqf0', 'Dqs0', 'Uf0', 'Us0', 'Uq0', 'R0', 'sig', 'tau', 'eps',
+             'gamma', 'd', 'H'])
 
     def test_set_regions(self):
         model = em.WarwickSEIRModel()
@@ -220,10 +224,18 @@ class TestWarwickSEIRModel(unittest.TestCase):
         ICs = em.WarwickICs(
             model=model,
             susceptibles_IC=[[15, 6], [7, 4]],
-            exposed_f_IC=[[0, 0], [0, 0]],
-            exposed_sd_IC=[[0, 0], [0, 0]],
-            exposed_su_IC=[[0, 0], [0, 0]],
-            exposed_q_IC=[[0, 0], [0, 0]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
             detected_f_IC=[[0, 0], [0, 0]],
             detected_qf_IC=[[0, 0], [0, 0]],
             detected_sd_IC=[[0, 0], [0, 0]],
@@ -270,7 +282,7 @@ class TestWarwickSEIRModel(unittest.TestCase):
         output_scipy_solver = model.simulate(parameters)
 
         output = [7, 4]
-        output.extend([0] * 28)
+        output.extend([0] * 44)
 
         npt.assert_almost_equal(
             output_scipy_solver,
@@ -417,10 +429,18 @@ class TestWarwickSEIRModel(unittest.TestCase):
         ICs = em.WarwickICs(
             model=model,
             susceptibles_IC=[[15, 6], [7, 4]],
-            exposed_f_IC=[[0, 0], [0, 0]],
-            exposed_sd_IC=[[0, 0], [0, 0]],
-            exposed_su_IC=[[0, 0], [0, 0]],
-            exposed_q_IC=[[0, 0], [0, 0]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
             detected_f_IC=[[0, 0], [0, 0]],
             detected_qf_IC=[[0, 0], [0, 0]],
             detected_sd_IC=[[0, 0], [0, 0]],
@@ -472,27 +492,27 @@ class TestWarwickSEIRModel(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             output1 = [5, 6]
-            output1.extend([0] * 28)
+            output1.extend([0] * 44)
             output1 = np.array(output1)
             model.new_infections(output1)
 
         with self.assertRaises(ValueError):
             output1 = [5, 6]
-            output1.extend([0] * 26)
+            output1.extend([0] * 42)
             output1 = np.array([output1, output1])
             model.new_infections(output1)
 
         with self.assertRaises(ValueError):
             output1 = [5, 6]
-            output1.extend([0] * 28)
+            output1.extend([0] * 44)
             output1 = np.array([output1, output1, output1])
             model.new_infections(output1)
 
         with self.assertRaises(TypeError):
             output1 = ['5', 6]
-            output1.extend([0] * 28)
+            output1.extend([0] * 44)
             output2 = [5, 6, '0']
-            output2.extend([0] * 27)
+            output2.extend([0] * 43)
             output1 = np.array([output1, output2])
             model.new_infections(output1)
 
@@ -634,10 +654,18 @@ class TestWarwickSEIRModel(unittest.TestCase):
         ICs = em.WarwickICs(
             model=model,
             susceptibles_IC=[[15, 6], [7, 4]],
-            exposed_f_IC=[[0, 0], [0, 0]],
-            exposed_sd_IC=[[0, 0], [0, 0]],
-            exposed_su_IC=[[0, 0], [0, 0]],
-            exposed_q_IC=[[0, 0], [0, 0]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
             detected_f_IC=[[0, 0], [0, 0]],
             detected_qf_IC=[[0, 0], [0, 0]],
             detected_sd_IC=[[0, 0], [0, 0]],
@@ -692,6 +720,30 @@ class TestWarwickSEIRModel(unittest.TestCase):
             np.array([[0, 0], [0, 0]]))
 
         with self.assertRaises(ValueError):
+            new_infections1 = np.array([0, 0])
+
+            model.check_new_hospitalisation_format(
+                new_infections1, pDtoH, dDtoH)
+
+        with self.assertRaises(ValueError):
+            new_infections1 = np.array([[0, 0], [0, 0], [0, 0]])
+
+            model.check_new_hospitalisation_format(
+                new_infections1, pDtoH, dDtoH)
+
+        with self.assertRaises(ValueError):
+            new_infections1 = np.array([[0, 0, 0], [0, 0, 0]])
+
+            model.check_new_hospitalisation_format(
+                new_infections1, pDtoH, dDtoH)
+
+        with self.assertRaises(TypeError):
+            new_infections1 = np.array([[0, '0'], [0, 0]])
+
+            model.check_new_hospitalisation_format(
+                new_infections1, pDtoH, dDtoH)
+
+        with self.assertRaises(ValueError):
             pDtoH1 = {'0.9': 0}
 
             model.check_new_hospitalisation_format(
@@ -734,7 +786,7 @@ class TestWarwickSEIRModel(unittest.TestCase):
                 new_infections, pDtoH, dDtoH1)
 
         with self.assertRaises(TypeError):
-            dDtoH1 = [1, '1'] * 17
+            dDtoH1 = [1, '1'] * 25
 
             model.check_new_hospitalisation_format(
                 new_infections, pDtoH, dDtoH1)
@@ -889,10 +941,18 @@ class TestWarwickSEIRModel(unittest.TestCase):
         ICs = em.WarwickICs(
             model=model,
             susceptibles_IC=[[15, 6], [7, 4]],
-            exposed_f_IC=[[0, 0], [0, 0]],
-            exposed_sd_IC=[[0, 0], [0, 0]],
-            exposed_su_IC=[[0, 0], [0, 0]],
-            exposed_q_IC=[[0, 0], [0, 0]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
             detected_f_IC=[[0, 0], [0, 0]],
             detected_qf_IC=[[0, 0], [0, 0]],
             detected_sd_IC=[[0, 0], [0, 0]],
@@ -945,6 +1005,90 @@ class TestWarwickSEIRModel(unittest.TestCase):
         npt.assert_array_equal(
             model.new_icu(new_infections, pDtoI, dDtoI),
             np.array([[0, 0], [0, 0]]))
+
+        with self.assertRaises(ValueError):
+            new_infections1 = np.array([0, 0])
+
+            model.check_new_icu_format(
+                new_infections1, pDtoI, dDtoI)
+
+        with self.assertRaises(ValueError):
+            new_infections1 = np.array([[0, 0], [0, 0], [0, 0]])
+
+            model.check_new_icu_format(
+                new_infections1, pDtoI, dDtoI)
+
+        with self.assertRaises(ValueError):
+            new_infections1 = np.array([[0, 0, 0], [0, 0, 0]])
+
+            model.check_new_icu_format(
+                new_infections1, pDtoI, dDtoI)
+
+        with self.assertRaises(TypeError):
+            new_infections1 = np.array([[0, '0'], [0, 0]])
+
+            model.check_new_icu_format(
+                new_infections1, pDtoI, dDtoI)
+
+        with self.assertRaises(ValueError):
+            pDtoI1 = {'0.9': 0}
+
+            model.check_new_icu_format(
+                new_infections, pDtoI1, dDtoI)
+
+        with self.assertRaises(ValueError):
+            pDtoI1 = [1, 1, 1]
+
+            model.check_new_icu_format(
+                new_infections, pDtoI1, dDtoI)
+
+        with self.assertRaises(TypeError):
+            pDtoI1 = [1, '1']
+
+            model.check_new_icu_format(
+                new_infections, pDtoI1, dDtoI)
+
+        with self.assertRaises(ValueError):
+            pDtoI1 = [-0.2, 0.5]
+
+            model.check_new_icu_format(
+                new_infections, pDtoI1, dDtoI)
+
+        with self.assertRaises(ValueError):
+            pDtoI1 = [0.5, 1.5]
+
+            model.check_new_icu_format(
+                new_infections, pDtoI1, dDtoI)
+
+        with self.assertRaises(ValueError):
+            dDtoI1 = {'0.9': 0}
+
+            model.check_new_icu_format(
+                new_infections, pDtoI, dDtoI1)
+
+        with self.assertRaises(ValueError):
+            dDtoI1 = [1, 1, 1]
+
+            model.check_new_icu_format(
+                new_infections, pDtoI, dDtoI1)
+
+        with self.assertRaises(TypeError):
+            dDtoI1 = [1, '1'] * 25
+
+            model.check_new_icu_format(
+                new_infections, pDtoI, dDtoI1)
+
+        with self.assertRaises(ValueError):
+            dDtoI1 = [-0.2] + [0.5] * 30
+
+            model.check_new_icu_format(
+                new_infections, pDtoI, dDtoI1)
+
+        with self.assertRaises(ValueError):
+            dDtoI1 = [0.5] * 30 + [1.5]
+
+            model.check_new_icu_format(
+                new_infections, pDtoI, dDtoI1)
 
     def test_new_deaths(self):
         model = em.WarwickSEIRModel()
@@ -1084,10 +1228,18 @@ class TestWarwickSEIRModel(unittest.TestCase):
         ICs = em.WarwickICs(
             model=model,
             susceptibles_IC=[[15, 6], [7, 4]],
-            exposed_f_IC=[[0, 0], [0, 0]],
-            exposed_sd_IC=[[0, 0], [0, 0]],
-            exposed_su_IC=[[0, 0], [0, 0]],
-            exposed_q_IC=[[0, 0], [0, 0]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
             detected_f_IC=[[0, 0], [0, 0]],
             detected_qf_IC=[[0, 0], [0, 0]],
             detected_sd_IC=[[0, 0], [0, 0]],
@@ -1131,41 +1283,441 @@ class TestWarwickSEIRModel(unittest.TestCase):
             simulation_parameters=simulation_parameters
         )
 
-        output = model.simulate(parameters)
+        pDtoH = [1, 1]
+        dDtoH = [1] * 30
+
+        pHtoDeath = [1, 1]
+        dHtoDeath = [1] * 30
+
+        new_infections = model.new_infections(
+            model.simulate(parameters))
+
+        new_hospitalisations = model.new_hospitalisations(
+            new_infections, pDtoH, dDtoH)
 
         npt.assert_array_equal(
-            model.new_hospitalisations(new_infections, pDtoH, dDtoH),
-            np.array([[0, 0], [0, 0]]))
-
-        npt.assert_array_equal(
-            model.new_deaths(output),
+            model.new_deaths(
+                new_hospitalisations, pHtoDeath, dHtoDeath),
             np.array([[0, 0], [0, 0]]))
 
         with self.assertRaises(ValueError):
-            output1 = [5, 6]
-            output1.extend([0] * 28)
-            output1 = np.array(output1)
-            model.new_deaths(output1)
+            new_hospitalisations1 = np.array([0, 0])
+
+            model.check_new_deaths_format(
+                new_hospitalisations1, pHtoDeath, dHtoDeath)
 
         with self.assertRaises(ValueError):
-            output1 = [5, 6]
-            output1.extend([0] * 26)
-            output1 = np.array([output1, output1])
-            model.new_deaths(output1)
+            new_hospitalisations1 = np.array([[0, 0], [0, 0], [0, 0]])
+
+            model.check_new_deaths_format(
+                new_hospitalisations1, pHtoDeath, dHtoDeath)
 
         with self.assertRaises(ValueError):
-            output1 = [5, 6]
-            output1.extend([0] * 28)
-            output1 = np.array([output1, output1, output1])
-            model.new_deaths(output1)
+            new_hospitalisations1 = np.array([[0, 0, 0], [0, 0, 0]])
+
+            model.check_new_deaths_format(
+                new_hospitalisations1, pHtoDeath, dHtoDeath)
 
         with self.assertRaises(TypeError):
-            output1 = ['5', 6]
-            output1.extend([0] * 28)
-            output2 = [5, 6, '0']
-            output2.extend([0] * 27)
-            output1 = np.array([output1, output2])
-            model.new_deaths(output1)
+            new_hospitalisations1 = np.array([[0, 0], ['0', 0]])
+
+            model.check_new_deaths_format(
+                new_hospitalisations1, pHtoDeath, dHtoDeath)
+
+        with self.assertRaises(ValueError):
+            pHtoDeath1 = {'0.9': 0}
+
+            model.check_new_deaths_format(
+                new_hospitalisations, pHtoDeath1, dHtoDeath)
+
+        with self.assertRaises(ValueError):
+            pHtoDeath1 = [1, 1, 1]
+
+            model.check_new_deaths_format(
+                new_hospitalisations, pHtoDeath1, dHtoDeath)
+
+        with self.assertRaises(TypeError):
+            pHtoDeath1 = [1, '1']
+
+            model.check_new_deaths_format(
+                new_hospitalisations, pHtoDeath1, dHtoDeath)
+
+        with self.assertRaises(ValueError):
+            pHtoDeath1 = [-0.2, 0.5]
+
+            model.check_new_deaths_format(
+                new_hospitalisations, pHtoDeath1, dHtoDeath)
+
+        with self.assertRaises(ValueError):
+            pHtoDeath1 = [0.5, 1.5]
+
+            model.check_new_deaths_format(
+                new_hospitalisations, pHtoDeath1, dHtoDeath)
+
+        with self.assertRaises(ValueError):
+            dHtoDeath1 = {'0.9': 0}
+
+            model.check_new_deaths_format(
+                new_hospitalisations, pHtoDeath, dHtoDeath1)
+
+        with self.assertRaises(ValueError):
+            dHtoDeath1 = [1, 1, 1]
+
+            model.check_new_deaths_format(
+                new_hospitalisations, pHtoDeath, dHtoDeath1)
+
+        with self.assertRaises(TypeError):
+            dHtoDeath1 = [1, '1'] * 17
+
+            model.check_new_deaths_format(
+                new_hospitalisations, pHtoDeath, dHtoDeath1)
+
+        with self.assertRaises(ValueError):
+            dHtoDeath1 = [-0.2] + [0.5] * 30
+
+            model.check_new_deaths_format(
+                new_hospitalisations, pHtoDeath, dHtoDeath1)
+
+        with self.assertRaises(ValueError):
+            dHtoDeath1 = [0.5] * 30 + [1.5]
+
+            model.check_new_deaths_format(
+                new_hospitalisations, pHtoDeath, dHtoDeath1)
+
+    def test_new_hospital_beds(self):
+        model = em.WarwickSEIRModel()
+
+        # Populate the model
+        regions = ['London', 'Cornwall']
+        age_groups = ['0-10', '10-25']
+
+        # Initial state of the system
+        house_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+        house_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
+
+        school_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+        school_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
+
+        work_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+        work_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
+
+        other_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+        other_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
+
+        house_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+        house_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+        house_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+        house_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2],
+                                                       [0.29, 4.6]])
+
+        school_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+        school_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+        school_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+        school_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2],
+                                                        [0.29, 4.6]])
+
+        work_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+        work_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+        work_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+        work_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2], [0.29, 4.6]])
+
+        other_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+        other_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+        other_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+        other_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2],
+                                                       [0.29, 4.6]])
+
+        house_contacts_0 = em.ContactMatrix(
+            age_groups, house_contact_data_matrix_0)
+        house_contacts_1 = em.ContactMatrix(
+            age_groups, house_contact_data_matrix_1)
+        house_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, house_region_data_matrix_0_0)
+        house_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, house_region_data_matrix_0_1)
+        house_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, house_region_data_matrix_1_0)
+        house_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, house_region_data_matrix_1_1)
+
+        school_contacts_0 = em.ContactMatrix(
+            age_groups, school_contact_data_matrix_0)
+        school_contacts_1 = em.ContactMatrix(
+            age_groups, school_contact_data_matrix_1)
+        school_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, school_region_data_matrix_0_0)
+        school_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, school_region_data_matrix_0_1)
+        school_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, school_region_data_matrix_1_0)
+        school_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, school_region_data_matrix_1_1)
+
+        work_contacts_0 = em.ContactMatrix(
+            age_groups, work_contact_data_matrix_0)
+        work_contacts_1 = em.ContactMatrix(
+            age_groups, work_contact_data_matrix_1)
+        work_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, work_region_data_matrix_0_0)
+        work_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, work_region_data_matrix_0_1)
+        work_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, work_region_data_matrix_1_0)
+        work_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, work_region_data_matrix_1_1)
+
+        other_contacts_0 = em.ContactMatrix(
+            age_groups, other_contact_data_matrix_0)
+        other_contacts_1 = em.ContactMatrix(
+            age_groups, other_contact_data_matrix_1)
+        other_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, other_region_data_matrix_0_0)
+        other_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, other_region_data_matrix_0_1)
+        other_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, other_region_data_matrix_1_0)
+        other_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, other_region_data_matrix_1_1)
+
+        # Matrices contact
+        house_matrices_contact = [house_contacts_0, house_contacts_1]
+        school_matrices_contact = [school_contacts_0, school_contacts_1]
+        work_matrices_contact = [work_contacts_0, work_contacts_1]
+        other_matrices_contact = [other_contacts_0, other_contacts_1]
+        time_changes_contact = [1, 2]
+
+        house_matrices_region = [
+            [house_regional_0_0, house_regional_0_1],
+            [house_regional_1_0, house_regional_1_1]]
+        school_matrices_region = [
+            [school_regional_0_0, school_regional_0_1],
+            [school_regional_1_0, school_regional_1_1]]
+        work_matrices_region = [
+            [work_regional_0_0, work_regional_0_1],
+            [work_regional_1_0, work_regional_1_1]]
+        other_matrices_region = [
+            [other_regional_0_0, other_regional_0_1],
+            [other_regional_1_0, other_regional_1_1]]
+        time_changes_region = [1, 14]
+
+        model.set_regions(regions)
+        model.set_age_groups(age_groups)
+        model.read_contact_data(
+            house_matrices_contact, school_matrices_contact,
+            work_matrices_contact, other_matrices_contact,
+            time_changes_contact)
+        model.read_regional_data(
+            house_matrices_region, school_matrices_region,
+            work_matrices_region, other_matrices_region,
+            time_changes_region)
+
+        # Set regional and time dependent parameters
+        regional_parameters = em.WarwickRegParameters(
+            model=model,
+            region_index=2,
+            H=[0.8, 0.8]
+        )
+
+        # Set ICs parameters
+        ICs = em.WarwickICs(
+            model=model,
+            susceptibles_IC=[[15, 6], [7, 4]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
+            detected_f_IC=[[0, 0], [0, 0]],
+            detected_qf_IC=[[0, 0], [0, 0]],
+            detected_sd_IC=[[0, 0], [0, 0]],
+            detected_su_IC=[[0, 0], [0, 0]],
+            detected_qs_IC=[[0, 0], [0, 0]],
+            undetected_f_IC=[[0, 0], [0, 0]],
+            undetected_s_IC=[[0, 0], [0, 0]],
+            undetected_q_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
+        )
+
+        # Set disease-specific parameters
+        disease_parameters = em.WarwickDiseaseParameters(
+            model=model,
+            tau=0.4,
+            d=0.4 * np.ones(len(age_groups))
+        )
+
+        # Set transmission parameters
+        transmission_parameters = em.WarwickTransmission(
+            model=model,
+            epsilon=0.5,
+            gamma=1,
+            sigma=0.5 * np.ones(len(age_groups))
+        )
+
+        # Set other simulation parameters
+        simulation_parameters = em.WarwickSimParameters(
+            model=model,
+            method='RK45',
+            times=[1, 2]
+        )
+
+        # Set all parameters in the controller
+        parameters = em.WarwickParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            transmission_parameters=transmission_parameters,
+            simulation_parameters=simulation_parameters
+        )
+
+        pDtoH = [1, 1]
+        dDtoH = [1] * 30
+
+        pDtoI = [1, 1]
+        dDtoI = [1] * 30
+
+        tH = 1/30 * np.ones(30)
+        tItoH = 1/30 * np.ones(30)
+
+        new_infections = model.new_infections(
+            model.simulate(parameters))
+
+        new_hospitalisations = model.new_hospitalisations(
+            new_infections, pDtoH, dDtoH)
+
+        new_icu = model.new_icu(new_infections, pDtoI, dDtoI)
+
+        npt.assert_array_equal(
+            model.new_hospital_beds(
+                new_hospitalisations, new_icu, tH, tItoH),
+            np.array([[0, 0], [0, 0]]))
+
+        with self.assertRaises(ValueError):
+            new_hospitalisations1 = np.array([0, 0])
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations1, new_icu, tH, tItoH)
+
+        with self.assertRaises(ValueError):
+            new_hospitalisations1 = np.array([[0, 0], [0, 0], [0, 0]])
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations1, new_icu, tH, tItoH)
+
+        with self.assertRaises(ValueError):
+            new_hospitalisations1 = np.array([[0, 0, 0], [0, 0, 0]])
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations1, new_icu, tH, tItoH)
+
+        with self.assertRaises(TypeError):
+            new_hospitalisations1 = np.array([[0, 0], ['0', 0]])
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations1, new_icu, tH, tItoH)
+
+        with self.assertRaises(ValueError):
+            new_icu1 = np.array([0, 0])
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu1, tH, tItoH)
+
+        with self.assertRaises(ValueError):
+            new_icu1 = np.array([[0, 0], [0, 0], [0, 0]])
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu1, tH, tItoH)
+
+        with self.assertRaises(ValueError):
+            new_icu1 = np.array([[0, 0, 0], [0, 0, 0]])
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu1, tH, tItoH)
+
+        with self.assertRaises(TypeError):
+            new_icu1 = np.array([[0, 0], ['0', 0]])
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu1, tH, tItoH)
+
+        with self.assertRaises(ValueError):
+            tH1 = {'0.9': 0}
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH1, tItoH)
+
+        with self.assertRaises(ValueError):
+            tH1 = [1, 1, 1]
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH1, tItoH)
+
+        with self.assertRaises(ValueError):
+            tH1 = [1] * 30
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH1, tItoH)
+
+        with self.assertRaises(TypeError):
+            tH1 = ['1'] * 30
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH1, tItoH)
+
+        with self.assertRaises(ValueError):
+            tH1 = ([-0.02] + [0.02] * 51)
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH1, tItoH)
+
+        with self.assertRaises(ValueError):
+            tH1 = [1.1, -0.1] + [0] * 50
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH1, tItoH)
+
+        with self.assertRaises(ValueError):
+            tItoH1 = {'0.9': 0}
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH, tItoH1)
+
+        with self.assertRaises(ValueError):
+            tItoH1 = [1, 1, 1]
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH, tItoH1)
+
+        with self.assertRaises(ValueError):
+            tItoH1 = [1] * 30
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH, tItoH1)
+
+        with self.assertRaises(TypeError):
+            tItoH1 = ['1'] * 30
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH, tItoH1)
+
+        with self.assertRaises(ValueError):
+            tItoH1 = [-0.02] + [0.02] * 51
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH, tItoH1)
+
+        with self.assertRaises(ValueError):
+            tItoH1 = [1.1, -0.1] + [0] * 50
+
+            model.check_new_hospital_beds_format(
+                new_hospitalisations, new_icu, tH, tItoH1)
 
     def test_loglik_deaths(self):
         model = em.WarwickSEIRModel()
@@ -1175,120 +1727,205 @@ class TestWarwickSEIRModel(unittest.TestCase):
         age_groups = ['0-10', '10-25']
 
         # Initial state of the system
-        contact_data_matrix_0 = np.array([[10, 5.2], [0, 3]])
-        contact_data_matrix_1 = np.array([[1, 0], [0, 3]])
+        house_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+        house_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
 
-        region_data_matrix_0_0 = np.array([[1, 10], [1, 6]])
-        region_data_matrix_0_1 = np.array([[0.5, 3], [0.3, 3]])
-        region_data_matrix_1_0 = np.array([[0.85, 1], [0.9, 6]])
-        region_data_matrix_1_1 = np.array([[0.5, 0.2], [0.29, 4.6]])
+        school_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+        school_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
 
-        contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
-        contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
-        regional_0_0 = em.RegionMatrix(
-            regions[0], age_groups, region_data_matrix_0_0)
-        regional_0_1 = em.RegionMatrix(
-            regions[1], age_groups, region_data_matrix_0_1)
-        regional_1_0 = em.RegionMatrix(
-            regions[0], age_groups, region_data_matrix_1_0)
-        regional_1_1 = em.RegionMatrix(
-            regions[1], age_groups, region_data_matrix_1_1)
+        work_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+        work_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
+
+        other_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+        other_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
+
+        house_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+        house_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+        house_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+        house_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2],
+                                                       [0.29, 4.6]])
+
+        school_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+        school_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+        school_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+        school_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2],
+                                                        [0.29, 4.6]])
+
+        work_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+        work_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+        work_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+        work_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2], [0.29, 4.6]])
+
+        other_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+        other_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+        other_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+        other_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2],
+                                                       [0.29, 4.6]])
+
+        house_contacts_0 = em.ContactMatrix(
+            age_groups, house_contact_data_matrix_0)
+        house_contacts_1 = em.ContactMatrix(
+            age_groups, house_contact_data_matrix_1)
+        house_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, house_region_data_matrix_0_0)
+        house_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, house_region_data_matrix_0_1)
+        house_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, house_region_data_matrix_1_0)
+        house_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, house_region_data_matrix_1_1)
+
+        school_contacts_0 = em.ContactMatrix(
+            age_groups, school_contact_data_matrix_0)
+        school_contacts_1 = em.ContactMatrix(
+            age_groups, school_contact_data_matrix_1)
+        school_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, school_region_data_matrix_0_0)
+        school_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, school_region_data_matrix_0_1)
+        school_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, school_region_data_matrix_1_0)
+        school_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, school_region_data_matrix_1_1)
+
+        work_contacts_0 = em.ContactMatrix(
+            age_groups, work_contact_data_matrix_0)
+        work_contacts_1 = em.ContactMatrix(
+            age_groups, work_contact_data_matrix_1)
+        work_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, work_region_data_matrix_0_0)
+        work_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, work_region_data_matrix_0_1)
+        work_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, work_region_data_matrix_1_0)
+        work_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, work_region_data_matrix_1_1)
+
+        other_contacts_0 = em.ContactMatrix(
+            age_groups, other_contact_data_matrix_0)
+        other_contacts_1 = em.ContactMatrix(
+            age_groups, other_contact_data_matrix_1)
+        other_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, other_region_data_matrix_0_0)
+        other_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, other_region_data_matrix_0_1)
+        other_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, other_region_data_matrix_1_0)
+        other_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, other_region_data_matrix_1_1)
 
         # Matrices contact
-        matrices_contact = [contacts_0, contacts_1]
-        time_changes_contact = [1, 14]
-        matrices_region = [
-            [regional_0_0, regional_0_1],
-            [regional_1_0, regional_1_1]]
+        house_matrices_contact = [house_contacts_0, house_contacts_1]
+        school_matrices_contact = [school_contacts_0, school_contacts_1]
+        work_matrices_contact = [work_contacts_0, work_contacts_1]
+        other_matrices_contact = [other_contacts_0, other_contacts_1]
+        time_changes_contact = [1, 2]
+
+        house_matrices_region = [
+            [house_regional_0_0, house_regional_0_1],
+            [house_regional_1_0, house_regional_1_1]]
+        school_matrices_region = [
+            [school_regional_0_0, school_regional_0_1],
+            [school_regional_1_0, school_regional_1_1]]
+        work_matrices_region = [
+            [work_regional_0_0, work_regional_0_1],
+            [work_regional_1_0, work_regional_1_1]]
+        other_matrices_region = [
+            [other_regional_0_0, other_regional_0_1],
+            [other_regional_1_0, other_regional_1_1]]
         time_changes_region = [1, 14]
-
-        # NPIs data
-        max_levels_npi = [3, 3, 2, 4, 2, 3, 2, 4, 2]
-        targeted_npi = [True, True, True, True, True, True, True, False, True]
-        general_npi = [
-            [True, False, True, True, False, False, False, False, False],
-            [True, False, True, True, True, True, False, False, False]]
-        time_changes_flag = [1, 12]
-
-        reg_levels_npi = [
-            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
-            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]]]
-        time_changes_npi = [1, 14]
 
         model.set_regions(regions)
         model.set_age_groups(age_groups)
-        model.read_contact_data(matrices_contact, time_changes_contact)
-        model.read_regional_data(matrices_region, time_changes_region)
-        model.read_npis_data(
-            max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
-            time_changes_npi, time_changes_flag)
+        model.read_contact_data(
+            house_matrices_contact, school_matrices_contact,
+            work_matrices_contact, other_matrices_contact,
+            time_changes_contact)
+        model.read_regional_data(
+            house_matrices_region, school_matrices_region,
+            work_matrices_region, other_matrices_region,
+            time_changes_region)
+
+        # Set regional and time dependent parameters
+        regional_parameters = em.WarwickRegParameters(
+            model=model,
+            region_index=2,
+            H=[0.8, 0.8]
+        )
 
         # Set ICs parameters
-        ICs = em.RocheICs(
+        ICs = em.WarwickICs(
             model=model,
-            susceptibles_IC=[[5, 6], [7, 4]],
-            exposed_IC=[[0, 0], [0, 0]],
-            infectives_pre_IC=[[0, 0], [0, 0]],
-            infectives_asym_IC=[[0, 0], [0, 0]],
-            infectives_sym_IC=[[0, 0], [0, 0]],
-            infectives_pre_ss_IC=[[0, 0], [0, 0]],
-            infectives_asym_ss_IC=[[0, 0], [0, 0]],
-            infectives_sym_ss_IC=[[0, 0], [0, 0]],
-            infectives_q_IC=[[0, 0], [0, 0]],
-            recovered_IC=[[0, 0], [0, 0]],
-            recovered_asym_IC=[[0, 0], [0, 0]],
-            dead_IC=[[0, 0], [0, 0]]
+            susceptibles_IC=[[15, 6], [7, 4]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
+            detected_f_IC=[[0, 0], [0, 0]],
+            detected_qf_IC=[[0, 0], [0, 0]],
+            detected_sd_IC=[[0, 0], [0, 0]],
+            detected_su_IC=[[0, 0], [0, 0]],
+            detected_qs_IC=[[0, 0], [0, 0]],
+            undetected_f_IC=[[0, 0], [0, 0]],
+            undetected_s_IC=[[0, 0], [0, 0]],
+            undetected_q_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
         )
 
-        # Set average times in compartments
-        compartment_times = em.RocheCompartmentTimes(
+        # Set disease-specific parameters
+        disease_parameters = em.WarwickDiseaseParameters(
             model=model,
-            k=3.43,
-            kS=2.57,
-            kQ=1,
-            kR=9 * np.ones(len(model.age_groups)),
-            kRI=10
-        )
-
-        # Set proportion of asymptomatic, super-spreader and dead cases
-        proportion_parameters = em.RocheProportions(
-            model=model,
-            Pa=0.658 * np.ones(len(age_groups)),
-            Pss=0.0955,
-            Pd=1
+            tau=0.4,
+            d=0.4 * np.ones(len(age_groups))
         )
 
         # Set transmission parameters
-        transmission_parameters = em.RocheTransmission(
+        transmission_parameters = em.WarwickTransmission(
             model=model,
-            beta_min=0.228,
-            beta_max=0.927,
-            bss=3.11,
+            epsilon=0.5,
             gamma=1,
-            s50=35.3
+            sigma=0.5 * np.ones(len(age_groups))
         )
 
         # Set other simulation parameters
-        simulation_parameters = em.RocheSimParameters(
+        simulation_parameters = em.WarwickSimParameters(
             model=model,
-            region_index=1,
             method='RK45',
-            times=np.arange(1, 11).tolist()
+            times=np.arange(1, 11).tolist(),
         )
 
         # Set all parameters in the controller
-        parameters = em.RocheParametersController(
+        parameters = em.WarwickParametersController(
             model=model,
+            regional_parameters=regional_parameters,
             ICs=ICs,
-            compartment_times=compartment_times,
-            proportion_parameters=proportion_parameters,
+            disease_parameters=disease_parameters,
             transmission_parameters=transmission_parameters,
             simulation_parameters=simulation_parameters
         )
 
-        output = model.simulate(parameters)
+        pDtoH = [1, 1]
+        dDtoH = [1] * 30
 
-        new_deaths = model.new_deaths(output)
+        pHtoDeath = [1, 1]
+        dHtoDeath = [1] * 30
+
+        new_infections = model.new_infections(
+            model.simulate(parameters))
+
+        new_hospitalisations = model.new_hospitalisations(
+            new_infections, pDtoH, dDtoH)
+
+        new_deaths = model.new_deaths(
+            new_hospitalisations, pHtoDeath, dHtoDeath)
 
         obs_death = [10] * model._num_ages
 
@@ -1469,10 +2106,18 @@ class TestWarwickSEIRModel(unittest.TestCase):
         ICs = em.WarwickICs(
             model=model,
             susceptibles_IC=[[15, 6], [7, 4]],
-            exposed_f_IC=[[0, 0], [0, 0]],
-            exposed_sd_IC=[[0, 0], [0, 0]],
-            exposed_su_IC=[[0, 0], [0, 0]],
-            exposed_q_IC=[[0, 0], [0, 0]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
             detected_f_IC=[[0, 0], [0, 0]],
             detected_qf_IC=[[0, 0], [0, 0]],
             detected_sd_IC=[[0, 0], [0, 0]],
@@ -1516,9 +2161,20 @@ class TestWarwickSEIRModel(unittest.TestCase):
             simulation_parameters=simulation_parameters
         )
 
-        output = model.simulate(parameters)
+        pDtoH = [1, 1]
+        dDtoH = [1] * 30
 
-        new_deaths = model.new_deaths(output)
+        pHtoDeath = [1, 1]
+        dHtoDeath = [1] * 30
+
+        new_infections = model.new_infections(
+            model.simulate(parameters))
+
+        new_hospitalisations = model.new_hospitalisations(
+            new_infections, pDtoH, dDtoH)
+
+        new_deaths = model.new_deaths(
+            new_hospitalisations, pHtoDeath, dHtoDeath)
 
         with self.assertRaises(TypeError):
             model.check_death_format(new_deaths, '10**(-5)')
@@ -1559,120 +2215,205 @@ class TestWarwickSEIRModel(unittest.TestCase):
         age_groups = ['0-10', '10-25']
 
         # Initial state of the system
-        contact_data_matrix_0 = np.array([[10, 5.2], [0, 3]])
-        contact_data_matrix_1 = np.array([[1, 0], [0, 3]])
+        house_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+        house_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
 
-        region_data_matrix_0_0 = np.array([[1, 10], [1, 6]])
-        region_data_matrix_0_1 = np.array([[0.5, 3], [0.3, 3]])
-        region_data_matrix_1_0 = np.array([[0.85, 1], [0.9, 6]])
-        region_data_matrix_1_1 = np.array([[0.5, 0.2], [0.29, 4.6]])
+        school_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+        school_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
 
-        contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
-        contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
-        regional_0_0 = em.RegionMatrix(
-            regions[0], age_groups, region_data_matrix_0_0)
-        regional_0_1 = em.RegionMatrix(
-            regions[1], age_groups, region_data_matrix_0_1)
-        regional_1_0 = em.RegionMatrix(
-            regions[0], age_groups, region_data_matrix_1_0)
-        regional_1_1 = em.RegionMatrix(
-            regions[1], age_groups, region_data_matrix_1_1)
+        work_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+        work_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
+
+        other_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+        other_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
+
+        house_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+        house_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+        house_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+        house_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2],
+                                                       [0.29, 4.6]])
+
+        school_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+        school_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+        school_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+        school_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2],
+                                                        [0.29, 4.6]])
+
+        work_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+        work_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+        work_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+        work_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2], [0.29, 4.6]])
+
+        other_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+        other_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+        other_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+        other_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2],
+                                                       [0.29, 4.6]])
+
+        house_contacts_0 = em.ContactMatrix(
+            age_groups, house_contact_data_matrix_0)
+        house_contacts_1 = em.ContactMatrix(
+            age_groups, house_contact_data_matrix_1)
+        house_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, house_region_data_matrix_0_0)
+        house_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, house_region_data_matrix_0_1)
+        house_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, house_region_data_matrix_1_0)
+        house_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, house_region_data_matrix_1_1)
+
+        school_contacts_0 = em.ContactMatrix(
+            age_groups, school_contact_data_matrix_0)
+        school_contacts_1 = em.ContactMatrix(
+            age_groups, school_contact_data_matrix_1)
+        school_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, school_region_data_matrix_0_0)
+        school_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, school_region_data_matrix_0_1)
+        school_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, school_region_data_matrix_1_0)
+        school_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, school_region_data_matrix_1_1)
+
+        work_contacts_0 = em.ContactMatrix(
+            age_groups, work_contact_data_matrix_0)
+        work_contacts_1 = em.ContactMatrix(
+            age_groups, work_contact_data_matrix_1)
+        work_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, work_region_data_matrix_0_0)
+        work_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, work_region_data_matrix_0_1)
+        work_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, work_region_data_matrix_1_0)
+        work_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, work_region_data_matrix_1_1)
+
+        other_contacts_0 = em.ContactMatrix(
+            age_groups, other_contact_data_matrix_0)
+        other_contacts_1 = em.ContactMatrix(
+            age_groups, other_contact_data_matrix_1)
+        other_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, other_region_data_matrix_0_0)
+        other_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, other_region_data_matrix_0_1)
+        other_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, other_region_data_matrix_1_0)
+        other_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, other_region_data_matrix_1_1)
 
         # Matrices contact
-        matrices_contact = [contacts_0, contacts_1]
-        time_changes_contact = [1, 14]
-        matrices_region = [
-            [regional_0_0, regional_0_1],
-            [regional_1_0, regional_1_1]]
+        house_matrices_contact = [house_contacts_0, house_contacts_1]
+        school_matrices_contact = [school_contacts_0, school_contacts_1]
+        work_matrices_contact = [work_contacts_0, work_contacts_1]
+        other_matrices_contact = [other_contacts_0, other_contacts_1]
+        time_changes_contact = [1, 2]
+
+        house_matrices_region = [
+            [house_regional_0_0, house_regional_0_1],
+            [house_regional_1_0, house_regional_1_1]]
+        school_matrices_region = [
+            [school_regional_0_0, school_regional_0_1],
+            [school_regional_1_0, school_regional_1_1]]
+        work_matrices_region = [
+            [work_regional_0_0, work_regional_0_1],
+            [work_regional_1_0, work_regional_1_1]]
+        other_matrices_region = [
+            [other_regional_0_0, other_regional_0_1],
+            [other_regional_1_0, other_regional_1_1]]
         time_changes_region = [1, 14]
-
-        # NPIs data
-        max_levels_npi = [3, 3, 2, 4, 2, 3, 2, 4, 2]
-        targeted_npi = [True, True, True, True, True, True, True, False, True]
-        general_npi = [
-            [True, False, True, True, False, False, False, False, False],
-            [True, False, True, True, True, True, False, False, False]]
-        time_changes_flag = [1, 12]
-
-        reg_levels_npi = [
-            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
-            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]]]
-        time_changes_npi = [1, 14]
 
         model.set_regions(regions)
         model.set_age_groups(age_groups)
-        model.read_contact_data(matrices_contact, time_changes_contact)
-        model.read_regional_data(matrices_region, time_changes_region)
-        model.read_npis_data(
-            max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
-            time_changes_npi, time_changes_flag)
+        model.read_contact_data(
+            house_matrices_contact, school_matrices_contact,
+            work_matrices_contact, other_matrices_contact,
+            time_changes_contact)
+        model.read_regional_data(
+            house_matrices_region, school_matrices_region,
+            work_matrices_region, other_matrices_region,
+            time_changes_region)
+
+        # Set regional and time dependent parameters
+        regional_parameters = em.WarwickRegParameters(
+            model=model,
+            region_index=2,
+            H=[0.8, 0.8]
+        )
 
         # Set ICs parameters
-        ICs = em.RocheICs(
+        ICs = em.WarwickICs(
             model=model,
-            susceptibles_IC=[[5, 6], [7, 4]],
-            exposed_IC=[[0, 0], [0, 0]],
-            infectives_pre_IC=[[0.1, 0.2], [0, 0]],
-            infectives_asym_IC=[[0, 0], [0, 0]],
-            infectives_sym_IC=[[0, 0], [0, 0]],
-            infectives_pre_ss_IC=[[0, 0], [0, 0]],
-            infectives_asym_ss_IC=[[0, 0], [0, 0]],
-            infectives_sym_ss_IC=[[0, 0], [0, 0]],
-            infectives_q_IC=[[0, 0], [0, 0]],
-            recovered_IC=[[0, 0], [0, 0]],
-            recovered_asym_IC=[[0, 0], [0, 0]],
-            dead_IC=[[0, 0], [0, 0]]
+            susceptibles_IC=[[15, 6], [7, 4]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
+            detected_f_IC=[[0, 0], [0, 0]],
+            detected_qf_IC=[[0, 0], [0, 0]],
+            detected_sd_IC=[[0, 0], [0, 0]],
+            detected_su_IC=[[0, 0], [0, 0]],
+            detected_qs_IC=[[0, 0], [0, 0]],
+            undetected_f_IC=[[0, 0], [0, 0]],
+            undetected_s_IC=[[0, 0], [0, 0]],
+            undetected_q_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
         )
 
-        # Set average times in compartments
-        compartment_times = em.RocheCompartmentTimes(
+        # Set disease-specific parameters
+        disease_parameters = em.WarwickDiseaseParameters(
             model=model,
-            k=3.43,
-            kS=2.57,
-            kQ=1,
-            kR=9 * np.ones(len(model.age_groups)),
-            kRI=10
-        )
-
-        # Set proportion of asymptomatic, super-spreader and dead cases
-        proportion_parameters = em.RocheProportions(
-            model=model,
-            Pa=0.658 * np.ones(len(age_groups)),
-            Pss=0.0955,
-            Pd=0.05
+            tau=0.4,
+            d=0.4 * np.ones(len(age_groups))
         )
 
         # Set transmission parameters
-        transmission_parameters = em.RocheTransmission(
+        transmission_parameters = em.WarwickTransmission(
             model=model,
-            beta_min=0.228,
-            beta_max=0.927,
-            bss=3.11,
+            epsilon=0.5,
             gamma=1,
-            s50=35.3
+            sigma=0.5 * np.ones(len(age_groups))
         )
 
         # Set other simulation parameters
-        simulation_parameters = em.RocheSimParameters(
+        simulation_parameters = em.WarwickSimParameters(
             model=model,
-            region_index=1,
             method='RK45',
-            times=np.arange(1, 61).tolist()
+            times=np.arange(1, 61).tolist(),
         )
 
         # Set all parameters in the controller
-        parameters = em.RocheParametersController(
+        parameters = em.WarwickParametersController(
             model=model,
+            regional_parameters=regional_parameters,
             ICs=ICs,
-            compartment_times=compartment_times,
-            proportion_parameters=proportion_parameters,
+            disease_parameters=disease_parameters,
             transmission_parameters=transmission_parameters,
             simulation_parameters=simulation_parameters
         )
 
-        output = model.simulate(parameters)
+        pDtoH = [1, 1]
+        dDtoH = [1] * 30
 
-        new_deaths = model.new_deaths(output)
+        pHtoDeath = [1, 1]
+        dHtoDeath = [1] * 30
+
+        new_infections = model.new_infections(
+            model.simulate(parameters))
+
+        new_hospitalisations = model.new_hospitalisations(
+            new_infections, pDtoH, dDtoH)
+
+        new_deaths = model.new_deaths(
+            new_hospitalisations, pHtoDeath, dHtoDeath)
 
         self.assertEqual(
             model.samples_deaths(new_deaths, 10**(-5), 41).shape,
@@ -1691,25 +2432,46 @@ class TestWarwickSEIRModel(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.samples_deaths(new_deaths, 10**(-5), 62)
 
-        parameters.ICs = em.RocheICs(
+        parameters.ICs = em.WarwickICs(
             model=model,
-            susceptibles_IC=[[5, 6], [7, 4]],
-            exposed_IC=[[0, 0], [0, 0]],
-            infectives_pre_IC=[[0, 0], [0, 0]],
-            infectives_asym_IC=[[0, 0], [0, 0]],
-            infectives_sym_IC=[[0, 0], [0, 0]],
-            infectives_pre_ss_IC=[[0, 0], [0, 0]],
-            infectives_asym_ss_IC=[[0, 0], [0, 0]],
-            infectives_sym_ss_IC=[[0, 0], [0, 0]],
-            infectives_q_IC=[[0, 0], [0, 0]],
-            recovered_IC=[[0, 0], [0, 0]],
-            recovered_asym_IC=[[0, 0], [0, 0]],
-            dead_IC=[[0, 0], [0, 0]]
+            susceptibles_IC=[[15, 6], [7, 4]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
+            detected_f_IC=[[0, 0], [0, 0]],
+            detected_qf_IC=[[0, 0], [0, 0]],
+            detected_sd_IC=[[0, 0], [0, 0]],
+            detected_su_IC=[[0, 0], [0, 0]],
+            detected_qs_IC=[[0, 0], [0, 0]],
+            undetected_f_IC=[[0, 0], [0, 0]],
+            undetected_s_IC=[[0, 0], [0, 0]],
+            undetected_q_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
         )
 
-        output = model.simulate(parameters)
+        pDtoH = [1, 1]
+        dDtoH = [1] * 30
 
-        new_deaths = model.new_deaths(output)
+        pHtoDeath = [1, 1]
+        dHtoDeath = [1] * 30
+
+        new_infections = model.new_infections(
+            model.simulate(parameters))
+
+        new_hospitalisations = model.new_hospitalisations(
+            new_infections, pDtoH, dDtoH)
+
+        new_deaths = model.new_deaths(
+            new_hospitalisations, pHtoDeath, dHtoDeath)
 
         self.assertEqual(
             model.samples_deaths(new_deaths, 10**(-5), 41).shape,
@@ -1873,10 +2635,18 @@ class TestWarwickSEIRModel(unittest.TestCase):
         ICs = em.WarwickICs(
             model=model,
             susceptibles_IC=[[15, 6], [7, 4]],
-            exposed_f_IC=[[0, 0], [0, 0]],
-            exposed_sd_IC=[[0, 0], [0, 0]],
-            exposed_su_IC=[[0, 0], [0, 0]],
-            exposed_q_IC=[[0, 0], [0, 0]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
             detected_f_IC=[[0, 0], [0, 0]],
             detected_qf_IC=[[0, 0], [0, 0]],
             detected_sd_IC=[[0, 0], [0, 0]],
@@ -1980,112 +2750,187 @@ class TestWarwickSEIRModel(unittest.TestCase):
         age_groups = ['0-10', '10-25']
 
         # Initial state of the system
-        contact_data_matrix_0 = np.array([[10, 5.2], [0, 3]])
-        contact_data_matrix_1 = np.array([[1, 0], [0, 3]])
+        house_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+        house_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
 
-        region_data_matrix_0_0 = np.array([[1, 10], [1, 6]])
-        region_data_matrix_0_1 = np.array([[0.5, 3], [0.3, 3]])
-        region_data_matrix_1_0 = np.array([[0.85, 1], [0.9, 6]])
-        region_data_matrix_1_1 = np.array([[0.5, 0.2], [0.29, 4.6]])
+        school_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+        school_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
 
-        contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
-        contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
-        regional_0_0 = em.RegionMatrix(
-            regions[0], age_groups, region_data_matrix_0_0)
-        regional_0_1 = em.RegionMatrix(
-            regions[1], age_groups, region_data_matrix_0_1)
-        regional_1_0 = em.RegionMatrix(
-            regions[0], age_groups, region_data_matrix_1_0)
-        regional_1_1 = em.RegionMatrix(
-            regions[1], age_groups, region_data_matrix_1_1)
+        work_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+        work_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
+
+        other_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+        other_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
+
+        house_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+        house_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+        house_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+        house_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2],
+                                                       [0.29, 4.6]])
+
+        school_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+        school_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+        school_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+        school_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2],
+                                                        [0.29, 4.6]])
+
+        work_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+        work_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+        work_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+        work_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2], [0.29, 4.6]])
+
+        other_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+        other_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+        other_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+        other_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2],
+                                                       [0.29, 4.6]])
+
+        house_contacts_0 = em.ContactMatrix(
+            age_groups, house_contact_data_matrix_0)
+        house_contacts_1 = em.ContactMatrix(
+            age_groups, house_contact_data_matrix_1)
+        house_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, house_region_data_matrix_0_0)
+        house_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, house_region_data_matrix_0_1)
+        house_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, house_region_data_matrix_1_0)
+        house_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, house_region_data_matrix_1_1)
+
+        school_contacts_0 = em.ContactMatrix(
+            age_groups, school_contact_data_matrix_0)
+        school_contacts_1 = em.ContactMatrix(
+            age_groups, school_contact_data_matrix_1)
+        school_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, school_region_data_matrix_0_0)
+        school_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, school_region_data_matrix_0_1)
+        school_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, school_region_data_matrix_1_0)
+        school_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, school_region_data_matrix_1_1)
+
+        work_contacts_0 = em.ContactMatrix(
+            age_groups, work_contact_data_matrix_0)
+        work_contacts_1 = em.ContactMatrix(
+            age_groups, work_contact_data_matrix_1)
+        work_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, work_region_data_matrix_0_0)
+        work_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, work_region_data_matrix_0_1)
+        work_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, work_region_data_matrix_1_0)
+        work_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, work_region_data_matrix_1_1)
+
+        other_contacts_0 = em.ContactMatrix(
+            age_groups, other_contact_data_matrix_0)
+        other_contacts_1 = em.ContactMatrix(
+            age_groups, other_contact_data_matrix_1)
+        other_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, other_region_data_matrix_0_0)
+        other_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, other_region_data_matrix_0_1)
+        other_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, other_region_data_matrix_1_0)
+        other_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, other_region_data_matrix_1_1)
 
         # Matrices contact
-        matrices_contact = [contacts_0, contacts_1]
-        time_changes_contact = [1, 14]
-        matrices_region = [
-            [regional_0_0, regional_0_1],
-            [regional_1_0, regional_1_1]]
-        time_changes_region = [1, 14]
+        house_matrices_contact = [house_contacts_0, house_contacts_1]
+        school_matrices_contact = [school_contacts_0, school_contacts_1]
+        work_matrices_contact = [work_contacts_0, work_contacts_1]
+        other_matrices_contact = [other_contacts_0, other_contacts_1]
+        time_changes_contact = [1, 2]
 
-        # NPIs data
-        max_levels_npi = [3, 3, 2, 4, 2, 3, 2, 4, 2]
-        targeted_npi = [True, True, True, True, True, True, True, False, True]
-        general_npi = [
-            [True, False, True, True, False, False, False, False, False],
-            [True, False, True, True, True, True, False, False, False]]
-        time_changes_flag = [1, 12]
-        reg_levels_npi = [
-            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
-            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]]]
-        time_changes_npi = [1, 14]
+        house_matrices_region = [
+            [house_regional_0_0, house_regional_0_1],
+            [house_regional_1_0, house_regional_1_1]]
+        school_matrices_region = [
+            [school_regional_0_0, school_regional_0_1],
+            [school_regional_1_0, school_regional_1_1]]
+        work_matrices_region = [
+            [work_regional_0_0, work_regional_0_1],
+            [work_regional_1_0, work_regional_1_1]]
+        other_matrices_region = [
+            [other_regional_0_0, other_regional_0_1],
+            [other_regional_1_0, other_regional_1_1]]
+        time_changes_region = [1, 14]
 
         model.set_regions(regions)
         model.set_age_groups(age_groups)
-        model.read_contact_data(matrices_contact, time_changes_contact)
-        model.read_regional_data(matrices_region, time_changes_region)
-        model.read_npis_data(
-            max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
-            time_changes_npi, time_changes_flag)
+        model.read_contact_data(
+            house_matrices_contact, school_matrices_contact,
+            work_matrices_contact, other_matrices_contact,
+            time_changes_contact)
+        model.read_regional_data(
+            house_matrices_region, school_matrices_region,
+            work_matrices_region, other_matrices_region,
+            time_changes_region)
+
+        # Set regional and time dependent parameters
+        regional_parameters = em.WarwickRegParameters(
+            model=model,
+            region_index=2,
+            H=[0.8, 0.8]
+        )
 
         # Set ICs parameters
-        ICs = em.RocheICs(
+        ICs = em.WarwickICs(
             model=model,
-            susceptibles_IC=[[5, 6], [7, 4]],
-            exposed_IC=[[0, 0], [0, 0]],
-            infectives_pre_IC=[[0, 0], [0, 0]],
-            infectives_asym_IC=[[0, 0], [0, 0]],
-            infectives_sym_IC=[[0, 0], [0, 0]],
-            infectives_pre_ss_IC=[[0, 0], [0, 0]],
-            infectives_asym_ss_IC=[[0, 0], [0, 0]],
-            infectives_sym_ss_IC=[[0, 0], [0, 0]],
-            infectives_q_IC=[[0, 0], [0, 0]],
-            recovered_IC=[[0, 0], [0, 0]],
-            recovered_asym_IC=[[0, 0], [0, 0]],
-            dead_IC=[[0, 0], [0, 0]]
+            susceptibles_IC=[[15, 6], [7, 4]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
+            detected_f_IC=[[0, 0], [0, 0]],
+            detected_qf_IC=[[0, 0], [0, 0]],
+            detected_sd_IC=[[0, 0], [0, 0]],
+            detected_su_IC=[[0, 0], [0, 0]],
+            detected_qs_IC=[[0, 0], [0, 0]],
+            undetected_f_IC=[[0, 0], [0, 0]],
+            undetected_s_IC=[[0, 0], [0, 0]],
+            undetected_q_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
         )
 
-        # Set average times in compartments
-        compartment_times = em.RocheCompartmentTimes(
+        # Set disease-specific parameters
+        disease_parameters = em.WarwickDiseaseParameters(
             model=model,
-            k=3.43,
-            kS=2.57,
-            kQ=1,
-            kR=9 * np.ones(len(model.age_groups)),
-            kRI=10
-        )
-
-        # Set proportion of asymptomatic, super-spreader and dead cases
-        proportion_parameters = em.RocheProportions(
-            model=model,
-            Pa=0.658 * np.ones(len(age_groups)),
-            Pss=0.0955,
-            Pd=0.05
+            tau=0.4,
+            d=0.4 * np.ones(len(age_groups))
         )
 
         # Set transmission parameters
-        transmission_parameters = em.RocheTransmission(
+        transmission_parameters = em.WarwickTransmission(
             model=model,
-            beta_min=0.228,
-            beta_max=0.927,
-            bss=3.11,
+            epsilon=0.5,
             gamma=1,
-            s50=35.3
+            sigma=0.5 * np.ones(len(age_groups))
         )
 
         # Set other simulation parameters
-        simulation_parameters = em.RocheSimParameters(
+        simulation_parameters = em.WarwickSimParameters(
             model=model,
-            region_index=1,
             method='RK45',
             times=[1, 2]
         )
 
         # Set all parameters in the controller
-        parameters = em.RocheParametersController(
+        parameters = em.WarwickParametersController(
             model=model,
+            regional_parameters=regional_parameters,
             ICs=ICs,
-            compartment_times=compartment_times,
-            proportion_parameters=proportion_parameters,
+            disease_parameters=disease_parameters,
             transmission_parameters=transmission_parameters,
             simulation_parameters=simulation_parameters
         )
@@ -2098,7 +2943,7 @@ class TestWarwickSEIRModel(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             output1 = [5, 6]
-            output1.extend([0] * 24)
+            output1.extend([0] * 44)
             output1 = np.array(output1)
 
             model.check_positives_format(
@@ -2106,7 +2951,7 @@ class TestWarwickSEIRModel(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             output1 = [5, 6]
-            output1.extend([0] * 22)
+            output1.extend([0] * 42)
             output1 = np.array([output1, output1])
 
             model.check_positives_format(
@@ -2114,7 +2959,7 @@ class TestWarwickSEIRModel(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             output1 = [5, 6]
-            output1.extend([0] * 24)
+            output1.extend([0] * 44)
             output1 = np.array([output1, output1, output1])
 
             model.check_positives_format(
@@ -2122,9 +2967,9 @@ class TestWarwickSEIRModel(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             output1 = ['5', 6]
-            output1.extend([0] * 24)
+            output1.extend([0] * 44)
             output2 = [5, 6, '0']
-            output2.extend([0] * 23)
+            output2.extend([0] * 43)
             output1 = np.array([output1, output2])
 
             model.check_positives_format(
@@ -2192,112 +3037,187 @@ class TestWarwickSEIRModel(unittest.TestCase):
         age_groups = ['0-10', '10-25']
 
         # Initial state of the system
-        contact_data_matrix_0 = np.array([[10, 5.2], [0, 3]])
-        contact_data_matrix_1 = np.array([[1, 0], [0, 3]])
+        house_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+        house_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
 
-        region_data_matrix_0_0 = np.array([[1, 10], [1, 6]])
-        region_data_matrix_0_1 = np.array([[0.5, 3], [0.3, 3]])
-        region_data_matrix_1_0 = np.array([[0.85, 1], [0.9, 6]])
-        region_data_matrix_1_1 = np.array([[0.5, 0.2], [0.29, 4.6]])
+        school_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+        school_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
 
-        contacts_0 = em.ContactMatrix(age_groups, contact_data_matrix_0)
-        contacts_1 = em.ContactMatrix(age_groups, contact_data_matrix_1)
-        regional_0_0 = em.RegionMatrix(
-            regions[0], age_groups, region_data_matrix_0_0)
-        regional_0_1 = em.RegionMatrix(
-            regions[1], age_groups, region_data_matrix_0_1)
-        regional_1_0 = em.RegionMatrix(
-            regions[0], age_groups, region_data_matrix_1_0)
-        regional_1_1 = em.RegionMatrix(
-            regions[1], age_groups, region_data_matrix_1_1)
+        work_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+        work_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
+
+        other_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+        other_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
+
+        house_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+        house_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+        house_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+        house_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2],
+                                                       [0.29, 4.6]])
+
+        school_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+        school_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+        school_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+        school_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2],
+                                                        [0.29, 4.6]])
+
+        work_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+        work_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+        work_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+        work_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2], [0.29, 4.6]])
+
+        other_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+        other_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+        other_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+        other_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2],
+                                                       [0.29, 4.6]])
+
+        house_contacts_0 = em.ContactMatrix(
+            age_groups, house_contact_data_matrix_0)
+        house_contacts_1 = em.ContactMatrix(
+            age_groups, house_contact_data_matrix_1)
+        house_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, house_region_data_matrix_0_0)
+        house_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, house_region_data_matrix_0_1)
+        house_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, house_region_data_matrix_1_0)
+        house_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, house_region_data_matrix_1_1)
+
+        school_contacts_0 = em.ContactMatrix(
+            age_groups, school_contact_data_matrix_0)
+        school_contacts_1 = em.ContactMatrix(
+            age_groups, school_contact_data_matrix_1)
+        school_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, school_region_data_matrix_0_0)
+        school_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, school_region_data_matrix_0_1)
+        school_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, school_region_data_matrix_1_0)
+        school_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, school_region_data_matrix_1_1)
+
+        work_contacts_0 = em.ContactMatrix(
+            age_groups, work_contact_data_matrix_0)
+        work_contacts_1 = em.ContactMatrix(
+            age_groups, work_contact_data_matrix_1)
+        work_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, work_region_data_matrix_0_0)
+        work_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, work_region_data_matrix_0_1)
+        work_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, work_region_data_matrix_1_0)
+        work_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, work_region_data_matrix_1_1)
+
+        other_contacts_0 = em.ContactMatrix(
+            age_groups, other_contact_data_matrix_0)
+        other_contacts_1 = em.ContactMatrix(
+            age_groups, other_contact_data_matrix_1)
+        other_regional_0_0 = em.RegionMatrix(
+            regions[0], age_groups, other_region_data_matrix_0_0)
+        other_regional_0_1 = em.RegionMatrix(
+            regions[1], age_groups, other_region_data_matrix_0_1)
+        other_regional_1_0 = em.RegionMatrix(
+            regions[0], age_groups, other_region_data_matrix_1_0)
+        other_regional_1_1 = em.RegionMatrix(
+            regions[1], age_groups, other_region_data_matrix_1_1)
 
         # Matrices contact
-        matrices_contact = [contacts_0, contacts_1]
-        time_changes_contact = [1, 14]
-        matrices_region = [
-            [regional_0_0, regional_0_1],
-            [regional_1_0, regional_1_1]]
-        time_changes_region = [1, 14]
+        house_matrices_contact = [house_contacts_0, house_contacts_1]
+        school_matrices_contact = [school_contacts_0, school_contacts_1]
+        work_matrices_contact = [work_contacts_0, work_contacts_1]
+        other_matrices_contact = [other_contacts_0, other_contacts_1]
+        time_changes_contact = [1, 2]
 
-        # NPIs data
-        max_levels_npi = [3, 3, 2, 4, 2, 3, 2, 4, 2]
-        targeted_npi = [True, True, True, True, True, True, True, False, True]
-        general_npi = [
-            [True, False, True, True, False, False, False, False, False],
-            [True, False, True, True, True, True, False, False, False]]
-        time_changes_flag = [1, 12]
-        reg_levels_npi = [
-            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]],
-            [[0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 2, 4, 2, 3, 2, 4, 2]]]
-        time_changes_npi = [1, 14]
+        house_matrices_region = [
+            [house_regional_0_0, house_regional_0_1],
+            [house_regional_1_0, house_regional_1_1]]
+        school_matrices_region = [
+            [school_regional_0_0, school_regional_0_1],
+            [school_regional_1_0, school_regional_1_1]]
+        work_matrices_region = [
+            [work_regional_0_0, work_regional_0_1],
+            [work_regional_1_0, work_regional_1_1]]
+        other_matrices_region = [
+            [other_regional_0_0, other_regional_0_1],
+            [other_regional_1_0, other_regional_1_1]]
+        time_changes_region = [1, 14]
 
         model.set_regions(regions)
         model.set_age_groups(age_groups)
-        model.read_contact_data(matrices_contact, time_changes_contact)
-        model.read_regional_data(matrices_region, time_changes_region)
-        model.read_npis_data(
-            max_levels_npi, targeted_npi, general_npi, reg_levels_npi,
-            time_changes_npi, time_changes_flag)
+        model.read_contact_data(
+            house_matrices_contact, school_matrices_contact,
+            work_matrices_contact, other_matrices_contact,
+            time_changes_contact)
+        model.read_regional_data(
+            house_matrices_region, school_matrices_region,
+            work_matrices_region, other_matrices_region,
+            time_changes_region)
+
+        # Set regional and time dependent parameters
+        regional_parameters = em.WarwickRegParameters(
+            model=model,
+            region_index=2,
+            H=[0.8, 0.8]
+        )
 
         # Set ICs parameters
-        ICs = em.RocheICs(
+        ICs = em.WarwickICs(
             model=model,
-            susceptibles_IC=[[5, 6], [7, 4]],
-            exposed_IC=[[0, 0], [0, 0]],
-            infectives_pre_IC=[[0, 0], [0, 0]],
-            infectives_asym_IC=[[0, 0], [0, 0]],
-            infectives_sym_IC=[[0, 0], [0, 0]],
-            infectives_pre_ss_IC=[[0, 0], [0, 0]],
-            infectives_asym_ss_IC=[[0, 0], [0, 0]],
-            infectives_sym_ss_IC=[[0, 0], [0, 0]],
-            infectives_q_IC=[[0, 0], [0, 0]],
-            recovered_IC=[[0, 0], [0, 0]],
-            recovered_asym_IC=[[0, 0], [0, 0]],
-            dead_IC=[[0, 0], [0, 0]]
+            susceptibles_IC=[[15, 6], [7, 4]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
+            detected_f_IC=[[0, 0], [0, 0]],
+            detected_qf_IC=[[0, 0], [0, 0]],
+            detected_sd_IC=[[0, 0], [0, 0]],
+            detected_su_IC=[[0, 0], [0, 0]],
+            detected_qs_IC=[[0, 0], [0, 0]],
+            undetected_f_IC=[[0, 0], [0, 0]],
+            undetected_s_IC=[[0, 0], [0, 0]],
+            undetected_q_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
         )
 
-        # Set average times in compartments
-        compartment_times = em.RocheCompartmentTimes(
+        # Set disease-specific parameters
+        disease_parameters = em.WarwickDiseaseParameters(
             model=model,
-            k=3.43,
-            kS=2.57,
-            kQ=1,
-            kR=9 * np.ones(len(model.age_groups)),
-            kRI=10
-        )
-
-        # Set proportion of asymptomatic, super-spreader and dead cases
-        proportion_parameters = em.RocheProportions(
-            model=model,
-            Pa=0.658 * np.ones(len(age_groups)),
-            Pss=0.0955,
-            Pd=0.05
+            tau=0.4,
+            d=0.4 * np.ones(len(age_groups))
         )
 
         # Set transmission parameters
-        transmission_parameters = em.RocheTransmission(
+        transmission_parameters = em.WarwickTransmission(
             model=model,
-            beta_min=0.228,
-            beta_max=0.927,
-            bss=3.11,
+            epsilon=0.5,
             gamma=1,
-            s50=35.3
+            sigma=0.5 * np.ones(len(age_groups))
         )
 
         # Set other simulation parameters
-        simulation_parameters = em.RocheSimParameters(
+        simulation_parameters = em.WarwickSimParameters(
             model=model,
-            region_index=1,
             method='RK45',
             times=[1, 2]
         )
 
         # Set all parameters in the controller
-        parameters = em.RocheParametersController(
+        parameters = em.WarwickParametersController(
             model=model,
+            regional_parameters=regional_parameters,
             ICs=ICs,
-            compartment_times=compartment_times,
-            proportion_parameters=proportion_parameters,
+            disease_parameters=disease_parameters,
             transmission_parameters=transmission_parameters,
             simulation_parameters=simulation_parameters
         )

@@ -176,19 +176,22 @@ class WarwickSEIRModel(pints.ForwardModel):
 
         # Assign default values
         self._output_names = [
-            'S', 'Ef', 'Esd', 'Esu', 'Eq', 'Df', 'Dsd', 'Dsu', 'Dqf', 'Dqs',
+            'S', 'E1f', 'E1sd', 'E1su', 'E1q', 'E2f', 'E2sd', 'E2su', 'E2q',
+            'E3f', 'E3sd', 'E3su', 'E3q', 'Df', 'Dsd', 'Dsu', 'Dqf', 'Dqs',
             'Uf', 'Us', 'Uq', 'R', 'Incidence']
         self._parameter_names = [
-            'S0', 'Ef0', 'Esd0', 'Esu0', 'Eq0', 'Df0', 'Dsd0', 'Dsu0', 'Dqf0',
-            'Dqs0', 'Uf0', 'Us0', 'Uq0', 'R0', 'sig', 'tau', 'eps', 'gamma',
-            'd', 'H']
+            'S0', 'E1f0', 'E1sd0', 'E1su0', 'E1q0', 'E2f0', 'E2sd0', 'E2su0',
+            'E2q0', 'E3f0', 'E3sd0', 'E3su0', 'E3q0', 'Df0', 'Dsd0', 'Dsu0',
+            'Dqf0', 'Dqs0', 'Uf0', 'Us0', 'Uq0', 'R0', 'sig', 'tau', 'eps',
+            'gamma', 'd', 'H']
 
-        # The default number of outputs is 15,
-        # i.e. S, Ef, Esd, Esu, Eq, Df, Dsd, Dsu, Dqf, Dqs, Uf, Us, Uq, R and
+        # The default number of outputs is 23,
+        # i.e. S, E1f, E1sd, E1su, E1q, E2f, E2sd, E2su, E2q, E3f, E3sd, E3su,
+        # E3q, Df, Dsd, Dsu, Dqf, Dqs, Uf, Us, Uq, R and
         # Incidence
         self._n_outputs = len(self._output_names)
-        # The default number of parameters is 20,
-        # i.e. 14 initial conditions and 6 parameters
+        # The default number of parameters is 28,
+        # i.e. 22 initial conditions and 6 parameters
         self._n_parameters = len(self._parameter_names)
 
         self._output_indices = np.arange(self._n_outputs)
@@ -329,7 +332,8 @@ class WarwickSEIRModel(pints.ForwardModel):
             system refers.
         y : numpy.array
             Array of all the compartments of the ODE system, segregated
-            by age-group. It assumes y = [S, Ef, Esd, Esu, Eq, Df, Dsd, Dsu,
+            by age-group. It assumes y = [S, E1f, E1sd, E1su, E1q, E2f, E2sd,
+            E2su, E2q, E3f, E3sd, E3su, E3q, Df, Dsd, Dsu,
             Dqf, Dqs, Uf, Us, Uq, R] where each letter actually refers to all
             compartment of that type. (e.g. S refers to the compartments of
             all ages of susceptibles).
@@ -357,12 +361,16 @@ class WarwickSEIRModel(pints.ForwardModel):
         a = num_a_groups
 
         # Split compartments into their types
-        s, eF, eSD, eSU, eQ, dF, dSD, dSU, dQF, dQS, uF, uS, uQ, _ = (
-            y[:a], y[a:(2*a)], y[(2*a):(3*a)],
-            y[(3*a):(4*a)], y[(4*a):(5*a)], y[(5*a):(6*a)],
-            y[(6*a):(7*a)], y[(7*a):(8*a)], y[(8*a):(9*a)],
-            y[(9*a):(10*a)], y[(10*a):(11*a)], y[(11*a):(12*a)],
-            y[(12*a):(13*a)], y[(13*a):])
+        s, e1F, e1SD, e1SU, e1Q, e2F, e2SD, e2SU, e2Q, e3F, e3SD, e3SU, e3Q, \
+            dF, dSD, dSU, dQF, dQS, uF, uS, uQ, _ = (
+                y[:a], y[a:(2*a)], y[(2*a):(3*a)],
+                y[(3*a):(4*a)], y[(4*a):(5*a)], y[(5*a):(6*a)],
+                y[(6*a):(7*a)], y[(7*a):(8*a)], y[(8*a):(9*a)],
+                y[(9*a):(10*a)], y[(10*a):(11*a)], y[(11*a):(12*a)],
+                y[(12*a):(13*a)], y[(13*a):(14*a)], y[(14*a):(15*a)],
+                y[(15*a):(16*a)], y[(16*a):(17*a)], y[(17*a):(18*a)],
+                y[(18*a):(19*a)], y[(19*a):(20*a)], y[(20*a):(21*a)],
+                y[(21*a):])
 
         # Read the social distancing parameters of the system
         theta, phi, q_H, q_S, q_W, q_O = self.social_distancing_param
@@ -382,48 +390,58 @@ class WarwickSEIRModel(pints.ForwardModel):
         other_cont_mat = \
             self.other_contacts_timeline.identify_current_contacts(r, t)
 
-        house_cont_mat = (1 - phi - phi * q_H) * house_cont_mat
-        nonhouse_cont_mat = (1 - phi - phi * q_S) * school_cont_mat + \
-            ((1 - phi - phi * q_W) *
-             (1 - theta + theta * (1 - phi - phi * q_O))) * work_cont_mat + \
-            ((1 - phi - phi * q_O)**2) * other_cont_mat
+        house_cont_mat = 1.3 * (1 - phi + phi * q_H) * house_cont_mat
+        nonhouse_cont_mat = 1.3 * (1 - phi + phi * q_S) * school_cont_mat + \
+            1.3 * ((1 - phi + phi * q_W) * (
+                1 - theta + theta * (1 - phi + phi * q_O))) * work_cont_mat + \
+            1.3 * ((1 - phi + phi * q_O)**2) * other_cont_mat
 
         # Write actual RHS
-        lam_F = np.multiply(
-            sig, np.asarray(dF) + np.asarray(dSD) +
-            np.asarray(dSU) + tau * np.asarray(uF) + tau * np.asarray(uS))
+        lam_F = np.multiply(sig, np.dot(
+            nonhouse_cont_mat, np.asarray(dF) + np.asarray(dSD) +
+            np.asarray(dSU) + tau * np.asarray(uF) + tau * np.asarray(uS)))
         lam_F_times_s = \
-            np.multiply(s, (1 / self._N) * np.dot(nonhouse_cont_mat, lam_F))
+            np.multiply(s, (1 / self._N) * lam_F)
 
-        lam_SD = np.multiply(sig, np.asarray(dF))
+        lam_SD = np.multiply(sig, np.dot(house_cont_mat, np.asarray(dF)))
         lam_SD_times_s = \
-            np.multiply(s, (1 / self._N) * np.dot(house_cont_mat, lam_SD))
+            np.multiply(s, (1 / self._N) * lam_SD)
 
-        lam_SU = np.multiply(sig, tau * np.asarray(uF))
+        lam_SU = np.multiply(sig, tau * np.dot(house_cont_mat, np.asarray(uF)))
         lam_SU_times_s = \
-            np.multiply(s, (1 / self._N) * np.dot(house_cont_mat, lam_SU))
+            np.multiply(s, (1 / self._N) * lam_SU)
 
-        lam_Q = np.multiply(sig, np.asarray(dQF))
+        lam_Q = np.multiply(sig, np.dot(house_cont_mat, np.asarray(dQF)))
         lam_Q_times_s = \
-            np.multiply(s, (1 / self._N) * np.dot(house_cont_mat, lam_Q))
+            np.multiply(s, (1 / self._N) * lam_Q)
 
         dydt = np.concatenate((
             -(lam_F_times_s + lam_SD_times_s + lam_SU_times_s + lam_Q_times_s),
-            lam_F_times_s - eps * np.asarray(eF),
-            lam_SD_times_s - eps * np.asarray(eSD),
-            lam_SU_times_s - eps * np.asarray(eSU),
-            lam_Q_times_s - eps * np.asarray(eQ),
-            eps * (1-h) * np.multiply(d, eF) - gamma * np.asarray(dF),
-            eps * np.multiply(d, eSD) - gamma * np.asarray(dSD),
-            eps * (1-h) * np.multiply(d, eSU) - gamma * np.asarray(dSU),
-            eps * h * np.multiply(d, eF) - gamma * np.asarray(dQF),
-            eps * (h * np.multiply(d, eSU) + np.multiply(
-                d, eQ)) - gamma * np.asarray(dQS),
-            eps * np.multiply((1-np.asarray(d)), eF) - gamma * np.asarray(uF),
-            eps * np.multiply(
+            lam_F_times_s - 3 * eps * np.asarray(e1F),
+            lam_SD_times_s - 3 * eps * np.asarray(e1SD),
+            lam_SU_times_s - 3 * eps * np.asarray(e1SU),
+            lam_Q_times_s - 3 * eps * np.asarray(e1Q),
+            3 * eps * np.asarray(e1F) - 3 * eps * np.asarray(e2F),
+            3 * eps * np.asarray(e1SD) - 3 * eps * np.asarray(e2SD),
+            3 * eps * np.asarray(e1SU) - 3 * eps * np.asarray(e2SU),
+            3 * eps * np.asarray(e1Q) - 3 * eps * np.asarray(e2Q),
+            3 * eps * np.asarray(e2F) - 3 * eps * np.asarray(e3F),
+            3 * eps * np.asarray(e2SD) - 3 * eps * np.asarray(e3SD),
+            3 * eps * np.asarray(e2SU) - 3 * eps * np.asarray(e3SU),
+            3 * eps * np.asarray(e2Q) - 3 * eps * np.asarray(e3Q),
+            3 * eps * (1-h) * np.multiply(d, e3F) - gamma * np.asarray(dF),
+            3 * eps * np.multiply(d, e3SD) - gamma * np.asarray(dSD),
+            3 * eps * (1-h) * np.multiply(d, e3SU) - gamma * np.asarray(dSU),
+            3 * eps * h * np.multiply(d, e3F) - gamma * np.asarray(dQF),
+            3 * eps * (h * np.multiply(d, e3SU) + np.multiply(
+                d, e3Q)) - gamma * np.asarray(dQS),
+            3 * eps * np.multiply((1-np.asarray(d)), e3F) - gamma * np.asarray(
+                uF),
+            3 * eps * np.multiply(
                 (1-np.asarray(d)),
-                np.asarray(eSD) + np.asarray(eSU)) - gamma * np.asarray(uS),
-            eps * np.multiply((1-np.asarray(d)), eQ) - gamma * np.asarray(uQ),
+                np.asarray(e3SD) + np.asarray(e3SU)) - gamma * np.asarray(uS),
+            3 * eps * np.multiply((1-np.asarray(d)), e3Q) - gamma * np.asarray(
+                uQ),
             gamma * (
                 np.asarray(dF) + np.asarray(dQF) + np.asarray(uF) +
                 np.asarray(dSD) + np.asarray(uS) + np.asarray(dSU) +
@@ -454,15 +472,19 @@ class WarwickSEIRModel(pints.ForwardModel):
 
         """
         # Initial conditions
-        si, eFi, eSDi, eSUi, eQi, dFi, dSDi, dSUi, dQFi, dQSi, uFi, uSi, \
-            uQi, _i = np.asarray(self._y_init)[:, self._region-1]
+        si, e1Fi, e1SDi, e1SUi, e1Qi, e2Fi, e2SDi, e2SUi, e2Qi, e3Fi, e3SDi, \
+            e3SUi, e3Qi, dFi, dSDi, dSUi, dQFi, dQSi, uFi, uSi, uQi, _i = \
+            np.asarray(self._y_init)[:, self._region-1]
         init_cond = list(
             chain(
-                si.tolist(), eFi.tolist(), eSDi.tolist(),
-                eSUi.tolist(), eQi.tolist(), dFi.tolist(),
-                dSDi.tolist(), dSUi.tolist(), dQFi.tolist(),
-                dQSi.tolist(), uFi.tolist(), uSi.tolist(),
-                uQi.tolist(), _i.tolist()))
+                si.tolist(), e1Fi.tolist(), e1SDi.tolist(),
+                e1SUi.tolist(), e1Qi.tolist(), e2Fi.tolist(),
+                e2SDi.tolist(), e2SUi.tolist(), e2Qi.tolist(),
+                e3Fi.tolist(), e3SDi.tolist(), e3SUi.tolist(),
+                e3Qi.tolist(), dFi.tolist(), dSDi.tolist(),
+                dSUi.tolist(), dQFi.tolist(), dQSi.tolist(),
+                uFi.tolist(), uSi.tolist(), uQi.tolist(),
+                _i.tolist()))
 
         # Solve the system of ODEs
         sol = solve_ivp(
@@ -483,8 +505,9 @@ class WarwickSEIRModel(pints.ForwardModel):
             List of quantities that characterise the Warwick SEIR model in
             this order: index of region for which we wish to simulate,
             initial conditions matrices classifed by age (column name) and
-            region (row name) for each type of compartment (s, eF, eSD, eSU,
-            eQ, dF, dSD, dSU, dQF, dQS, uF, uS, uQ, _), the age-dependent
+            region (row name) for each type of compartment (s, e1F, e1SD, e1SU,
+            e1Q, e2F, e2SD, e2SU, e2Q, e3F, e3SD, e3SU, e3Q, dF, dSD, dSU, dQF,
+            dQS, uF, uS, uQ, _), the age-dependent
             susceptibility of individuals to infection (sig), the reduction in
             the transmission rate of infection for asymptomatic individuals
             (tau), the rate of progression to infectious disease (eps), the
@@ -504,9 +527,9 @@ class WarwickSEIRModel(pints.ForwardModel):
         """
         # Split parameters into the features of the model
         self._region = parameters[0]
-        self._y_init = parameters[1:15]
+        self._y_init = parameters[1:23]
         self._N = np.sum(np.asarray(self._y_init))
-        self._c = parameters[15:21]
+        self._c = parameters[23:29]
         self.house_contacts_timeline = em.MultiTimesContacts(
             self.house_matrices_contact,
             self.time_changes_contact,
@@ -544,15 +567,15 @@ class WarwickSEIRModel(pints.ForwardModel):
 
         # Age-based total infected is infectious 'i' plus recovered 'r'
         total_infected = output[
-            (5*self._num_ages):(6*self._num_ages), :] + output[
-            (6*self._num_ages):(7*self._num_ages), :] + output[
-            (7*self._num_ages):(8*self._num_ages), :] + output[
-            (8*self._num_ages):(9*self._num_ages), :] + output[
-            (9*self._num_ages):(10*self._num_ages), :] + output[
-            (10*self._num_ages):(11*self._num_ages), :] + output[
-            (11*self._num_ages):(12*self._num_ages), :] + output[
-            (12*self._num_ages):(13*self._num_ages), :] + output[
-            (13*self._num_ages):(14*self._num_ages), :]
+            (13*self._num_ages):(14*self._num_ages), :] + output[
+            (14*self._num_ages):(15*self._num_ages), :] + output[
+            (15*self._num_ages):(16*self._num_ages), :] + output[
+            (16*self._num_ages):(17*self._num_ages), :] + output[
+            (17*self._num_ages):(18*self._num_ages), :] + output[
+            (18*self._num_ages):(19*self._num_ages), :] + output[
+            (19*self._num_ages):(20*self._num_ages), :] + output[
+            (20*self._num_ages):(21*self._num_ages), :] + output[
+            (21*self._num_ages):(22*self._num_ages), :]
 
         # Number of incidences is the increase in total_infected
         # between the time points (add a 0 at the front to
@@ -767,8 +790,9 @@ class WarwickSEIRModel(pints.ForwardModel):
         # Add index of region
         my_parameters.append(parameters[0])
 
-        # Add initial conditions for the s, eF, eSD, eSU, eQ, dF, dSD, dSU,
-        # dQF, dQS, uF, uS, uQ and r compartments
+        # Add initial conditions for the s, e1F, e1SD, e1SU, e1Q, e2F, e2SD,
+        # e2SU, e2Q, e3F, e3SD, e3SU, e3Q, dF, dSD, dSU, dQF, dQS, uF, uS, uQ
+        # and r compartments
         for c in range(len(self._output_names)-1):
             initial_cond_comp = []
             for r in range(n_reg):
@@ -811,7 +835,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         if np.asarray(output).shape[0] != self._times.shape[0]:
             raise ValueError(
                     'Wrong number of rows for the model output.')
-        if np.asarray(output).shape[1] != 15 * self._num_ages:
+        if np.asarray(output).shape[1] != 23 * self._num_ages:
             raise ValueError(
                     'Wrong number of columns for the model output.')
         for r in np.asarray(output):
@@ -857,13 +881,13 @@ class WarwickSEIRModel(pints.ForwardModel):
 
         for ind, t in enumerate(self._times.tolist()):
             # Read from output
-            eF = output[ind, :][(2*self._num_ages):(3*self._num_ages)]
-            eSD = output[ind, :][(3*self._num_ages):(4*self._num_ages)]
-            eSU = output[ind, :][(4*self._num_ages):(5*self._num_ages)]
-            eQ = output[ind, :][(5*self._num_ages):(6*self._num_ages)]
+            e3F = output[ind, :][(9*self._num_ages):(10*self._num_ages)]
+            e3SD = output[ind, :][(10*self._num_ages):(11*self._num_ages)]
+            e3SU = output[ind, :][(11*self._num_ages):(12*self._num_ages)]
+            e3Q = output[ind, :][(12*self._num_ages):(13*self._num_ages)]
 
             # fraction of new infectives in delta_t time step
-            d_infec[ind, :] = eps * np.multiply(d, eF + eSD + eSU + eQ)
+            d_infec[ind, :] = 3 * eps * np.multiply(d, e3F + e3SD + e3SU + e3Q)
 
             if np.any(d_infec[ind, :] < 0):  # pragma: no cover
                 d_infec[ind, :] = np.zeros_like(d_infec[ind, :])
@@ -933,7 +957,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         """
         n_daily_hosp = np.zeros((self._times.shape[0], self._num_ages))
 
-        # Normalise dItoH
+        # Normalise dDtoH
         dDtoH = ((1/np.sum(dDtoH)) * np.asarray(dDtoH)).tolist()
 
         for ind, _ in enumerate(self._times.tolist()):
@@ -989,7 +1013,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         if np.asarray(dDtoH).ndim != 1:
             raise ValueError('Delays between onset of symptoms and \
                 hospitalisation storage format is 1-dimensional.')
-        if np.asarray(dDtoH).shape[0] != len(self._times):
+        if np.asarray(dDtoH).shape[0] < 30:
             raise ValueError('Wrong number of delays between onset of \
                 symptoms and hospitalisation.')
         if np.sum(dDtoH) != 1:
@@ -1039,6 +1063,9 @@ class WarwickSEIRModel(pints.ForwardModel):
 
         """
         n_daily_icu = np.zeros((self._times.shape[0], self._num_ages))
+
+        # Normalise dDtoI
+        dDtoI = ((1/np.sum(dDtoI)) * np.asarray(dDtoI)).tolist()
 
         for ind, _ in enumerate(self._times.tolist()):
             if ind >= 30:
@@ -1143,6 +1170,9 @@ class WarwickSEIRModel(pints.ForwardModel):
 
         """
         n_daily_deaths = np.zeros((self._times.shape[0], self._num_ages))
+
+        # Normalise dHtoDeath
+        dHtoDeath = ((1/np.sum(dHtoDeath)) * np.asarray(dHtoDeath)).tolist()
 
         for ind, _ in enumerate(self._times.tolist()):
             if ind >= 30:
@@ -1267,8 +1297,8 @@ class WarwickSEIRModel(pints.ForwardModel):
                     np.diag(tH[:(ind+1)][::-1]),
                     new_hospitalisations[:(ind+1), :]) +
                     np.matmul(
-                    np.diag(tItoH[:30][::-1]),
-                    new_icu[(ind-29):(ind+1), :]), axis=0)
+                    np.diag(tItoH[:(ind+1)][::-1]),
+                    new_icu[:(ind+1), :]), axis=0)
 
         for ind, _ in enumerate(self._times.tolist()):  # pragma: no cover
             if np.any(n_hosp_occ[ind, :] < 0):
@@ -1305,7 +1335,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         if np.asarray(tH).ndim != 1:
             raise ValueError('Weighting distribution of the times spent in\
                 hospital storage format is 1-dimensional.')
-        if np.asarray(tH).shape[0] != len(self._times):
+        if np.asarray(tH).shape[0] < 30:
             raise ValueError('Wrong number of weighting distribution of\
                 the times spent in hospital.')
         if np.sum(tH) != 1:
