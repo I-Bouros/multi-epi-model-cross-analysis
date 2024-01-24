@@ -215,8 +215,8 @@ def change_age_groups(matrix: np.array):
 
     for i in range(8):
         for j in range(8):
-            new_matrix[i, j] = np.mean(
-                matrix[ind_old[i][:, None], ind_old[j]][:, None])
+            new_matrix[i, j] = np.mean(np.sum(
+                matrix[ind_old[i][:, None], ind_old[j]][:, None], axis=0))
 
     return new_matrix
 
