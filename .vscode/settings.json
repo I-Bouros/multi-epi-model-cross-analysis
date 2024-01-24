@@ -2,5 +2,5 @@
     "python.linting.pylintEnabled": false,
     "python.linting.flake8Enabled": true,
     "python.linting.enabled": true,
-    "python.pythonPath": "/Users/ioaros/opt/anaconda3/bin/python"
+    "python.pythonPath": "/Users/ioaros/opt/anaconda3/envs/epimodels/bin/python"
 }
