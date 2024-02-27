@@ -331,7 +331,8 @@ class WarwickLogLik(pints.LogPDF):
 
         eigvals, eigvecs = np.linalg.eig(M_from_to_HAT)
 
-        reprod_number_0, i = np.max(abs(eigvals)), np.argmax(abs(eigvals))
+        reprod_number_0, i = np.max(
+            np.absolute(eigvals)), np.argmax(abs(eigvals))
         reprod_number_0 = reprod_number_0 / gamma
         Age_structure = abs(eigvecs[:, i])
 
