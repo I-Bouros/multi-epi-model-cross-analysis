@@ -17,3 +17,4 @@ module.
 # Import inference classes
 from .phe_inference import PheSEIRInfer, PHELogLik, PHELogPrior  # noqa
 from .roche_inference import RocheSEIRInfer, RocheLogLik, RocheLogPrior  # noqa
+from .warwick_inference import WarwickSEIRInfer, WarwickLogLik, WarwickLogPrior  # noqa

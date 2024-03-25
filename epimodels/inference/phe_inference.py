@@ -374,7 +374,7 @@ class PheSEIRInfer(object):
     def read_model_data(
             self, susceptibles_data, infectives_data):
         """
-        Sets the serology data used for the model's parameters optimisation or
+        Sets the initial data used for the model's parameters optimisation or
         inference.
 
         Parameters

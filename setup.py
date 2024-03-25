@@ -68,6 +68,7 @@ setup(
     install_requires=[
         # Dependencies go here!
         'numpy>=1.8',
+        'openpyxl',
         'pandas',
         'scipy',
         'pints @ git+https://github.com/pints-team/pints.git#egg=pints-latest',

@@ -794,7 +794,7 @@ class TestPheSEIRModel(unittest.TestCase):
             model=model,
             initial_r=[0.5, 1],
             region_index=2,
-            betas=[[1]*2, [1]*2],
+            betas=[[[1]*2, [1]*2]],
             times=[1, 2]
         )
 

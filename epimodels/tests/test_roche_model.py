@@ -1230,7 +1230,7 @@ class TestRocheSEIRModel(unittest.TestCase):
             (len(age_groups),))
 
         npt.assert_array_equal(
-            model.samples_deaths(new_deaths, 10**(-5), 41),
+            model.samples_deaths(new_deaths, 10**(-5), 0),
             np.zeros(len(age_groups)))
 
     def test_loglik_positive_tests(self):
