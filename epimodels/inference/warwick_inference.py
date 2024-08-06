@@ -16,9 +16,12 @@ matrices.
 
 """
 
+from iteration_utilities import deepflatten
+from itertools import chain
+
 import numpy as np
 import pints
-from iteration_utilities import deepflatten
+from scipy.integrate import solve_ivp
 
 import epimodels as em
 
@@ -147,16 +150,21 @@ class WarwickLogLik(pints.LogPDF):
         other_cont_mat = extended_other_cont_mat
 
         # Read the social distancing parameters of the system
-        theta, phi, q_H, q_S, q_W, q_O = self._model.social_distancing_param
+        # theta, phi, q_H, q_S, q_W, q_O = self._model.social_distancing_param
 
-        self._house_cont_mat = 1.3 * (1 - phi + phi * q_H) * house_cont_mat
-        self._other_cont_mat = \
-            1.3 * ((1 - phi + phi * q_O)**2) * other_cont_mat
+        # self._house_cont_mat = 1.3 * (1 - phi + phi * q_H) * house_cont_mat
+        # self._other_cont_mat = \
+        #     ((1 - phi + phi * q_O)**2) * other_cont_mat
+        # self._nonhouse_cont_mat = \
+        #     (1 - phi + phi * q_S) * school_cont_mat + \
+        #     ((1 - phi + phi * q_W) * (
+        #       1 - theta + theta * (1 - phi + phi * q_O))) * work_cont_mat + \
+        #     ((1 - phi + phi * q_O)**2) * other_cont_mat
+
+        self._house_cont_mat = house_cont_mat
+        self._other_cont_mat = other_cont_mat
         self._nonhouse_cont_mat = \
-            1.3 * (1 - phi + phi * q_S) * school_cont_mat + \
-            1.3 * ((1 - phi + phi * q_W) * (
-                1 - theta + theta * (1 - phi + phi * q_O))) * work_cont_mat + \
-            1.3 * ((1 - phi + phi * q_O)**2) * other_cont_mat
+            school_cont_mat + work_cont_mat + other_cont_mat
 
     def n_parameters(self):
         """
@@ -168,7 +176,8 @@ class WarwickLogLik(pints.LogPDF):
             Number of parameters for log-likelihood object.
 
         """
-        return 8
+        # return 8
+        return 7
 
     def _update_age_groups(self, parameter_vector):
         """
@@ -230,10 +239,10 @@ class WarwickLogLik(pints.LogPDF):
 
         return new_vector
 
-    def _compute_next_gen_matrix(self, d, sigma, tau):
+    def _compute_next_gen_matrix(self, d, sigma, tau, house_cont_mat, other_cont_mat):
         """
         """
-        M_from_to = self._house_cont_mat + self._other_cont_mat
+        M_from_to = house_cont_mat + other_cont_mat
 
         M_from_to_HAT = np.zeros_like(M_from_to)
         k = np.shape(M_from_to_HAT)[0]
@@ -280,7 +289,10 @@ class WarwickLogLik(pints.LogPDF):
 
         # New unnormalised value for Q
         transmission = (1 / self._N) * np.dot(
-            self._nonhouse_cont_mat, symp_cases + tau * asymp_cases)
+            self._nonhouse_cont_mat + self._house_cont_mat,
+            symp_cases + tau * asymp_cases)
+        # transmission = np.dot(
+        #     self._nonhouse_cont_mat, symp_cases + tau * asymp_cases)
         nQ = np.divide(symp_cases, transmission)
 
         # Normalise new value of Q
@@ -289,6 +301,169 @@ class WarwickLogLik(pints.LogPDF):
         # Return updated guess of Q based on prior value and transmission
         # vector
         return 0.9 * Q + 0.1 * nQ, transmission
+
+    def compute_gamma_r0(self, alpha, d, tau, sigma, gamma=0.5):
+        """
+        """
+        dgamma = gamma * 0.5
+        flag = 0
+        #gamma=1/2.35; % to get DT=3.3
+        for _ in range(12):
+            sol, r0_1 = self.newerExtended_ODEs(
+                self._house_cont_mat * 0 ,
+                gamma * self._nonhouse_cont_mat,
+                alpha, gamma, sigma, d, tau, 0, self._N , np.arange(1))
+            
+            sigma = sigma * 2.7 / r0_1 # fine tune if necessary
+            sol, r0_2 = self.newerExtended_ODEs(
+                self._house_cont_mat*0 ,
+                gamma * self._nonhouse_cont_mat,
+                alpha, gamma, sigma, d, tau, 0, self._N , np.arange(20) )
+            
+            e = np.zeros(self._model._num_ages)
+
+            for _ in range(1, 13):
+                e += sol['y'][
+                    (_ * self._model._num_ages):((_+1) * self._model._num_ages), :]
+
+            g = np.mean(np.divide(e[:,-1], e[:,-2]))
+            
+            doubling_time = np.log(2)/np.log(g)
+            
+            if doubling_time > 3.3:
+                gamma= gamma + dgamma
+            else:
+                gamma= gamma - dgamma
+                flag=1
+
+            if flag:
+                dgamma = dgamma/2
+            else:
+                dgamma = dgamma/2
+
+        return gamma, r0_2
+
+    def _right_hand_side(self, house_cont_mat, nonhouse_cont_mat,
+            alpha, gamma, sig, d, tau, h, y):
+        """
+        """
+        # Read in the number of age-groups
+        a = self._model._num_ages
+
+        # Split compartments into their types
+        s, e1F, e1SD, e1SU, e1Q, e2F, e2SD, e2SU, e2Q, e3F, e3SD, e3SU, e3Q, \
+            dF, dSD, dSU, dQF, dQS, uF, uS, uQ, _ = (
+                y[:a], y[a:(2*a)], y[(2*a):(3*a)],
+                y[(3*a):(4*a)], y[(4*a):(5*a)], y[(5*a):(6*a)],
+                y[(6*a):(7*a)], y[(7*a):(8*a)], y[(8*a):(9*a)],
+                y[(9*a):(10*a)], y[(10*a):(11*a)], y[(11*a):(12*a)],
+                y[(12*a):(13*a)], y[(13*a):(14*a)], y[(14*a):(15*a)],
+                y[(15*a):(16*a)], y[(16*a):(17*a)], y[(17*a):(18*a)],
+                y[(18*a):(19*a)], y[(19*a):(20*a)], y[(20*a):(21*a)],
+                y[(21*a):])
+
+        eps =  alpha
+
+        # Write actual RHS
+        lam_F = np.multiply(sig, np.dot(
+            nonhouse_cont_mat, np.asarray(dF) + np.asarray(dSD) +
+            np.asarray(dSU) + tau * np.asarray(uF) + tau * np.asarray(uS)))
+        lam_F_times_s = \
+            np.multiply(s, (1 / self._N) * lam_F)
+
+        lam_SD = np.multiply(sig, np.dot(house_cont_mat, np.asarray(dF)))
+        lam_SD_times_s = \
+            np.multiply(s, (1 / self._N) * lam_SD)
+
+        lam_SU = np.multiply(sig, tau * np.dot(house_cont_mat, np.asarray(uF)))
+        lam_SU_times_s = \
+            np.multiply(s, (1 / self._N) * lam_SU)
+
+        lam_Q = np.multiply(sig, np.dot(house_cont_mat, np.asarray(dQF)))
+        lam_Q_times_s = \
+            np.multiply(s, (1 / self._N) * lam_Q)
+
+        dydt = np.concatenate((
+            -(lam_F_times_s + lam_SD_times_s + lam_SU_times_s + lam_Q_times_s),
+            lam_F_times_s - 3 * eps * np.asarray(e1F),
+            lam_SD_times_s - 3 * eps * np.asarray(e1SD),
+            lam_SU_times_s - 3 * eps * np.asarray(e1SU),
+            lam_Q_times_s - 3 * eps * np.asarray(e1Q),
+            3 * eps * np.asarray(e1F) - 3 * eps * np.asarray(e2F),
+            3 * eps * np.asarray(e1SD) - 3 * eps * np.asarray(e2SD),
+            3 * eps * np.asarray(e1SU) - 3 * eps * np.asarray(e2SU),
+            3 * eps * np.asarray(e1Q) - 3 * eps * np.asarray(e2Q),
+            3 * eps * np.asarray(e2F) - 3 * eps * np.asarray(e3F),
+            3 * eps * np.asarray(e2SD) - 3 * eps * np.asarray(e3SD),
+            3 * eps * np.asarray(e2SU) - 3 * eps * np.asarray(e3SU),
+            3 * eps * np.asarray(e2Q) - 3 * eps * np.asarray(e3Q),
+            3 * eps * (1-h) * np.multiply(d, e3F) - gamma * np.asarray(dF),
+            3 * eps * np.multiply(d, e3SD) - gamma * np.asarray(dSD),
+            3 * eps * (1-h) * np.multiply(d, e3SU) - gamma * np.asarray(dSU),
+            3 * eps * h * np.multiply(d, e3F) - gamma * np.asarray(dQF),
+            3 * eps * (h * np.multiply(d, e3SU) + np.multiply(
+                d, e3Q)) - gamma * np.asarray(dQS),
+            3 * eps * np.multiply((1-np.asarray(d)), e3F) - gamma * np.asarray(
+                uF),
+            3 * eps * np.multiply(
+                (1-np.asarray(d)),
+                np.asarray(e3SD) + np.asarray(e3SU)) - gamma * np.asarray(uS),
+            3 * eps * np.multiply((1-np.asarray(d)), e3Q) - gamma * np.asarray(
+                uQ),
+            gamma * (
+                np.asarray(dF) + np.asarray(dQF) + np.asarray(uF) +
+                np.asarray(dSD) + np.asarray(uS) + np.asarray(dSU) +
+                np.asarray(dQS) + np.asarray(uQ))
+            ))
+
+        return dydt
+
+    def newerExtended_ODEs(self, house_cont_mat, nonhouse_cont_mat,
+                alpha, gamma, sig, d, tau, h, times):
+        """
+        Computes the values in each compartment of the Warwick ODEs system
+        using the 'off-the-shelf' solver of the IVP from :module:`scipy`.
+
+        Parameters
+        ----------
+        times : list
+            List of time points at which we wish to evaluate the ODEs system.
+        num_a_groups : int
+            Number of age groups in which the population is split. It
+            refers to the number of compartments of each type.
+        method : str
+            The type of solver implemented by the :meth:`scipy.solve_ivp`.
+
+        Returns
+        -------
+        dict
+            Solution of the ODE system at the time points provided.
+
+        """
+        # Initial conditions
+        si, e1Fi, e1SDi, e1SUi, e1Qi, e2Fi, e2SDi, e2SUi, e2Qi, e3Fi, e3SDi, \
+            e3SUi, e3Qi, dFi, dSDi, dSUi, dQFi, dQSi, uFi, uSi, uQi, _i = \
+            np.asarray(self._y_init)[:, self._region-1]
+        init_cond = list(
+            chain(
+                si.tolist(), e1Fi.tolist(), e1SDi.tolist(),
+                e1SUi.tolist(), e1Qi.tolist(), e2Fi.tolist(),
+                e2SDi.tolist(), e2SUi.tolist(), e2Qi.tolist(),
+                e3Fi.tolist(), e3SDi.tolist(), e3SUi.tolist(),
+                e3Qi.tolist(), dFi.tolist(), dSDi.tolist(),
+                dSUi.tolist(), dQFi.tolist(), dQSi.tolist(),
+                uFi.tolist(), uSi.tolist(), uQi.tolist(),
+                _i.tolist()))
+
+        reprod_number_0 = self.r0_age_structure(, d, sigma, gamma)
+
+        # Solve the system of ODEs
+        sol = solve_ivp(
+            lambda t, y: self._right_hand_side(
+                t, house_cont_mat, nonhouse_cont_mat,
+                alpha, gamma, sig, d, tau, h, y),
+            [times[0], times[-1]], init_cond, method='RK45', t_eval=times)
+        return sol, reprod_number_0
 
     def _log_likelihood(self, var_parameters):
         """
@@ -319,22 +494,13 @@ class WarwickLogLik(pints.LogPDF):
         self._parameters[-5] = var_parameters[2]
         # E0
         E0_multiplier = var_parameters[3]
-        # phi
-        self._model.social_distancing_param[1] = var_parameters[4]
+        # # phi
+        # self._model.social_distancing_param[1] = var_parameters[4]
 
         d, sigma, gamma = self.compute_updated_param(
             alpha, self._parameters[-6])
 
-        # Compute eigenvalues and vectors of the
-        M_from_to_HAT = self._compute_next_gen_matrix(
-            d, sigma, var_parameters[-2])
-
-        eigvals, eigvecs = np.linalg.eig(M_from_to_HAT)
-
-        reprod_number_0, i = np.max(
-            np.absolute(eigvals)), np.argmax(abs(eigvals))
-        reprod_number_0 = reprod_number_0 / gamma
-        Age_structure = abs(eigvecs[:, i])
+        Age_structure = self.r0_age_structure(var_parameters[-2], d, sigma, gamma)[0]
 
         exposed_0 = Age_structure / np.sum(Age_structure)
         detected_0 = Age_structure / np.sum(Age_structure)
@@ -378,11 +544,14 @@ class WarwickLogLik(pints.LogPDF):
         self._parameters[-3] = d
 
         # sigma
-        self._parameters[-7] = var_parameters[5] * sigma
+        # self._parameters[-7] = var_parameters[5] * sigma
+        self._parameters[-7] = var_parameters[4] * sigma
 
         # Hs and Ds
-        Hs = var_parameters[6]
-        Ds = var_parameters[7]
+        # Hs = var_parameters[6]
+        Hs = var_parameters[5]
+        # Ds = var_parameters[7]
+        Ds = var_parameters[6]
 
         total_log_lik = 0
 
@@ -440,6 +609,23 @@ class WarwickLogLik(pints.LogPDF):
 
         except ValueError:  # pragma: no cover
             return -np.inf
+
+    def r0_age_structure(self, tau, d, sigma, gamma):
+        """
+        """
+        # Compute eigenvalues and vectors of the
+        M_from_to_HAT = self._compute_next_gen_matrix(
+        d, sigma, tau,
+        self._house_cont_mat, self._nonhouse_cont_mat)
+
+        eigvals, eigvecs = np.linalg.eig(M_from_to_HAT)
+
+        reprod_number_0, i = np.max(
+            np.absolute(eigvals)), np.argmax(abs(eigvals))
+        reprod_number_0 = reprod_number_0 / gamma
+        Age_structure = abs(eigvecs[:, i])
+        
+        return Age_structure, reprod_number_0
 
     def compute_updated_param(self, alpha, tau):
         """
@@ -652,7 +838,8 @@ class WarwickLogPrior(pints.LogPrior):
             Number of parameters for log-prior object.
 
         """
-        return 8
+        # return 8
+        return 7
 
     def __call__(self, x):
         """
@@ -682,17 +869,17 @@ class WarwickLogPrior(pints.LogPrior):
         # Prior contribution of E0
         log_prior += pints.UniformLogPrior([1], [30])(x[3])
 
-        # Prior contribution of phi
-        log_prior += pints.UniformLogPrior([0], [1])(x[4])
+        # # Prior contribution of phi
+        # log_prior += pints.UniformLogPrior([0], [1])(x[4])
 
         # Prior contribution of sigmaR
-        log_prior += pints.UniformLogPrior([0.25], [4])(x[5])
+        log_prior += pints.UniformLogPrior([0.25], [4])(x[4])
 
         # Prior contribution of Hs
-        log_prior += pints.UniformLogPrior([0.5], [2])(x[6])
+        log_prior += pints.UniformLogPrior([0.5], [2])(x[5])
 
         # Prior contribution of Ds
-        log_prior += pints.UniformLogPrior([0.5], [2])(x[7])
+        log_prior += pints.UniformLogPrior([0.5], [2])(x[6])
 
         return log_prior
 
@@ -969,8 +1156,12 @@ class WarwickSEIRInfer(object):
         chains = mcmc.run()
         print('Done!')
 
+        # param_names = [
+        #     'alpha', 'tau', 'epsilon', 'E0', 'phi', 'sigmaR',
+        #     'Hs', 'Ds']
+
         param_names = [
-            'alpha', 'tau', 'epsilon', 'E0', 'phi', 'sigmaR',
+            'alpha', 'tau', 'epsilon', 'E0', 'sigmaR',
             'Hs', 'Ds']
 
         # Check convergence and other properties of chains
@@ -1010,7 +1201,8 @@ class WarwickSEIRInfer(object):
         self._create_posterior(times, wd, wp)
 
         # Starting points
-        x0 = [0.9, 0, 0.2, 15, 0.5, 1, 1, 1]
+        # x0 = [0.9, 0, 0.2, 15, 0.5, 1, 1, 1]
+        x0 = [0.9, 0, 0.2, 15, 1, 1, 1]
 
         # Create optimisation routine
         optimiser = pints.OptimisationController(

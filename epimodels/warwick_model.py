@@ -391,10 +391,10 @@ class WarwickSEIRModel(pints.ForwardModel):
             self.other_contacts_timeline.identify_current_contacts(r, t)
 
         house_cont_mat = 1.3 * (1 - phi + phi * q_H) * house_cont_mat
-        nonhouse_cont_mat = 1.3 * (1 - phi + phi * q_S) * school_cont_mat + \
-            1.3 * ((1 - phi + phi * q_W) * (
+        nonhouse_cont_mat = (1 - phi + phi * q_S) * school_cont_mat + \
+            ((1 - phi + phi * q_W) * (
                 1 - theta + theta * (1 - phi + phi * q_O))) * work_cont_mat + \
-            1.3 * ((1 - phi + phi * q_O)**2) * other_cont_mat
+            ((1 - phi + phi * q_O)**2) * other_cont_mat
 
         # Write actual RHS
         lam_F = np.multiply(sig, np.dot(
