@@ -17,9 +17,11 @@ matrices.
 """
 
 from iteration_utilities import deepflatten
+from itertools import chain
 
 import numpy as np
 import pints
+from scipy.integrate import solve_ivp
 
 import epimodels as em
 
@@ -151,8 +153,6 @@ class WarwickLogLik(pints.LogPDF):
         self._other_cont_mat = other_cont_mat
         self._nonhouse_cont_mat = \
             school_cont_mat + work_cont_mat + other_cont_mat
-        self._total_cont_mat = \
-            self._house_cont_mat + self._nonhouse_cont_mat
 
     def n_parameters(self):
         """
@@ -165,8 +165,7 @@ class WarwickLogLik(pints.LogPDF):
 
         """
         # return 8
-        # return 7
-        return 3
+        return 7
 
     def _update_age_groups(self, parameter_vector):
         """
@@ -228,7 +227,288 @@ class WarwickLogLik(pints.LogPDF):
 
         return new_vector
 
-    def _compute_updated_param(self, alpha, tau):
+    def _compute_next_gen_matrix(
+            self, d, sigma, tau, house_cont_mat, other_cont_mat):
+        """
+        """
+        M_from_to = house_cont_mat + other_cont_mat
+
+        M_from_to_HAT = np.zeros_like(M_from_to)
+        k = np.shape(M_from_to_HAT)[0]
+
+        tau = tau * np.ones(k)
+
+        for f in range(k):
+            for t in range(k):
+                M_from_to_HAT[f, t] = \
+                    M_from_to[f, t] * d[t] * sigma[t] * (
+                        1 + tau[f] * (1 - d[f]) / d[f])
+
+        return M_from_to_HAT
+
+    def _compute_updated_Q(self, Q, alpha, tau):
+        """
+        Updates step-wise the current guess of the auxiliary parameter value Q
+        used in computing the model parameters for the guesses of alpha and
+        tau.
+
+        Parameters
+        ----------
+        Q : int or float
+            The current guess of the auxiliary parameter value Q.
+        alpha : int or float
+            The current guess of the auxiliary scenario weight parameter alpha.
+        tau : int or float
+            The current guess of the reduction in the transmission rate of
+            infection for asymptomatic individuals.
+
+        Returns
+        -------
+        tuple of lists
+            Tuple of the updated guess of the auxiliary parameter value Q
+            and force of infection vector.
+
+        """
+        symp_cases = self._extended_infectives_prop
+        # Compute symptom probability vector
+        d = np.power(Q, 1-alpha)
+
+        # Compute asymptomatic cases U from known symptomatic cases D
+        asymp_cases = np.matmul(np.divide(1-d, d), symp_cases)
+
+        # New unnormalised value for Q
+        transmission = (1 / self._N) * np.dot(
+            self._nonhouse_cont_mat + self._house_cont_mat,
+            symp_cases + tau * asymp_cases)
+        # transmission = np.dot(
+        #     self._nonhouse_cont_mat, symp_cases + tau * asymp_cases)
+        nQ = np.divide(symp_cases, transmission)
+
+        # Normalise new value of Q
+        nQ = nQ / np.max(nQ)
+
+        # Return updated guess of Q based on prior value and transmission
+        # vector
+        return 0.9 * Q + 0.1 * nQ, transmission
+
+    def compute_gamma_r0(self, eps, d, tau, sigma, gamma=0.5):
+        """
+        """
+        dgamma = gamma * 0.5
+        flag = 0
+        # gamma=1/2.35; % to get DT=3.3
+
+        # Initial conditions
+        si = self._extended_susceptibles
+
+        e1Fi = np.zeros_like(self._extended_susceptibles).tolist()
+        e1SDi = np.zeros_like(self._extended_susceptibles).tolist()
+        e1SUi = np.zeros_like(self._extended_susceptibles).tolist()
+        e1Qi = np.zeros_like(self._extended_susceptibles).tolist()
+
+        e2Fi = np.zeros_like(self._extended_susceptibles).tolist()
+        e2SDi = np.zeros_like(self._extended_susceptibles).tolist()
+        e2SUi = np.zeros_like(self._extended_susceptibles).tolist()
+        e2Qi = np.zeros_like(self._extended_susceptibles).tolist()
+
+        e3Fi = np.zeros_like(self._extended_susceptibles).tolist()
+        e3SDi = np.zeros_like(self._extended_susceptibles).tolist()
+        e3SUi = np.zeros_like(self._extended_susceptibles).tolist()
+        e3Qi = np.zeros_like(self._extended_susceptibles).tolist()
+
+        dFi = 20 * (self._extended_infectives_prop)
+
+        dQFi = np.zeros_like(self._extended_susceptibles).tolist()
+        dSDi = np.zeros_like(self._extended_susceptibles).tolist()
+        dSUi = np.zeros_like(self._extended_susceptibles).tolist()
+        dQSi = np.zeros_like(self._extended_susceptibles).tolist()
+
+        uFi = np.zeros_like(self._extended_susceptibles).tolist()
+        uSi = np.zeros_like(self._extended_susceptibles).tolist()
+        uQi = np.zeros_like(self._extended_susceptibles).tolist()
+
+        _i = np.zeros_like(self._extended_susceptibles).tolist()
+
+        initial_state = list(deepflatten(list(
+            chain(
+                np.asarray(si).tolist(), np.asarray(e1Fi).tolist(),
+                np.asarray(e1SDi).tolist(), np.asarray(e1SUi).tolist(),
+                np.asarray(e1Qi).tolist(), np.asarray(e2Fi).tolist(),
+                np.asarray(e2SDi).tolist(), np.asarray(e2SUi).tolist(),
+                np.asarray(e2Qi).tolist(), np.asarray(e3Fi).tolist(),
+                np.asarray(e3SDi).tolist(), np.asarray(e3SUi).tolist(),
+                np.asarray(e3Qi).tolist(), np.asarray(dFi).tolist(),
+                np.asarray(dSDi).tolist(), np.asarray(dSUi).tolist(),
+                np.asarray(dQFi).tolist(), np.asarray(dQSi).tolist(),
+                np.asarray(uFi).tolist(), np.asarray(uSi).tolist(),
+                np.asarray(uQi).tolist(), np.asarray(_i).tolist()))))
+
+        for _ in range(12):
+            sol, Age_structure, r0_1 = self.newerExtended_ODEs(
+                self._house_cont_mat * 0,
+                gamma * (self._house_cont_mat + self._nonhouse_cont_mat),
+                eps, gamma, sigma, d, tau, 0, np.arange(2),
+                initial_state)
+
+            sigma = sigma * 2.7 / r0_1  # fine tune if necessary
+
+            sol, Age_structure, r0_2 = self.newerExtended_ODEs(
+                self._house_cont_mat*0,
+                gamma * (self._house_cont_mat + self._nonhouse_cont_mat),
+                eps, gamma, sigma, d, tau, 0, np.arange(20),
+                sol['y'][:, -1])
+
+            e = np.zeros_like(
+                sol['y'][:len(self._extended_susceptibles), :])
+
+            for _ in range(1, 13):
+                e += sol['y'][
+                    (_ * len(self._extended_susceptibles)):(
+                        (_+1) * len(self._extended_susceptibles)), :]
+
+            g = np.mean(np.divide(e[:, -1], e[:, -2]))
+
+            doubling_time = np.log(2)/np.log(g)
+
+            if doubling_time > 3.3:
+                gamma = gamma + dgamma
+            else:
+                gamma = gamma - dgamma
+                flag = 1
+
+            if flag:
+                dgamma = dgamma/2
+            else:
+                dgamma = dgamma/2
+
+        return gamma, Age_structure, r0_2
+
+    def _right_hand_side(self, t, house_cont_mat, nonhouse_cont_mat,
+                         eps, gamma, sig, d, tau, h, y):
+        """
+        """
+        # Read in the number of age-groups
+        a = len(self._extended_susceptibles)
+
+        # Split compartments into their types
+        s, e1F, e1SD, e1SU, e1Q, e2F, e2SD, e2SU, e2Q, e3F, e3SD, e3SU, e3Q, \
+            dF, dSD, dSU, dQF, dQS, uF, uS, uQ, _ = (
+                y[:a], y[a:(2*a)], y[(2*a):(3*a)],
+                y[(3*a):(4*a)], y[(4*a):(5*a)], y[(5*a):(6*a)],
+                y[(6*a):(7*a)], y[(7*a):(8*a)], y[(8*a):(9*a)],
+                y[(9*a):(10*a)], y[(10*a):(11*a)], y[(11*a):(12*a)],
+                y[(12*a):(13*a)], y[(13*a):(14*a)], y[(14*a):(15*a)],
+                y[(15*a):(16*a)], y[(16*a):(17*a)], y[(17*a):(18*a)],
+                y[(18*a):(19*a)], y[(19*a):(20*a)], y[(20*a):(21*a)],
+                y[(21*a):])
+
+        # Write actual RHS
+        lam_F = np.multiply(sig, np.dot(
+            nonhouse_cont_mat, np.asarray(dF) + np.asarray(dSD) +
+            np.asarray(dSU) + tau * np.asarray(uF) + tau * np.asarray(uS)))
+        lam_F_times_s = \
+            np.multiply(s, (1 / self._N) * lam_F)
+
+        lam_SD = np.multiply(sig, np.dot(house_cont_mat, np.asarray(dF)))
+        lam_SD_times_s = \
+            np.multiply(s, (1 / self._N) * lam_SD)
+
+        lam_SU = np.multiply(sig, tau * np.dot(house_cont_mat, np.asarray(uF)))
+        lam_SU_times_s = \
+            np.multiply(s, (1 / self._N) * lam_SU)
+
+        lam_Q = np.multiply(sig, np.dot(house_cont_mat, np.asarray(dQF)))
+        lam_Q_times_s = \
+            np.multiply(s, (1 / self._N) * lam_Q)
+
+        dydt = np.concatenate((
+            -(lam_F_times_s + lam_SD_times_s + lam_SU_times_s + lam_Q_times_s),
+            lam_F_times_s - 3 * eps * np.asarray(e1F),
+            lam_SD_times_s - 3 * eps * np.asarray(e1SD),
+            lam_SU_times_s - 3 * eps * np.asarray(e1SU),
+            lam_Q_times_s - 3 * eps * np.asarray(e1Q),
+            3 * eps * np.asarray(e1F) - 3 * eps * np.asarray(e2F),
+            3 * eps * np.asarray(e1SD) - 3 * eps * np.asarray(e2SD),
+            3 * eps * np.asarray(e1SU) - 3 * eps * np.asarray(e2SU),
+            3 * eps * np.asarray(e1Q) - 3 * eps * np.asarray(e2Q),
+            3 * eps * np.asarray(e2F) - 3 * eps * np.asarray(e3F),
+            3 * eps * np.asarray(e2SD) - 3 * eps * np.asarray(e3SD),
+            3 * eps * np.asarray(e2SU) - 3 * eps * np.asarray(e3SU),
+            3 * eps * np.asarray(e2Q) - 3 * eps * np.asarray(e3Q),
+            3 * eps * (1-h) * np.multiply(d, e3F) - gamma * np.asarray(dF),
+            3 * eps * np.multiply(d, e3SD) - gamma * np.asarray(dSD),
+            3 * eps * (1-h) * np.multiply(d, e3SU) - gamma * np.asarray(dSU),
+            3 * eps * h * np.multiply(d, e3F) - gamma * np.asarray(dQF),
+            3 * eps * (h * np.multiply(d, e3SU) + np.multiply(
+                d, e3Q)) - gamma * np.asarray(dQS),
+            3 * eps * np.multiply((1-np.asarray(d)), e3F) - gamma * np.asarray(
+                uF),
+            3 * eps * np.multiply(
+                (1-np.asarray(d)),
+                np.asarray(e3SD) + np.asarray(e3SU)) - gamma * np.asarray(uS),
+            3 * eps * np.multiply((1-np.asarray(d)), e3Q) - gamma * np.asarray(
+                uQ),
+            gamma * (
+                np.asarray(dF) + np.asarray(dQF) + np.asarray(uF) +
+                np.asarray(dSD) + np.asarray(uS) + np.asarray(dSU) +
+                np.asarray(dQS) + np.asarray(uQ))
+            ))
+
+        return dydt
+
+    def newerExtended_ODEs(self, house_cont_mat, nonhouse_cont_mat,
+                           epsilon, gamma, sig, d, tau, h, times, init_cond):
+        """
+        Computes the values in each compartment of the Warwick ODEs system
+        using the 'off-the-shelf' solver of the IVP from :module:`scipy`.
+
+        Parameters
+        ----------
+        times : list
+            List of time points at which we wish to evaluate the ODEs system.
+        num_a_groups : int
+            Number of age groups in which the population is split. It
+            refers to the number of compartments of each type.
+        method : str
+            The type of solver implemented by the :meth:`scipy.solve_ivp`.
+
+        Returns
+        -------
+        dict
+            Solution of the ODE system at the time points provided.
+
+        """
+        Age_structure, reprod_number_0 = self.r0_age_structure(
+            house_cont_mat, nonhouse_cont_mat, tau, d, sig, gamma)
+
+        # Solve the system of ODEs
+        sol = solve_ivp(
+            lambda t, y: self._right_hand_side(
+                t, house_cont_mat, nonhouse_cont_mat,
+                epsilon, gamma, sig, d, tau, h, y),
+            [times[0], times[-1]], init_cond, method='RK45', t_eval=times)
+
+        return sol, Age_structure, reprod_number_0
+
+    def r0_age_structure(self, house_cont_mat, nonhouse_cont_mat,
+                         tau, d, sigma, gamma):
+        """
+        """
+        # Compute eigenvalues and vectors of the
+        M_from_to_HAT = self._compute_next_gen_matrix(
+            d, sigma, tau,
+            house_cont_mat, nonhouse_cont_mat)
+
+        eigvals, eigvecs = np.linalg.eig(M_from_to_HAT)
+
+        reprod_number_0, i = np.max(
+            np.absolute(eigvals)), np.argmax(abs(eigvals))
+        reprod_number_0 = reprod_number_0 / gamma
+        Age_structure = abs(eigvecs[:, i])
+
+        return Age_structure, reprod_number_0
+
+    def compute_updated_param(self, alpha, tau):
         """
         Computes updated parameters values based on current values of
         alpha and tau.
@@ -255,7 +535,7 @@ class WarwickLogLik(pints.LogPDF):
             0.5789, 0.4939, 0.7038, 0.9309, 0.9818, 0.8767, 1.0000])
 
         for _ in range(100):
-            Q_guess = self._compute_updated_Q(
+            Q_guess, transmission = self._compute_updated_Q(
                 Q_guess, alpha, tau)
 
         # Compute d
@@ -264,89 +544,11 @@ class WarwickLogLik(pints.LogPDF):
         # Compute sigma
         sigma = (1/0.9) * np.power(Q_guess, alpha)
 
+        # # Compute gamma
+        # gamma = transmission[-1] * d[-1] * sigma[-1] / (
+        #     2.7 * self._extended_infectives_prop[-1])
+
         return d, sigma
-
-    def _compute_updated_Q(self, Q, alpha, tau):
-        """
-        Updates step-wise the current guess of the auxiliary parameter value Q
-        used in computing the model parameters for the guesses of alpha and
-        tau.
-
-        Parameters
-        ----------
-        Q : int or float
-            The current guess of the auxiliary parameter value Q.
-        alpha : int or float
-            The current guess of the auxiliary scenario weight parameter alpha.
-        tau : int or float
-            The current guess of the reduction in the transmission rate of
-            infection for asymptomatic individuals.
-
-        Returns
-        -------
-        tuple of lists
-            Tuple of the updated guess of the auxiliary parameter value Q
-            and force of infection vector.
-
-        """
-        # Compute symptom probability vector
-        d = np.power(Q, 1-alpha)
-
-        # Compute asymptomatic cases U from known symptomatic cases D
-        symp_cases = self._extended_infectives_prop
-        asymp_cases = np.multiply(np.divide(1, d), symp_cases) - symp_cases
-
-        # New unnormalised value for Q
-        transmission = np.dot(
-            symp_cases + tau * asymp_cases,
-            self._total_cont_mat)
-
-        nQ = np.divide(symp_cases, transmission)
-
-        # Normalise new value of Q
-        nQ = nQ / np.max(nQ)
-
-        # Return updated guess of Q based on prior value and transmission
-        # vector
-        return 0.9 * Q + 0.1 * nQ
-
-    def _compute_r0_age_structure(self, house_cont_mat, nonhouse_cont_mat,
-                                  d, sigma, tau, gamma):
-        """
-        """
-        # Compute eigenvalues and vectors of the
-        M_from_to_HAT = self._compute_next_gen_matrix(
-            house_cont_mat, nonhouse_cont_mat,
-            d, sigma, tau)
-
-        eigvals, eigvecs = np.linalg.eig(M_from_to_HAT)
-
-        reprod_number_0, i = np.max(
-            np.absolute(eigvals)), np.argmax(abs(eigvals))
-
-        reprod_number_0 = reprod_number_0 / gamma
-        Age_structure = abs(eigvecs[:, i])
-
-        return Age_structure, reprod_number_0
-
-    def _compute_next_gen_matrix(self, house_cont_mat, other_cont_mat,
-                                 d, sigma, tau):
-        """
-        """
-        M_from_to = house_cont_mat + other_cont_mat
-
-        M_from_to_HAT = np.zeros_like(M_from_to)
-        k = np.shape(M_from_to_HAT)[0]
-
-        tau = tau * np.ones(k)
-
-        for f in range(k):
-            for t in range(k):
-                M_from_to_HAT[f, t] = \
-                    M_from_to[f, t] * d[t] * sigma[t] * (
-                        1 + tau[f] * (1 - d[f]) / d[f])
-
-        return M_from_to_HAT
 
     def _log_likelihood(self, var_parameters):
         """
@@ -373,20 +575,18 @@ class WarwickLogLik(pints.LogPDF):
         alpha = var_parameters[0]
         # tau
         self._parameters[-6] = var_parameters[1]
-        # # epsilon
-        # self._parameters[-5] = var_parameters[2]
+        # epsilon
+        self._parameters[-5] = var_parameters[2]
         # E0
-        E0_multiplier = var_parameters[2]
+        E0_multiplier = var_parameters[3]
         # # phi
         # self._model.social_distancing_param[1] = var_parameters[4]
 
-        d, sigma = self._compute_updated_param(alpha, var_parameters[1])
+        d, sigma = self.compute_updated_param(
+            alpha, self._parameters[-6])
 
-        Age_structure, reprod_number_0 = self._compute_r0_age_structure(
-            self._house_cont_mat * 0,
-            self._parameters[-4] * (
-                self._house_cont_mat + self._nonhouse_cont_mat),
-            d, sigma, var_parameters[1], self._parameters[-4])
+        gamma, Age_structure = self.compute_gamma_r0(
+            var_parameters[2], d, var_parameters[1], sigma)[:2]
 
         exposed_0 = Age_structure / np.sum(Age_structure)
         detected_0 = Age_structure / np.sum(Age_structure)
@@ -423,19 +623,21 @@ class WarwickLogLik(pints.LogPDF):
         sigma = self._update_age_groups(sigma)
 
         # Update rest of parameters
+        # gamma
+        self._parameters[-4] = gamma
+
         # d
         self._parameters[-3] = d
 
         # sigma
         # self._parameters[-7] = var_parameters[5] * sigma
-        # self._parameters[-7] = var_parameters[3] * sigma
-        self._parameters[-7] = sigma
+        self._parameters[-7] = var_parameters[4] * sigma
 
         # Hs and Ds
         # Hs = var_parameters[6]
-        Hs = 1
+        Hs = var_parameters[5]
         # Ds = var_parameters[7]
-        Ds = 1
+        Ds = var_parameters[6]
 
         total_log_lik = 0
 
@@ -596,8 +798,8 @@ class WarwickLogLik(pints.LogPDF):
         d = 0.4 * np.ones(self._model._num_ages)
 
         # Transmission parameters
-        epsilon = 0.1895
-        gamma = 0.083
+        epsilon = 0.2
+        gamma = 1
         sigma = 0.5 * np.ones(self._model._num_ages)
 
         self._parameters = [
@@ -664,8 +866,7 @@ class WarwickLogPrior(pints.LogPrior):
 
         """
         # return 8
-        # return 7
-        return 3
+        return 7
 
     def __call__(self, x):
         """
@@ -689,23 +890,23 @@ class WarwickLogPrior(pints.LogPrior):
         # Prior contribution of tau
         log_prior += pints.UniformLogPrior([0], [0.5])(x[1])
 
-        # # Prior contribution of epsilon
-        # log_prior += pints.UniformLogPrior([0.1], [0.3])(x[2])
+        # Prior contribution of epsilon
+        log_prior += pints.UniformLogPrior([0.1], [0.3])(x[2])
 
         # Prior contribution of E0
-        log_prior += pints.UniformLogPrior([1], [2000])(x[2])
+        log_prior += pints.UniformLogPrior([1], [30])(x[3])
 
         # # Prior contribution of phi
         # log_prior += pints.UniformLogPrior([0], [1])(x[4])
 
-        # # Prior contribution of sigmaR
-        # log_prior += pints.UniformLogPrior([0.25], [4])(x[3])
+        # Prior contribution of sigmaR
+        log_prior += pints.UniformLogPrior([0.25], [4])(x[4])
 
-        # # Prior contribution of Hs
-        # log_prior += pints.UniformLogPrior([0.5], [2])(x[4])
+        # Prior contribution of Hs
+        log_prior += pints.UniformLogPrior([0.5], [2])(x[5])
 
-        # # Prior contribution of Ds
-        # log_prior += pints.UniformLogPrior([0.5], [2])(x[5])
+        # Prior contribution of Ds
+        log_prior += pints.UniformLogPrior([0.5], [2])(x[6])
 
         return log_prior
 
@@ -986,12 +1187,9 @@ class WarwickSEIRInfer(object):
         #     'alpha', 'tau', 'epsilon', 'E0', 'phi', 'sigmaR',
         #     'Hs', 'Ds']
 
-        # param_names = [
-        #     'alpha', 'tau', 'epsilon', 'E0', 'sigmaR',
-        #     'Hs', 'Ds']
-
         param_names = [
-            'alpha', 'tau', 'E0']
+            'alpha', 'tau', 'epsilon', 'E0', 'sigmaR',
+            'Hs', 'Ds']
 
         # Check convergence and other properties of chains
         results = pints.MCMCSummary(
@@ -1031,8 +1229,7 @@ class WarwickSEIRInfer(object):
 
         # Starting points
         # x0 = [0.9, 0, 0.2, 15, 0.5, 1, 1, 1]
-        # x0 = [0.9, 0, 0.2, 15, 1, 1, 1]
-        x0 = [0.9, 0.1, 10]
+        x0 = [0.9, 0, 0.2, 15, 1, 1, 1]
 
         # Create optimisation routine
         optimiser = pints.OptimisationController(
