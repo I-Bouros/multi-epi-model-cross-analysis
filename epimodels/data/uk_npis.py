@@ -30,17 +30,17 @@ import numpy as np
 def read_npis_data(npis_file: str):
     """
     Parses the csv document containing the daily country-specific levels of
-    npis data.
+    NPIs data.
 
     Parameters
     ----------
     npis_file : str
-        The name of the country-specific npis data file used.
+        The name of the country-specific NPIs data file used.
 
     Returns
     -------
     pandas.Dataframe
-        Dataframe of the daily country-specific levels of npis.
+        Dataframe of the daily country-specific levels of NPIs.
 
     """
     # Select data from the given state
@@ -55,17 +55,17 @@ def read_npis_data(npis_file: str):
 def read_flags_data(flags_file: str):
     """
     Parses the csv document containing the daily country-specific flags for
-    npis data.
+    NPIs data.
 
     Parameters
     ----------
     flags_file : str
-        The name of the country-specific flags for npis data file used.
+        The name of the country-specific flags for NPIs data file used.
 
     Returns
     -------
     pandas.Dataframe
-        Dataframe of the daily country-specific flags for npis.
+        Dataframe of the daily country-specific flags for NPIs.
 
     """
     # Select data from the given state
@@ -82,27 +82,27 @@ def process_npis_data(
         start_date: str = '15Feb2020',
         end_date: str = '25Jun2020'):
     """
-    Computes the changes in levels of npis for a given country for a given
+    Computes the changes in levels of NPIs for a given country for a given
     country and the times of changes.
 
     Parameters
     ----------
     data : pandas.Dataframe
-        Dataframe of the daily levels of npis for a given country for a given
+        Dataframe of the daily levels of NPIs for a given country for a given
         country.
     start_date : str
-        The initial date (year-month-date) from which the levels of npis are
+        The initial date (year-month-date) from which the levels of NPIs are
         calculated.
     end_date : str
-        The final date (year-month-date) from which the levels of npis are
+        The final date (year-month-date) from which the levels of NPIs are
         calculated.
 
     Returns
     -------
     numpy.array
-        Processed distinct levels of npis data as a matrix.
+        Processed distinct levels of NPIs data as a matrix.
     numpy.array
-        Paired time of changes in the levels of npis data as a matrix.
+        Paired time of changes in the levels of NPIs data as a matrix.
 
     """
     # Process dates
@@ -148,27 +148,27 @@ def process_flags_data(
         start_date: str = '15Feb20200',
         end_date: str = '25Jun2020'):
     """
-    Computes the changes in flags for npis for a given country for a given
+    Computes the changes in flags for NPIs for a given country for a given
     country and the times of changes.
 
     Parameters
     ----------
     data : pandas.Dataframe
-        Dataframe of the daily flags for npis for a given country for a given
+        Dataframe of the daily flags for NPIs for a given country for a given
         country.
     start_date : str
-        The initial date (year-month-date) from which the flags for npis are
+        The initial date (year-month-date) from which the flags for NPIs are
         calculated.
     end_date : str
-        The final date (year-month-date) from which the flags for npis are
+        The final date (year-month-date) from which the flags for NPIs are
         calculated.
 
     Returns
     -------
     numpy.array
-        Processed distinct flags for npis data as a matrix.
+        Processed distinct flags for NPIs data as a matrix.
     numpy.array
-        Paired time of changes in the flags for npis data as a matrix.
+        Paired time of changes in the flags for NPIs data as a matrix.
 
     """
     # Fill NA with Os
@@ -233,13 +233,13 @@ def process_dates(date: str):
 
 def main():
     """
-    Produces files for the time-dependent levels of npis and their flags
+    Produces files for the time-dependent levels of NPIs and their flags
     as well as the times these changes occur.
 
     Returns
     -------
     csv
-        Processed files for the time-dependent levels of npis and their flags
+        Processed files for the time-dependent levels of NPIs and their flags
         as well as the times these changes occur.
 
     """

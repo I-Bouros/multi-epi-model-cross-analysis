@@ -33,22 +33,22 @@ def read_contact_matrices(
         file_index: int = 2,
         state: str = 'United Kingdom of Great Britain'):
     """
-    Read the baseline contact matices for different activities recorded
+    Read the baseline contact matrices for different activities recorded
     for the given state from the appropriate Excel file.
 
     Parameters
     ----------
     file_index : int
-        Index of the file containg the baseline contact matrices
+        Index of the file containing the baseline contact matrices
         used in the model.
     state : str
-        Name of the country whose the baseline contact matrices are used in
+        Name of the country whose baseline contact matrices are used in
         the model.
 
-    Retruns
+    Returns
     -------
     list of pandas.Dataframe
-        List of the baseline contact matices for each activitiy recorded
+        List of the baseline contact matrices for each activity recorded
         for different for the given state.
 
     """

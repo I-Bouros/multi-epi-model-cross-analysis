@@ -29,7 +29,7 @@ import epimodels as em
 class WarwickSEIRModel(pints.ForwardModel):
     r"""WarwickSEIRModel Class:
     Base class for constructing the ODE model: deterministic SEIR developed by
-    Univerity of Warwick to model the Covid-19 epidemic and the effects
+    University of Warwick to model the Covid-19 epidemic and the effects
     of within-household dynamics on the epidemic trajectory in different
     countries.
 
@@ -46,9 +46,9 @@ class WarwickSEIRModel(pints.ForwardModel):
     they are symptomatic or asymptomatic infectious, and whether they are the
     first in the household to be infected, if they are quarantined, or are a
     subsequent infection. We also consider a population divided in age groups,
-    as we expect people of different ages to interact diferently between
+    as we expect people of different ages to interact differently between
     themselves and to be affected differently by the virus, i.e. have
-    different succeptibilities to infection and proportions of
+    different susceptibilities to infection and proportions of
     asymptomatic individuals. The model structure now
     becomes, for each region:
 
@@ -87,7 +87,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         \end{eqnarray}
 
     where :math:`i` is the age group of the individual, :math:`C_{ij}` is
-    the :math:`(i,j)` th element of the regional contact matrix, and
+    the :math:`(i,j)` the element of the regional contact matrix, and
     represents the expected number of new infections in age group :math:`i`
     caused by an infectious in age group :math:`j`. :math:`N` is the total
     population size.
@@ -126,7 +126,7 @@ class WarwickSEIRModel(pints.ForwardModel):
     this parameter cause the curve to more closely approach the step function.
 
     The :math:`P_a`, :math:`P_{ss}` and :math:`P_d` parameters represent the
-    propotions of people that go on to become asymptomatic, super-spreaders
+    proportions of people that go on to become asymptomatic, super-spreaders
     or dead, respectively. Because we expect older people to be more likely to
     die and younger people to be more likely to be asymptomatic, we consider
     :math:`P_a` and :math:`P_d` to be age dependent.
@@ -141,7 +141,7 @@ class WarwickSEIRModel(pints.ForwardModel):
           status;
         * :math:`\gamma_{ra}`: asymptomatic to recovered (or dead) status.
 
-    Because we expect older and younger people to recover diferently from the
+    Because we expect older and younger people to recover differently from the
     virus we consider :math:`\gamma_r` and :math:`\gamma_{ra}` to be age
     dependent. These rates are computed according to the following formulae:
 
@@ -160,13 +160,13 @@ class WarwickSEIRModel(pints.ForwardModel):
     from exposed to presymptomatic infection), :math:`k_s` the average time to
     developing symptoms since disease onset, :math:`k_q` the average time until
     the case is quarantined once the symptoms appear, :math:`k_r` the average
-    time until recovery since the start of the quaranrining period and
+    time until recovery since the start of the quarantining period and
     :math:`k_{ri}` the average time to recovery since the end of the
     presymptomatic stage for an asymptomatic case.
 
     :math:`S(0) = S_0, E(0) = E_0, I(0) = I_0, R(0) = R_0` are also
     parameters of the model (evaluation at 0 refers to the compartments'
-    structure at intial time.
+    structure at initial time.
 
     Extends :class:`pints.ForwardModel`.
 

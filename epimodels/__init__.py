@@ -7,7 +7,7 @@
 # released under the MIT license. See accompanying LICENSE for copyright
 # notice and full license details.
 #
-"""epimodels is a Epidemiology Modelling library.
+"""epimodels is an Epidemiology Modelling library.
 It contains functionality for creating regional, contact population matrices
 as well as modelling of the number of cases of infections by compartment
 during an outbreak of the SARS-Cov-2 virus.

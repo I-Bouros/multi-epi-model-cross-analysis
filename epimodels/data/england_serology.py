@@ -217,7 +217,7 @@ def main(files: list):
     -------
     csv
         Processed serology data files for each different region found in the
-        fiven file.
+        given file.
 
     """
 

@@ -99,10 +99,10 @@ class TestContactMatrixClass(unittest.TestCase):
         # Assert show_figure is called once
         assert show_patch.called
 
+
 #
 # Test RegionMatrix Class
 #
-
 
 class TestRegionMatrixClass(unittest.TestCase):
     """
@@ -198,10 +198,10 @@ class TestRegionMatrixClass(unittest.TestCase):
         # Assert show_figure is called once
         assert show_patch.called
 
+
 #
 # Test UniNextGenMatrix Class
 #
-
 
 class TestUniNextGenMatrixClass(unittest.TestCase):
     """
@@ -277,10 +277,10 @@ class TestUniNextGenMatrixClass(unittest.TestCase):
 
         self.assertEqual(next_gen.compute_dom_eigenvalue(), 144)
 
+
 #
 # Test UniInfectivityMatrix Class
 #
-
 
 class TestMultiTimesContacts(unittest.TestCase):
     """
@@ -493,10 +493,10 @@ class TestMultiTimesContacts(unittest.TestCase):
             multi_time_contacts.identify_current_contacts(2, 15),
             np.array([[0.5, 0], [0, 13.8]]))
 
+
 #
 # Test UniInfectivityMatrix Class
 #
-
 
 class TestUniInfectivityMatrixClass(unittest.TestCase):
     """
@@ -622,10 +622,10 @@ class TestUniInfectivityMatrixClass(unittest.TestCase):
         with self.assertRaises(TypeError):
             infect.compute_reproduction_number(temp_variation, 0)
 
+
 #
 # Test MultiTimesInfectivity Class
 #
-
 
 class TestMultiTimesInfectivityClass(unittest.TestCase):
     """

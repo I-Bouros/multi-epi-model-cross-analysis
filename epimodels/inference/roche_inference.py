@@ -8,8 +8,8 @@
 #
 """
 This script contains code for parameter inference of the extended SEIR model
-created by Public Health England and Univerity of Cambridge. This is one of the
-official models used by the UK government for policy making.
+created by F. Hoffmann-La Roche Ltd and can be used to model the effects of
+non-pharmaceutical interventions (NPIs) on the epidemic dynamics.
 
 It uses an extended version of an SEIR model with contact and region-specific
 matrices.
@@ -319,10 +319,10 @@ class RocheLogLik(pints.LogPDF):
         """
         return self._log_likelihood(x)
 
+
 #
 # RocheLogPrior Class
 #
-
 
 class RocheLogPrior(pints.LogPrior):
     """RocheLogPrior Class:
@@ -381,10 +381,10 @@ class RocheLogPrior(pints.LogPrior):
 
         return log_prior
 
+
 #
 # RocheSEIRInfer Class
 #
-
 
 class RocheSEIRInfer(object):
     """RocheSEIRInfer Class:
