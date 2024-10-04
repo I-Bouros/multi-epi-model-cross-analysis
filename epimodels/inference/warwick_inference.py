@@ -8,8 +8,8 @@
 #
 """
 This script contains code for parameter inference of the extended SEIR model
-created by Public Health England and University of Cambridge. This is one of the
-official models used by the UK government for policy making.
+created by the University of Warwick. This is one of the official models used
+by the UK government for policy making.
 
 It uses an extended version of an SEIR model with contact and region-specific
 matrices.
@@ -22,6 +22,7 @@ import numpy as np
 import pints
 
 import epimodels as em
+
 
 class WarwickLogLik(pints.LogPDF):
     """WarwickLogLik Class:
@@ -629,6 +630,7 @@ class WarwickLogLik(pints.LogPDF):
         """
         return self._log_likelihood(x)
 
+
 #
 # WarwickLogPrior Class
 #
@@ -709,6 +711,7 @@ class WarwickLogPrior(pints.LogPrior):
         # log_prior += pints.UniformLogPrior([0.5], [2])(x[5])
 
         return log_prior
+
 
 #
 # WarwickSEIRInfer Class
