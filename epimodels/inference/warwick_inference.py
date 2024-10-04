@@ -8,7 +8,7 @@
 #
 """
 This script contains code for parameter inference of the extended SEIR model
-created by Public Health England and Univerity of Cambridge. This is one of the
+created by Public Health England and University of Cambridge. This is one of the
 official models used by the UK government for policy making.
 
 It uses an extended version of an SEIR model with contact and region-specific
@@ -23,7 +23,6 @@ import pints
 
 import epimodels as em
 
-
 class WarwickLogLik(pints.LogPDF):
     """WarwickLogLik Class:
     Controller class to construct the log-likelihood needed for optimisation or
@@ -33,10 +32,13 @@ class WarwickLogLik(pints.LogPDF):
     ----------
     model : WarwickSEIRModel
         The model for which we solve the optimisation or inference problem.
-    extended_susceptibles
-
-    extended_infectives_prop
-
+    extended_susceptibles : list
+        List country-level initial number of
+        susceptibles organised in an extended age classification.
+    extended_infectives_prop : list
+        List country-level initial proportions of
+        infective individuals in each age group when the population is
+        organised in an extended age classification.
     extended_house_cont_mat : ContactMatrix
         Initial contact matrix with more age groups used for the modelling,
         underlying household interactions.
@@ -244,7 +246,7 @@ class WarwickLogLik(pints.LogPDF):
         Returns
         -------
         tuple of lists
-            Tuple of the updated values of the d, sdigma and gamma parameters
+            Tuple of the updated values of the d, sigma and gamma parameters
             of the model.
 
         """
@@ -268,7 +270,7 @@ class WarwickLogLik(pints.LogPDF):
 
     def _compute_updated_Q(self, Q, alpha, tau):
         """
-        Updates step-wise the current guess of the auxiliary parameter value Q
+        Updates stepwise the current guess of the auxiliary parameter value Q
         used in computing the model parameters for the guesses of alpha and
         tau.
 
@@ -392,7 +394,7 @@ class WarwickLogLik(pints.LogPDF):
         detected_0 = Age_structure / np.sum(Age_structure)
         undetected_0 = Age_structure / np.sum(Age_structure)
 
-        # Asign updated initial conditions
+        # Assign updated initial conditions
         # Exposed_1_f
         self._parameters[2] = E0_multiplier * np.asarray(
             [self._stack_age_groups(exposed_0 / number_E_states, r)
@@ -631,7 +633,6 @@ class WarwickLogLik(pints.LogPDF):
 # WarwickLogPrior Class
 #
 
-
 class WarwickLogPrior(pints.LogPrior):
     """WarwickLogPrior Class:
     Controller class to construct the log-prior needed for optimisation or
@@ -713,7 +714,6 @@ class WarwickLogPrior(pints.LogPrior):
 # WarwickSEIRInfer Class
 #
 
-
 class WarwickSEIRInfer(object):
     """WarwickSEIRInfer Class:
     Controller class for the optimisation or inference of parameters of the
@@ -762,11 +762,12 @@ class WarwickSEIRInfer(object):
         Parameters
         ----------
         extended_susceptibles : list
-            List of regional age-structured lists of the initial number of
-            susceptibles with more age groups.
-        extended_infectives_prop_prop : list
-            List of regional age-structured lists of the propotions of initial
-            number of infectives with more age groups.
+            List country-level initial number of
+            susceptibles organised in an extended age classification.
+        extended_infectives_prop : list
+            List country-level initial proportions of
+            infective individuals in each age group when the population is
+            organised in an extended age classification.
 
         """
         self._extended_susceptibles = extended_susceptibles
@@ -829,7 +830,7 @@ class WarwickSEIRInfer(object):
 
     def read_delay_data(self, pDtoH, dDtoH, pHtoDeath, dHtoDeath):
         """
-        Sets the hosptitalisation and death delays data used for the model's
+        Sets the hospitalisation and death delays data used for the model's
         parameters inference.
 
         Parameters
