@@ -55,33 +55,33 @@ class RocheSEIRModel(pints.ForwardModel):
 
         \begin{eqnarray}
             \frac{dS_i}{dt} &=& \sum_{j} C_{ij}(- \frac{\beta_a}{N} S_i
-                {I_a}_j - \frac{\beta_{aa}}{N} S_i {I_{aa}}_j -
-                \frac{\beta_s}{N} S_i {I_s}_j - \frac{\beta_{as}}{N} S_i
-                {I_{as}}_j - \frac{\beta_{aas}}{N} S_i {I_{aas}}_j -
-                \frac{\beta_{ss}}{N} S_i {I_{ss}}_j) \\
+                {I^a}_j - \frac{\beta_{aa}}{N} S_i {I^{aa}}_j -
+                \frac{\beta_s}{N} S_i {I^s}_j - \frac{\beta_{as}}{N} S_i
+                {I^{as}}_j - \frac{\beta_{aas}}{N} S_i {I^{aas}}_j -
+                \frac{\beta_{ss}}{N} S_i {I^{ss}}_j) \\
             \frac{dE_i}{dt} &=& -\gamma_e E_i + \sum_{j} C_{ij}(
-                \frac{\beta_a}{N} S_i {I_a}_j + \frac{\beta_{aa}}{N} S_i
-                {I_{aa}}_j + \frac{\beta_s}{N} S_i {I_s}_j +
-                \frac{\beta_{as}}{N} S_i {I_{as}}_j + \frac{\beta_{aas}}{N}
-                S_i {I_{aas}}_j + \frac{\beta_{ss}}{N} S_i {I_{ss}}_j) \\
-            \frac{d{I_a}_i}{dt} &=& (1 - P_{ss}) \gamma_e E_i -
-                \gamma_s {I_a}_i \\
-            \frac{d{I_{aa}}_i}{dt} &=& {P_a}_i \gamma_s {I_a}_i -
-                {\gamma_{ra}}_i {I_{aa}}_i \\
-            \frac{d{I_s}_i}{dt} &=& (1 - {P_a}_i) \gamma_s {I_a}_i -
-                \gamma_q {I_s}_i \\
-            \frac{d{I_{as}}_i}{dt} &=& P_{ss} \gamma_e E_i -
-                \gamma_s {I_{as}}_i \\
-            \frac{d{I_{aas}}_i}{dt} &=& {P_a}_i \gamma_s {I_{as}}_i -
-                {\gamma_{ra}}_i {I_{aas}}_i \\
-            \frac{d{I_{ss}}_i}{dt} &=& (1 - {P_a}_i) \gamma_s {I_{as}}_i -
-                \gamma_q {I_{ss}}_i \\
-            \frac{d{I_q}_i}{dt} &=& \gamma_q {I_{ss}}_i + \gamma_q {I_s}_i -
-                {\gamma_r}_i {I_q}_i\\
-            \frac{dR_i}{dt} &=& (1 - {P_d}_i) {\gamma_r}_i {I_q}_i \\
-            \frac{d{R_a}_i}{dt} &=& {\gamma_{ra}}_i {I_{aas}}_i +
-                {\gamma_{ra}}_i {I_{aa}}_i \\
-            \frac{dD_i}{dt} &=& {P_d}_i {\gamma_r}_i {I_q}_i
+                \frac{\beta_a}{N} S_i {I^a}_j + \frac{\beta_{aa}}{N} S_i
+                {I^{aa}}_j + \frac{\beta_s}{N} S_i {I^s}_j +
+                \frac{\beta_{as}}{N} S_i {I^{as}}_j + \frac{\beta_{aas}}{N}
+                S_i {I^{aas}}_j + \frac{\beta_{ss}}{N} S_i {I^{ss}}_j) \\
+            \frac{d{I^a}_i}{dt} &=& (1 - P_{ss}) \gamma_e E_i -
+                \gamma_s {I^a}_i \\
+            \frac{d{I^{aa}}_i}{dt} &=& {P_a}_i \gamma_s {I^a}_i -
+                {\gamma_{ra}}_i {I^{aa}}_i \\
+            \frac{d{I^s}_i}{dt} &=& (1 - {P_a}_i) \gamma_s {I^a}_i -
+                \gamma_q {I^s}_i \\
+            \frac{d{I^{as}}_i}{dt} &=& P_{ss} \gamma_e E_i -
+                \gamma_s {I^{as}}_i \\
+            \frac{d{I^{aas}}_i}{dt} &=& {P_a}_i \gamma_s {I^{as}}_i -
+                {\gamma_{ra}}_i {I^{aas}}_i \\
+            \frac{d{I^{ss}}_i}{dt} &=& (1 - {P_a}_i) \gamma_s {I^{as}}_i -
+                \gamma_q {I^{ss}}_i \\
+            \frac{d{I^q}_i}{dt} &=& \gamma_q {I^{ss}}_i + \gamma_q {I^s}_i -
+                {\gamma_r}_i {I^q}_i\\
+            \frac{dR^i}{dt} &=& (1 - {P_d}_i) {\gamma_r}_i {I^q}_i \\
+            \frac{d{R^a}_i}{dt} &=& {\gamma_{ra}}_i {I^{aas}}_i +
+                {\gamma_{ra}}_i {I^{aa}}_i \\
+            \frac{dD_i}{dt} &=& {P_d}_i {\gamma_r}_i {I^q}_i
         \end{eqnarray}
 
     where :math:`i` is the age group of the individual, :math:`C_{ij}` is

@@ -36,14 +36,16 @@ class WarwickSEIRModel(pints.ForwardModel):
     countries.
 
     The population is structured such that every individual will belong to one
-    of the compartments of the extended SEIRD model.
+    of the compartments of the extended SEIR model.
 
     The general SEIR Model has four compartments - susceptible individuals
     (:math:`S`), exposed but not yet infectious (:math:`E`), infectious
     (:math:`I`) and recovered (:math:`R`).
 
-    In the Warwick model framework, the exposed are split into 4 compartments,
-    depending on the type of infective that has infected them, while the
+    In the Warwick-Household model framework, the exposed are split first into
+    four compartments, depending on the type of infective that has infected
+    them within the household, and each of them further into three sequential
+    exposed compartments to illustrate different latency stages. The
     infectious compartment is split into 8 distinct ones: depending on whether
     they are symptomatic or asymptomatic infectious, and whether they are the
     first in the household to be infected, if they are quarantined, or are a
@@ -58,34 +60,55 @@ class WarwickSEIRModel(pints.ForwardModel):
        :nowrap:
 
         \begin{eqnarray}
-            \frac{dS_i}{dt} &=& \sum_{j} C_{ij}(- \frac{\beta_a}{N} S_i
-                {I_a}_j - \frac{\beta_{aa}}{N} S_i {I_{aa}}_j -
-                \frac{\beta_s}{N} S_i {I_s}_j - \frac{\beta_{as}}{N} S_i
-                {I_{as}}_j - \frac{\beta_{aas}}{N} S_i {I_{aas}}_j -
-                \frac{\beta_{ss}}{N} S_i {I_{ss}}_j) \\
-            \frac{dE_i}{dt} &=& -\gamma_E E_i + \sum_{j} C_{ij}(
-                \frac{\beta_a}{N} S_i {I_a}_j + \frac{\beta_{aa}}{N} S_i
-                {I_{aa}}_j + \frac{\beta_s}{N} S_i {I_s}_j +
-                \frac{\beta_{as}}{N} S_i {I_{as}}_j + \frac{\beta_{aas}}{N}
-                S_i {I_{aas}}_j + \frac{\beta_{ss}}{N} S_i {I_{ss}}_j) \\
-            \frac{d{I_a}_i}{dt} &=& (1 - P_{ss}) \gamma_E E_i -
-                \gamma_s {I_a}_i \\
-            \frac{d{I_{aa}}_i}{dt} &=& {P_a}_i \gamma_s {I_a}_i -
-                {\gamma_{ra}}_i {I_{aa}}_i \\
-            \frac{d{I_s}_i}{dt} &=& (1 - {P_a}_i) \gamma_s {I_a}_i -
-                \gamma_q {I_s}_i \\
-            \frac{d{I_{as}}_i}{dt} &=& P_{ss} \gamma_E E_i -
-                \gamma_s {I_{as}}_i \\
-            \frac{d{I_{aas}}_i}{dt} &=& {P_a}_i \gamma_s {I_{as}}_i -
-                {\gamma_{ra}}_i {I_{aas}}_i \\
-            \frac{d{I_{ss}}_i}{dt} &=& (1 - {P_a}_i) \gamma_s {I_{as}}_i -
-                \gamma_q {I_{ss}}_i \\
-            \frac{d{I_q}_i}{dt} &=& \gamma_q {I_{ss}}_i + \gamma_q {I_s}_i -
-                {\gamma_r}_i {I_q}_i\\
-            \frac{dR_i}{dt} &=& (1 - {P_d}_i) {\gamma_r}_i {I_q}_i \\
-            \frac{d{R_a}_i}{dt} &=& {\gamma_{ra}}_i {I_{aas}}_i +
-                {\gamma_{ra}}_i {I_{aa}}_i \\
-            \frac{dD_i}{dt} &=& {P_d}_i {\gamma_r}_i {I_q}_i
+            \frac{dS_i}{dt} &=& - \sigma \Big(C^N \big(\frac{S_i}{N} I^F_j +
+                \frac{S_i}{N} I^{SD}_j + \frac{S_i}{N} I^{SU}_j +
+                \tau(\frac{S_i}{N} A^F_j + \frac{S_i}{N} A^S_j)\big) +
+                +C^H (\frac{S_i}{N} I^F_j + \frac{S_i}{N} A^F_j +
+                \frac{S_i}{N} I^{QF}_j) \Big)\\
+            \frac{dE^{1,F}_i}{dt} &=& \sigma C^N \big(\frac{S_i}{N} I^F_j +
+                \frac{S_i}{N} I^{SD}_i + \frac{S_i}{N} I^{SU}_j +
+                \tau(\frac{S_i}{N} A^F_j + \frac{S_i}{N} A^S_j)\big) -
+                3 \epsilon E^{1,F}_j \\
+            \frac{dE^{1,SD}_i}{dt} &=& \sigma C^H \frac{S_i}{N} I^F_i -
+                3 \epsilon E^{1,SD}_i \\
+            \frac{dE^{1,SU}_i}{dt} &=& \sigma C^H \frac{S_i}{N} A^F_i -
+                3 \epsilon E^{1,SU}_i \\
+            \frac{dE^{1,Q}_i}{dt} &=& \sigma C^H S_i I^{QF}_i -
+                3 \epsilon E^{1,Q}_i \\
+            \frac{dE^{2,F}_i}{dt} &=& 3 \epsilon E^{1,F}_i -
+                3 \epsilon E^{2,F}_i \\
+            \frac{dE^{2,SD}_i}{dt} &=& 3 \epsilon E^{1,SD}_i -
+                3 \epsilon E^{2,SD}_i \\
+            \frac{dE^{2,SU}_i}{dt} &=& 3 \epsilon E^{1,SU}_i -
+                3 \epsilon E^{2,SU}_i \\
+            \frac{dE^{2,Q}_i}{dt} &=& 3 \epsilon E^{1,Q}_i -
+                3 \epsilon E^{2,Q}_i \\
+            \frac{dE^{3,F}_i}{dt} &=& 3 \epsilon E^{2,F}_i -
+                3 \epsilon E^{3,F}_i \\
+            \frac{dE^{3,SD}_i}{dt} &=& 3 \epsilon E^{2,SD}_i -
+                3 \epsilon E^{3,SD}_i \\
+            \frac{dE^{3,SU}_i}{dt} &=& 3 \epsilon E^{2,SU}_i -
+                3 \epsilon E^{3,SU}_i \\
+            \frac{dE^{1,Q}_i}{dt} &=& 3 \epsilon E^{2,Q}_i -
+                3 \epsilon E^{3,Q}_i \\
+            \frac{dI^F_i}{dt} &=& 3 (1-H) \epsilon d E^{3,F}_i -
+                \gamma I^F_i \\
+            \frac{dI^{SD}_i}{dt} &=& 3 \epsilon d E^{3,SD}_i -
+                \gamma I^{SD}_i \\
+            \frac{dI^{SU}_i}{dt} &=& 3 (1-H) \epsilon d E^{3,SU}_i -
+                \gamma I^{SU}_i \\
+            \frac{dI^{QF}_i}{dt} &=& 3 H \epsilon d E^{3,F}_i -
+                \gamma I^{QF}_i \\
+            \frac{dI^{QS}_i}{dt} &=& 3 H \epsilon d (E^{3,SD}_i + E^{3,SU}_i) -
+                \gamma I^{QS}_i \\
+            \frac{dA^F_i}{dt} &=& 3 \epsilon (1 - d) E^{3,F}_i -
+                \gamma A^F_i \\
+            \frac{dA^S_i}{dt} &=& 3 \epsilon (1 - d) (E^{3,SD}_i + E^{3,SU}_i)
+                - \gamma A^S_i \\
+            \frac{dA^Q_i}{dt} &=& 3 \epsilon (1 - d) E^{3,Q}_i -
+                \gamma A^Q_i \\
+            \frac{dR_i}{dt} &=& \gamma (I^F_i + I^{QF}_i + A^F_i + I^{SD}_i +
+                A^S_i + I^{SU}_i + I^{QS}_i + A^Q_i)
         \end{eqnarray}
 
     where :math:`i` is the age group of the individual, :math:`C_{ij}` is
