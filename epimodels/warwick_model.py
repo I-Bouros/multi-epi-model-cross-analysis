@@ -7,11 +7,11 @@
 # notice and full license details.
 #
 """
-This script contains code for modelling the extended SEIR model created by
-Public Health England and Univerity of Cambridge. This is one of the
-official models used by the UK government for policy making.
+This script contains code for modelling the extended SEIR model
+created by the University of Warwick. This is one of the official models used
+by the UK government for policy making.
 
-It uses an extended version of an SEIR model and contact and region specific
+It uses an extended version of an SEIR model with contact and region-specific
 matrices.
 
 """

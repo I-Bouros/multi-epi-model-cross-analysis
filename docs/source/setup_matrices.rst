@@ -2,6 +2,8 @@
 Setup Matrices
 **************
 
+This page contains information about the different classes used for setting up regional and contact matrices for the models included in `epimodels'.
+
 .. currentmodule:: epimodels
 
 Overview:
