@@ -23,7 +23,9 @@ created by the University of Warwick. This is one of the official models used
 by the UK government for policy making.
 
 It uses an extended version of an SEIR model with contact and region-specific
-matrices.
+matrices and can be used to model the effects of within-household dynamics on
+the epidemic trajectory in different countries. It also differentiates between
+asymptomatic and symptomatic infections.
 
 .. currentmodule:: epimodels
 
