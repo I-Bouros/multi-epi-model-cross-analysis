@@ -45,8 +45,8 @@ Roche SEIRD Model
 .. autoclass:: RocheSEIRModel
   :members:
 
-Warwick Model
-*************
+Warwick-Household Model
+***********************
 
 .. autoclass:: WarwickSEIRModel
   :members:

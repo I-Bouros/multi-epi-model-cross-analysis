@@ -11,14 +11,17 @@ Overview:
 - Inference & Optimisation Controller Classes:
     - :class:`PheSEIRInfer`
     - :class:`RocheSEIRInfer`
+    - :class:`WarwickSEIRInfer`
 
 - Log-likelihood Initial Conditions Classes:
     - :class:`PHELogLik`
     - :class:`RocheLogLik`
+    - :class:`WarwickLogLik`
 
 - Prior Classes:
     - :class:`PHELogPrior`
     - :class:`RocheLogPrior`
+    - :class:`WarwickLogPrior`
 
 Public Health England & Cambridge Model
 ***************************************
@@ -42,4 +45,16 @@ Roche SEIRD Model
   :members:
 
 .. autoclass:: RocheLogPrior
+  :members:
+
+Warwick-Household Model
+***********************
+
+.. autoclass:: WarwickSEIRInfer
+  :members:
+
+.. autoclass:: WarwickLogLik
+  :members:
+
+.. autoclass:: WarwickLogPrior
   :members:

@@ -73,8 +73,8 @@ Parameters Controller
 .. autoclass:: PheParametersController
   :members:
 
-Parameter Classes for the Roche Model
-*************************************
+Parameter Classes for the Roche SEIRD Model
+*******************************************
     Below we list the methods for all the parameter classes associated with the forward simulation of the Roche model.
 
 Initial Conditions Parameters
@@ -113,9 +113,9 @@ Parameters Controller
 .. autoclass:: RocheParametersController
   :members:
 
-Parameter Classes for the PHE Model
-***********************************
-    Below we list the methods for all the parameter classes associated with the forward simulation of the Warwick model.
+Parameter Classes for the Warwick-Household Model
+*************************************************
+    Below we list the methods for all the parameter classes associated with the forward simulation of the Warwick-Household model.
 
 Initial Conditions Parameters
 *****************************
