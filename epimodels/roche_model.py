@@ -86,9 +86,9 @@ class RocheSEIRModel(pints.ForwardModel):
 
     where :math:`i` is the age group of the individual, :math:`C_{ij}` is
     the :math:`(i,j)`th element of the regional contact matrix, and
-    represents the expected number of new infections in age group :math:`i`
-    caused by an infectious in age group :math:`j`. :math:`N` is the total
-    population size.
+    represents the expected number of contacts in age group :math:`i`
+    made by an individuals in age group :math:`j` on a given day. :math:`N` is
+    the total population size.
 
     The transmission parameters are the rates with which different types of
     infectious individual infects susceptible ones.
@@ -162,7 +162,11 @@ class RocheSEIRModel(pints.ForwardModel):
     :math:`k_{ri}` the average time to recovery since the end of the
     presymptomatic stage for an asymptomatic case.
 
-    :math:`S(0) = S_0, E(0) = E_0, I(0) = I_0, R(0) = R_0, D(0) = D_0` are also
+    :math:`S(0) = S_0`, :math:`E(0) = E_0`, :math:`I^a(0) = I^a_0`,
+    :math:`I^{aa}(0) = I^{aa}_0`, :math:`I^s(0) = I^s_0`,
+    :math:`I^{as}(0) = I^{as}_0`, :math:`I^{aas}(0) = I^{aas}_0`,
+    :math:`I^{ss}(0) = I^{ss}_0`, :math:`I^q(0) = I^q_0`,
+    :math:`R(0) = R_0`, :math:`R^a(0) = R^a_0`, :math:`D(0) = D_0` are also
     parameters of the model (evaluation at 0 refers to the compartments'
     structure at initial time.
 

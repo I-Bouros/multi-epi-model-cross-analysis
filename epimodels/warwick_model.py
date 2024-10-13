@@ -111,87 +111,87 @@ class WarwickSEIRModel(pints.ForwardModel):
                 A^S_i + I^{SU}_i + I^{QS}_i + A^Q_i)
         \end{eqnarray}
 
-    where :math:`i` is the age group of the individual, :math:`C_{ij}` is
-    the :math:`(i,j)` the element of the regional contact matrix, and
-    represents the expected number of new infections in age group :math:`i`
-    caused by an infectious in age group :math:`j`. :math:`N` is the total
+    where :math:`i` is the age group of the individual, :math:`C^H_{ij}` is
+    the :math:`(i,j)` the element of the regional household contact matrix, and
+    represents the expected number of contacts in age group :math:`i` within
+    the household made by an individuals in age group :math:`j` on a given day.
+    Similarly, :math:`C^N_{ij}` is the :math:`(i,j)` the element of the
+    regional non-household contact matrix and represents the expected number of
+    contacts in age group :math:`i` outside the household made by an
+    individual in age group :math:`j` on a given day. :math:`N` is the total
     population size.
 
-    The transmission parameters are the rates with which different types of
-    infectious individual infects susceptible ones.
-
-    The transmission rates for the different types of infectious vectors are:
-
-        * :math:`\beta_a`: presymptomatic infectious;
-        * :math:`\beta_{aa}`: asymptomatic infectious;
-        * :math:`\beta_s`: symptomatic infectious;
-        * :math:`\beta_{as}`: presymptomatic super-spreader infectious;
-        * :math:`\beta_{aas}`: asymptomatic super-spreader infectious;
-        * :math:`\beta_{ss}`: symptomatic super-spreader infectious.
-
-    The transmission rates depend on each other according to the following
-    formulae:
+    Non-pharmaceutical interventions will alter the number of contacts
+    individuals will have in each context per day. The correct :math:`C^H` and
+    :math:`C^N` matrices are calculated each day by computing a weighted
+    average between the baseline matrices for contacts within household
+    (:math:`C^{H, base}`), at school (:math:`C^{S, base}`), in the workplace
+    (:math:`C^{W, base}`) and in all other contexts (:math:`C^{O, base}`) and
+    their full-lockdown equivalents which are given by:
 
     .. math::
         :nowrap:
 
         \begin{eqnarray}
-            \beta_a &=& \beta_{aa} = \frac{\beta_s}{2} \\
-            \beta_{as} &=& \beta_{aas} = \frac{\beta_{ss}}{2} \\
-            \beta_{s} &=& \beta_{max} - (\beta_{max} - \beta_{min})\frac{
-                SI^\gamma}{SI^\gamma + SI_50^\gamma} \\
-            \beta_{as} &=& (1 + b_{ss})\beta_a \\
-            \beta_{aas} &=& (1 + b_{ss})\beta_{aa} \\
-            \beta_{ss} &=& (1 + b_{ss})\beta_s \\
+            C^{H, lock} &=& q_H * C^{H, base} \\
+            C^{S, lock} &=& q_S * C^{S, base} \\
+            C^{W, lock} &=& q_W * C^{W, base} \\
+            C^{O, lock} &=& q_O * C^{O, base} \\
         \end{eqnarray}
 
-    where :math:`b_{ss}` represents the relative increase in transmission of a
-    super-spreader case and :math:`\gamma` is the sharpness of the
-    intervention wave used for function continuity purposes. Larger values of
-    this parameter cause the curve to more closely approach the step function.
+    where :math:`q_H` is the coefficient of increase in contacts within the
+    hosuehold and :math:`q_S`, :math:`q_W` and :math:`q_O` are the
+    decrease in contacts at school, in the workplace, and, respectively, in all
+    other contexts when a full-lockdown is implemented. Therefore, the
+    daily contact matrices :math:`C^H` and :math:`C^N` applied are given by:
 
-    The :math:`P_a`, :math:`P_{ss}` and :math:`P_d` parameters represent the
-    proportions of people that go on to become asymptomatic, super-spreaders
-    or dead, respectively. Because we expect older people to be more likely to
-    die and younger people to be more likely to be asymptomatic, we consider
-    :math:`P_a` and :math:`P_d` to be age dependent.
+    .. math::
+        :nowrap:
 
-    The rates of progessions through the different
+        \begin{eqnarray}
+            C^H &=& 1.3 * \big((1-\phi)*C^{H, base} + \phi*C^{H, lock}\big) \\
+            C^S &=& \big((1-\phi)*C^{S, base} + \phi*C^{S, lock}\big) \\
+            C^W &=& \big(1-\theta + \theta * (1-\phi + \phi*q_O)\big) * \big(
+                (1-\phi)*C^{W, base} + \phi*C^{W, lock}\big) \\
+            C^O &=& (1-\phi + \phi*q_O) * \big(
+                (1-\phi)*C^{O, base} + \phi*C^{O, lock}\big) \\
+        \end{eqnarray}
+
+    where :math:`\phi` is a coefficient indicating the strength of the
+    implemented interventions and :math:`\theta` is a scaling factor of any
+    public-facing interactions.
+
+    The transmission parameters are the rates with which different types of
+    infectious individual infects susceptible ones. Asymptomatic infections
+    are assumed to have a reduced transmission compared to their symptomatic
+    counterpart. This reduction in transmission is indicated through the
+    parameter :math:`\tau` in the force of infection.
+
+    The :math:`\sigma`, :math:`H` and :math:`d` parameters represent the
+    susceptibilities to the disease, the household quarantine complience
+    factor and, respectively, the proportions of people that go on to develop
+    symptomatic infections. Because we expect older people to be more likely
+    to be susceptible to infection and younger people to be more likely to be
+    asymptomatic, we consider :math:`\sigma` and :math:`d` to be age dependent.
+
+    The rates of progression through the different
     stages of the illness are:
 
-        * :math:`\gamma_E`: exposed to presymptomatic infectious status;
-        * :math:`\gamma_s`: presymptomatic to (a)symptomatic infectious status;
-        * :math:`\gamma_q`: symptomatic to quarantined infectious status;
-        * :math:`\gamma_r`: quarantined infectious to recovered (or dead)
-          status;
-        * :math:`\gamma_{ra}`: asymptomatic to recovered (or dead) status.
+        * :math:`\epsilon`: exposed to (a)symptomatic infectious status;
+        * :math:`\gamma`: (a)symptomatic to recovered status.
 
-    Because we expect older and younger people to recover differently from the
-    virus we consider :math:`\gamma_r` and :math:`\gamma_{ra}` to be age
-    dependent. These rates are computed according to the following formulae:
-
-    .. math::
-        :nowrap:
-
-        \begin{eqnarray}
-            \gamma_E &=& \frac{1}{k} \\
-            \gamma_s &=& \frac{1}{k_s} \\
-            \gamma_q &=& \frac{1}{k_q} \\
-            {\gamma_r}_i &=& \frac{1}{{k_r}_i} \\
-            {\gamma_{ra}}_i &=& \frac{1}{{k_{ri}}_i} \\
-        \end{eqnarray}
-
-    where :math:`k` refers to mean incubation period until disease onset (i.e.
-    from exposed to presymptomatic infection), :math:`k_s` the average time to
-    developing symptoms since disease onset, :math:`k_q` the average time until
-    the case is quarantined once the symptoms appear, :math:`k_r` the average
-    time until recovery since the start of the quarantining period and
-    :math:`k_{ri}` the average time to recovery since the end of the
-    presymptomatic stage for an asymptomatic case.
-
-    :math:`S(0) = S_0, E(0) = E_0, I(0) = I_0, R(0) = R_0` are also
-    parameters of the model (evaluation at 0 refers to the compartments'
-    structure at initial time.
+    :math:`S(0) = S_0`, :math:`E^{1,F}(0) = E^{1,F}_0`,
+    :math:`E^{1,SD}(0) = E^{1,SD}_0`, :math:`E^{1,SU}(0) = E^{1,SU}_0`,
+    :math:`E^{1,Q}(0) = E^{1,Q}_0`, :math:`E^{2,F}(0) = E^{2,F}_0`,
+    :math:`E^{2,SD}(0) = E^{2,SD}_0`, :math:`E^{2,SU}(0) = E^{2,SU}_0`,
+    :math:`E^{2,Q}(0) = E^{2,Q}_0`, :math:`E^{3,F}(0) = E^{3,F}_0`,
+    :math:`E^{3,SD}(0) = E^{3,SD}_0`, :math:`E^{3,SU}(0) = E^{3,SU}_0`,
+    :math:`E^{3,Q}(0) = E^{3,Q}_0`, :math:`I^F(0) = I^F_0`,
+    :math:`I^{SD}(0) = I^{SD}_0`, :math:`I^{SU}(0) = I^{SU}_0`,
+    :math:`I^{QF}(0) = I^{QF}_0`, :math:`I^{QS}(0) = I^{QS}_0`,
+    :math:`A^F(0) = A^F_0`, :math:`A^S(0) = A^S_0`, :math:`A^Q(0) = A^Q_0`,
+    :math:`R(0) = R_0`, are also parameters of the model (evaluation at 0
+    refers to the compartments' structure at initial time.
 
     Extends :class:`pints.ForwardModel`.
 
@@ -202,17 +202,17 @@ class WarwickSEIRModel(pints.ForwardModel):
         # Assign default values
         self._output_names = [
             'S', 'E1f', 'E1sd', 'E1su', 'E1q', 'E2f', 'E2sd', 'E2su', 'E2q',
-            'E3f', 'E3sd', 'E3su', 'E3q', 'Df', 'Dsd', 'Dsu', 'Dqf', 'Dqs',
-            'Uf', 'Us', 'Uq', 'R', 'Incidence']
+            'E3f', 'E3sd', 'E3su', 'E3q', 'If', 'Isd', 'Isu', 'Iqf', 'Iqs',
+            'Af', 'As', 'Aq', 'R', 'Incidence']
         self._parameter_names = [
             'S0', 'E1f0', 'E1sd0', 'E1su0', 'E1q0', 'E2f0', 'E2sd0', 'E2su0',
-            'E2q0', 'E3f0', 'E3sd0', 'E3su0', 'E3q0', 'Df0', 'Dsd0', 'Dsu0',
-            'Dqf0', 'Dqs0', 'Uf0', 'Us0', 'Uq0', 'R0', 'sig', 'tau', 'eps',
+            'E2q0', 'E3f0', 'E3sd0', 'E3su0', 'E3q0', 'If0', 'Isd0', 'Isu0',
+            'Iqf0', 'Iqs0', 'Af0', 'As0', 'Aq0', 'R0', 'sig', 'tau', 'eps',
             'gamma', 'd', 'H']
 
         # The default number of outputs is 23,
         # i.e. S, E1f, E1sd, E1su, E1q, E2f, E2sd, E2su, E2q, E3f, E3sd, E3su,
-        # E3q, Df, Dsd, Dsu, Dqf, Dqs, Uf, Us, Uq, R and
+        # E3q, If, Isd, Isu, Iqf, Iqs, Af, As, Aq, R and
         # Incidence
         self._n_outputs = len(self._output_names)
         # The default number of parameters is 28,
@@ -358,8 +358,8 @@ class WarwickSEIRModel(pints.ForwardModel):
         y : numpy.array
             Array of all the compartments of the ODE system, segregated
             by age-group. It assumes y = [S, E1f, E1sd, E1su, E1q, E2f, E2sd,
-            E2su, E2q, E3f, E3sd, E3su, E3q, Df, Dsd, Dsu,
-            Dqf, Dqs, Uf, Us, Uq, R] where each letter actually refers to all
+            E2su, E2q, E3f, E3sd, E3su, E3q, If, Isd, Isu,
+            Iqf, Iqs, Af, As, Aq, R] where each letter actually refers to all
             compartment of that type. (e.g. S refers to the compartments of
             all ages of susceptibles).
         c : list
@@ -387,7 +387,7 @@ class WarwickSEIRModel(pints.ForwardModel):
 
         # Split compartments into their types
         s, e1F, e1SD, e1SU, e1Q, e2F, e2SD, e2SU, e2Q, e3F, e3SD, e3SU, e3Q, \
-            dF, dSD, dSU, dQF, dQS, uF, uS, uQ, _ = (
+            iF, iSD, iSU, iQF, iQS, aF, aS, aQ, _ = (
                 y[:a], y[a:(2*a)], y[(2*a):(3*a)],
                 y[(3*a):(4*a)], y[(4*a):(5*a)], y[(5*a):(6*a)],
                 y[(6*a):(7*a)], y[(7*a):(8*a)], y[(8*a):(9*a)],
@@ -423,20 +423,20 @@ class WarwickSEIRModel(pints.ForwardModel):
 
         # Write actual RHS
         lam_F = np.multiply(sig, np.dot(
-            nonhouse_cont_mat, np.asarray(dF) + np.asarray(dSD) +
-            np.asarray(dSU) + tau * np.asarray(uF) + tau * np.asarray(uS)))
+            nonhouse_cont_mat, np.asarray(iF) + np.asarray(iSD) +
+            np.asarray(iSU) + tau * np.asarray(aF) + tau * np.asarray(aS)))
         lam_F_times_s = \
             np.multiply(s, (1 / self._N) * lam_F)
 
-        lam_SD = np.multiply(sig, np.dot(house_cont_mat, np.asarray(dF)))
+        lam_SD = np.multiply(sig, np.dot(house_cont_mat, np.asarray(iF)))
         lam_SD_times_s = \
             np.multiply(s, (1 / self._N) * lam_SD)
 
-        lam_SU = np.multiply(sig, tau * np.dot(house_cont_mat, np.asarray(uF)))
+        lam_SU = np.multiply(sig, tau * np.dot(house_cont_mat, np.asarray(aF)))
         lam_SU_times_s = \
             np.multiply(s, (1 / self._N) * lam_SU)
 
-        lam_Q = np.multiply(sig, np.dot(house_cont_mat, np.asarray(dQF)))
+        lam_Q = np.multiply(sig, np.dot(house_cont_mat, np.asarray(iQF)))
         lam_Q_times_s = \
             np.multiply(s, (1 / self._N) * lam_Q)
 
@@ -454,23 +454,23 @@ class WarwickSEIRModel(pints.ForwardModel):
             3 * eps * np.asarray(e2SD) - 3 * eps * np.asarray(e3SD),
             3 * eps * np.asarray(e2SU) - 3 * eps * np.asarray(e3SU),
             3 * eps * np.asarray(e2Q) - 3 * eps * np.asarray(e3Q),
-            3 * eps * (1-h) * np.multiply(d, e3F) - gamma * np.asarray(dF),
-            3 * eps * np.multiply(d, e3SD) - gamma * np.asarray(dSD),
-            3 * eps * (1-h) * np.multiply(d, e3SU) - gamma * np.asarray(dSU),
-            3 * eps * h * np.multiply(d, e3F) - gamma * np.asarray(dQF),
+            3 * eps * (1-h) * np.multiply(d, e3F) - gamma * np.asarray(iF),
+            3 * eps * np.multiply(d, e3SD) - gamma * np.asarray(iSD),
+            3 * eps * (1-h) * np.multiply(d, e3SU) - gamma * np.asarray(iSU),
+            3 * eps * h * np.multiply(d, e3F) - gamma * np.asarray(iQF),
             3 * eps * (h * np.multiply(d, e3SU) + np.multiply(
-                d, e3Q)) - gamma * np.asarray(dQS),
+                d, e3Q)) - gamma * np.asarray(iQS),
             3 * eps * np.multiply((1-np.asarray(d)), e3F) - gamma * np.asarray(
-                uF),
+                aF),
             3 * eps * np.multiply(
                 (1-np.asarray(d)),
-                np.asarray(e3SD) + np.asarray(e3SU)) - gamma * np.asarray(uS),
+                np.asarray(e3SD) + np.asarray(e3SU)) - gamma * np.asarray(aS),
             3 * eps * np.multiply((1-np.asarray(d)), e3Q) - gamma * np.asarray(
-                uQ),
+                aQ),
             gamma * (
-                np.asarray(dF) + np.asarray(dQF) + np.asarray(uF) +
-                np.asarray(dSD) + np.asarray(uS) + np.asarray(dSU) +
-                np.asarray(dQS) + np.asarray(uQ))
+                np.asarray(iF) + np.asarray(iQF) + np.asarray(aF) +
+                np.asarray(iSD) + np.asarray(aS) + np.asarray(iSU) +
+                np.asarray(iQS) + np.asarray(aQ))
             ))
 
         return dydt
@@ -498,7 +498,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         """
         # Initial conditions
         si, e1Fi, e1SDi, e1SUi, e1Qi, e2Fi, e2SDi, e2SUi, e2Qi, e3Fi, e3SDi, \
-            e3SUi, e3Qi, dFi, dSDi, dSUi, dQFi, dQSi, uFi, uSi, uQi, _i = \
+            e3SUi, e3Qi, dFi, iSDi, iSUi, iQFi, iQSi, aFi, aSi, aQi, _i = \
             np.asarray(self._y_init)[:, self._region-1]
         init_cond = list(
             chain(
@@ -506,9 +506,9 @@ class WarwickSEIRModel(pints.ForwardModel):
                 e1SUi.tolist(), e1Qi.tolist(), e2Fi.tolist(),
                 e2SDi.tolist(), e2SUi.tolist(), e2Qi.tolist(),
                 e3Fi.tolist(), e3SDi.tolist(), e3SUi.tolist(),
-                e3Qi.tolist(), dFi.tolist(), dSDi.tolist(),
-                dSUi.tolist(), dQFi.tolist(), dQSi.tolist(),
-                uFi.tolist(), uSi.tolist(), uQi.tolist(),
+                e3Qi.tolist(), dFi.tolist(), iSDi.tolist(),
+                iSUi.tolist(), iQFi.tolist(), iQSi.tolist(),
+                aFi.tolist(), aSi.tolist(), aQi.tolist(),
                 _i.tolist()))
 
         # Solve the system of ODEs
@@ -531,8 +531,8 @@ class WarwickSEIRModel(pints.ForwardModel):
             this order: index of region for which we wish to simulate,
             initial conditions matrices classifed by age (column name) and
             region (row name) for each type of compartment (s, e1F, e1SD, e1SU,
-            e1Q, e2F, e2SD, e2SU, e2Q, e3F, e3SD, e3SU, e3Q, dF, dSD, dSU, dQF,
-            dQS, uF, uS, uQ, _), the age-dependent
+            e1Q, e2F, e2SD, e2SU, e2Q, e3F, e3SD, e3SU, e3Q, iF, iSD, iSU, iQF,
+            iQS, aF, aS, aQ, _), the age-dependent
             susceptibility of individuals to infection (sig), the reduction in
             the transmission rate of infection for asymptomatic individuals
             (tau), the rate of progression to infectious disease (eps), the
@@ -776,7 +776,7 @@ class WarwickSEIRModel(pints.ForwardModel):
             (1) index of region for which we wish to simulate,
             (2) initial conditions matrices classifed by age (column name) and
             region (row name) for each type of compartment (s, eF, eSD, eSU,
-            eQ, dF, dSD, dSU, dQF, dQS, uF, uS, uQ, _),
+            eQ, If, Isd, Isu, Iqf, Iqs, Af, As, aQ, _),
             (3) the age-dependent susceptibility of individuals to infection
             (sig),
             (4) the reduction in the transmission rate of infection for
@@ -816,7 +816,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         my_parameters.append(parameters[0])
 
         # Add initial conditions for the s, e1F, e1SD, e1SU, e1Q, e2F, e2SD,
-        # e2SU, e2Q, e3F, e3SD, e3SU, e3Q, dF, dSD, dSU, dQF, dQS, uF, uS, uQ
+        # e2SU, e2Q, e3F, e3SD, e3SU, e3Q, iF, iSD, iSU, iQF, iQS, aF, aS, aQ
         # and r compartments
         for c in range(len(self._output_names)-1):
             initial_cond_comp = []
