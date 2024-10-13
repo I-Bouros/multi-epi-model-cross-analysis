@@ -140,7 +140,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         \end{eqnarray}
 
     where :math:`q_H` is the coefficient of increase in contacts within the
-    hosuehold and :math:`q_S`, :math:`q_W` and :math:`q_O` are the
+    household and :math:`q_S`, :math:`q_W` and :math:`q_O` are the
     decrease in contacts at school, in the workplace, and, respectively, in all
     other contexts when a full-lockdown is implemented. Therefore, the
     daily contact matrices :math:`C^H` and :math:`C^N` applied are given by:
@@ -168,7 +168,7 @@ class WarwickSEIRModel(pints.ForwardModel):
     parameter :math:`\tau` in the force of infection.
 
     The :math:`\sigma`, :math:`H` and :math:`d` parameters represent the
-    susceptibilities to the disease, the household quarantine complience
+    susceptibilities to the disease, the household quarantine compliance
     factor and, respectively, the proportions of people that go on to develop
     symptomatic infections. Because we expect older people to be more likely
     to be susceptible to infection and younger people to be more likely to be
