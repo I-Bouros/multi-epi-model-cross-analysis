@@ -316,7 +316,7 @@ class RocheSEIRModel(pints.ForwardModel):
         self._output_indices = output_indices
         self._n_outputs = len(outputs)
 
-    def _compute_betas(self, beta_min, beta_max, bss, gamma, SI, S50=0.353):
+    def _compute_betas(self, beta_min, beta_max, bss, gamma, SI, S50=35.3):
         """
         Computes the current time, age and region-varying rates with which
         susceptible individuals become infected, depending on the type of

@@ -137,7 +137,9 @@ def process_npis_data(
         new_time = small_data[
             (small_data[interventions] == t.tolist()).all(1)]['time']
 
-        npi_levels = npi_levels.append(new_npis, ignore_index=True)
+        new_npis = pd.DataFrame(new_npis, columns=interventions)
+
+        npi_levels = pd.concat([npi_levels, new_npis], ignore_index=True)
         times_npis.append(new_time.tolist())
 
     return npi_levels.to_numpy(), np.array(times_npis)
@@ -206,7 +208,9 @@ def process_flags_data(
         new_time = small_data[
             (small_data[interventions] == t.tolist()).all(1)]['time']
 
-        npi_flags = npi_flags.append(new_flags, ignore_index=True)
+        new_flags = pd.DataFrame(new_flags, columns=interventions)
+
+        npi_flags = pd.concat([npi_flags, new_flags], ignore_index=True)
         times_flags.append(new_time.tolist())
 
     return npi_flags.to_numpy(), np.array(times_flags)
@@ -251,9 +255,18 @@ def main():
     npi_levels, times_npis = process_npis_data(npis_data,
                                                start_date='15Feb2020',
                                                end_date='25Jun2020')
+    long_npi_levels, long_times_npis = process_npis_data(
+        npis_data,
+        start_date='15Feb2020',
+        end_date='25Jun2021')
+
     npi_flags, times_flags = process_flags_data(flags_data,
                                                 start_date='15Feb2020',
                                                 end_date='25Jun2020')
+    long_npi_flags, long_times_flags = process_flags_data(
+        flags_data,
+        start_date='15Feb2020',
+        end_date='25Jun2021')
 
     # Transform recorded matrix of serial intervals to csv file
     path_ = os.path.join(
@@ -264,10 +277,20 @@ def main():
     np.savetxt(os.path.join(path_, 'times_npis.csv'),
                times_npis, delimiter=',', fmt='%i')
 
+    np.savetxt(os.path.join(path_, 'long_uk_npis.csv'),
+               long_npi_levels, delimiter=',', fmt='%i')
+    np.savetxt(os.path.join(path_, 'long_times_npis.csv'),
+               long_times_npis, delimiter=',', fmt='%i')
+
     np.savetxt(os.path.join(path_, 'uk_flags.csv'),
                npi_flags, delimiter=',', fmt='%i')
     np.savetxt(os.path.join(path_, 'times_flags.csv'),
                times_flags, delimiter=',', fmt='%i')
+
+    np.savetxt(os.path.join(path_, 'long_uk_flags.csv'),
+               long_npi_flags, delimiter=',', fmt='%i')
+    np.savetxt(os.path.join(path_, 'long_times_flags.csv'),
+               long_times_flags, delimiter=',', fmt='%i')
 
 
 if __name__ == '__main__':
