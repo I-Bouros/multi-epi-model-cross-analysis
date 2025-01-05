@@ -99,8 +99,8 @@ class WarwickSEIRModel(pints.ForwardModel):
                 \gamma I^{SU}_i \\
             \frac{dI^{QF}_i}{dt} &=& 3 H \epsilon d E^{3,F}_i -
                 \gamma I^{QF}_i \\
-            \frac{dI^{QS}_i}{dt} &=& 3 H \epsilon d (E^{3,SD}_i + E^{3,SU}_i) -
-                \gamma I^{QS}_i \\
+            \frac{dI^{QS}_i}{dt} &=& 3 H \epsilon d E^{3,SU}_i +
+                3 \epsilon d E^{3,Q}_i) - \gamma I^{QS}_i \\
             \frac{dA^F_i}{dt} &=& 3 \epsilon (1 - d) E^{3,F}_i -
                 \gamma A^F_i \\
             \frac{dA^S_i}{dt} &=& 3 \epsilon (1 - d) (E^{3,SD}_i + E^{3,SU}_i)
@@ -343,6 +343,39 @@ class WarwickSEIRModel(pints.ForwardModel):
         self._output_indices = output_indices
         self._n_outputs = len(outputs)
 
+    def _compute_soc_dist_parameters(self, t):
+        """
+        Computes the current values of the social distancing parameters
+        at a specified timepoint.
+
+        Parameters
+        ----------
+        t : float
+            Time point at which we compute the evaluation.
+
+        Returns
+        -------
+        list of int or float
+            List of values of the current social distancing parameters
+            at the specified timepoint.
+
+        """
+        theta_all, phi_all, q_H_all, q_S_all, q_W_all, q_O_all, times_npis = \
+            self.social_distancing_param
+
+        # Identify the current time and region NPIs flags
+        pos = np.where(np.asarray(times_npis) <= t)
+
+        # Compute current levels of the social distancing parameters
+        theta = theta_all[pos[-1][-1]]
+        phi = phi_all[pos[-1][-1]]
+        q_H = q_H_all[pos[-1][-1]]
+        q_S = q_S_all[pos[-1][-1]]
+        q_W = q_W_all[pos[-1][-1]]
+        q_O = q_O_all[pos[-1][-1]]
+
+        return theta, phi, q_H, q_S, q_W, q_O
+
     def _right_hand_side(self, t, r, y, c, num_a_groups):
         r"""
         Constructs the RHS of the equations of the system of ODEs for given a
@@ -398,12 +431,12 @@ class WarwickSEIRModel(pints.ForwardModel):
                 y[(21*a):])
 
         # Read the social distancing parameters of the system
-        theta, phi, q_H, q_S, q_W, q_O = self.social_distancing_param
+        theta, phi, q_H, q_S, q_W, q_O = self._compute_soc_dist_parameters(t)
 
         # Read parameters of the system
         sig, tau, eps, gamma, d, h_all = c[:6]
 
-        h = h_all[self._region-1]
+        h = h_all[self._region-1] * phi
 
         # Identify the appropriate contact matrix for the ODE system
         house_cont_mat = \
@@ -426,19 +459,19 @@ class WarwickSEIRModel(pints.ForwardModel):
             nonhouse_cont_mat, np.asarray(iF) + np.asarray(iSD) +
             np.asarray(iSU) + tau * np.asarray(aF) + tau * np.asarray(aS)))
         lam_F_times_s = \
-            np.multiply(s, (1 / self._N) * lam_F)
+            np.multiply(s, (1 / self._N[r-1]) * lam_F)
 
         lam_SD = np.multiply(sig, np.dot(house_cont_mat, np.asarray(iF)))
         lam_SD_times_s = \
-            np.multiply(s, (1 / self._N) * lam_SD)
+            np.multiply(s, (1 / self._N[r-1]) * lam_SD)
 
         lam_SU = np.multiply(sig, tau * np.dot(house_cont_mat, np.asarray(aF)))
         lam_SU_times_s = \
-            np.multiply(s, (1 / self._N) * lam_SU)
+            np.multiply(s, (1 / self._N[r-1]) * lam_SU)
 
         lam_Q = np.multiply(sig, np.dot(house_cont_mat, np.asarray(iQF)))
         lam_Q_times_s = \
-            np.multiply(s, (1 / self._N) * lam_Q)
+            np.multiply(s, (1 / self._N[r-1]) * lam_Q)
 
         dydt = np.concatenate((
             -(lam_F_times_s + lam_SD_times_s + lam_SU_times_s + lam_Q_times_s),
@@ -553,7 +586,7 @@ class WarwickSEIRModel(pints.ForwardModel):
         # Split parameters into the features of the model
         self._region = parameters[0]
         self._y_init = parameters[1:23]
-        self._N = np.sum(np.asarray(self._y_init))
+        self._N = np.sum(np.asarray(self._y_init), axis=0)
         self._c = parameters[23:29]
         self.house_contacts_timeline = em.MultiTimesContacts(
             self.house_matrices_contact,
@@ -1851,3 +1884,250 @@ class WarwickSEIRModel(pints.ForwardModel):
         return binom.rvs(
             n=tests,
             p=self.mean_positives(sens, spec, suscep, pop))
+
+    def compute_transistion_matrix(self):
+        """
+        Computes the transition matrix of the Warwick-Household model.
+
+        Returns
+        -------
+        numpy.array
+            Transition matrix of the Warwick-Household model
+            in specified region at time :math:`t_k`.
+
+        """
+        a = self._num_ages
+        Zs = np.zeros((a, a))
+
+        # Read parameters of the system
+        eps, gamma, d, h_all = self._c[2:6]
+
+        h = h_all[self._region-1]
+
+        # Pre-compute block-matrices
+        eps_3 = 3 * eps * np.identity(a)
+        gamma_m = gamma * np.identity(a)
+        d_eps_3 = 3 * eps * np.diag(d)
+        one_d_eps_3 = 3 * eps * np.diag(1-np.array(d))
+        H_d_eps_3 = 3 * eps * h * np.diag(d)
+        one_H_d_eps_3 = 3 * eps * (1-h) * np.diag(d)
+
+        sigma_matrix = np.block(
+            [[-eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, -eps_3, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, -eps_3, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, one_H_d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                -gamma_m, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, one_d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, -gamma_m, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, H_d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, -gamma_m, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, -gamma_m, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, one_d_eps_3, Zs, Zs, one_d_eps_3, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, -gamma_m, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, one_H_d_eps_3, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, -gamma_m, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, H_d_eps_3, Zs, Zs, d_eps_3,
+                Zs, Zs, Zs, Zs, Zs, Zs, -gamma_m, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, one_d_eps_3,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, -gamma_m]])
+
+        self._inv_trans_matrix = np.linalg.inv(sigma_matrix)
+
+    def compute_rt_trajectory(self, output, k):
+        """
+        Computes the time-dependent reproduction at time :math:`t_k`
+        from the Warwick-Household model.
+
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the WarwickSEIRModel.
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
+
+        Returns
+        -------
+        float
+            The reproduction number in specified region at time :math:`t_k`.
+
+        Notes
+        -----
+        Always run :meth:`WarwickSEIRModel.simulate`,
+        :meth:`WarwickSEIRModel.check_positives_format` and
+        :meth:`WarwickSEIRModel.compute_transistion_matrix` before running this
+        one.
+
+        """
+        self._check_time_step_format(k)
+        r = self._region
+        a = self._num_ages
+        Zs = np.zeros((a, a))
+
+        # Split compartments into their types
+        suscep = output[k, :a]
+
+        # Read parameters of the system
+        sig, tau = self._c[:2]
+
+        # Read the social distancing parameters of the system
+        theta, phi, q_H, q_S, q_W, q_O = self._compute_soc_dist_parameters(k+1)
+
+        # Identify the appropriate contact matrix for the ODE system
+        house_cont_mat = \
+            self.house_contacts_timeline.identify_current_contacts(r, k+1)
+        school_cont_mat = \
+            self.school_contacts_timeline.identify_current_contacts(r, k+1)
+        work_cont_mat = \
+            self.work_contacts_timeline.identify_current_contacts(r, k+1)
+        other_cont_mat = \
+            self.other_contacts_timeline.identify_current_contacts(r, k+1)
+
+        house_cont_mat = 1.3 * (1 - phi + phi * q_H) * house_cont_mat
+        nonhouse_cont_mat = (1 - phi + phi * q_S) * school_cont_mat + \
+            ((1 - phi + phi * q_W) * (
+                1 - theta + theta * (1 - phi + phi * q_O))) * work_cont_mat + \
+            ((1 - phi + phi * q_O)**2) * other_cont_mat
+
+        # Pre-compute block-matrices
+        cH = np.multiply(
+            suscep, (1 / self._N[r-1]) * np.multiply(sig, house_cont_mat))
+        cN = np.multiply(
+            suscep, (1 / self._N[r-1]) * np.multiply(sig, nonhouse_cont_mat))
+
+        t_matrix = np.block(
+            [[Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                cN, tau * cN, Zs, cN, tau * cN, cN, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                cH, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, cH, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, cH, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs]])
+
+        # Compute the next-generation matrix
+        next_gen_matrix = - np.matmul(t_matrix, self._inv_trans_matrix)
+
+        return np.max(np.absolute(np.linalg.eigvals(next_gen_matrix)))
+
+    def compute_rt_trajectory_paper(self, k):
+        """
+        Computes the time-dependent reproduction at time :math:`t_k`
+        from the Warwick-Household model.
+
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the WarwickSEIRModel.
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
+
+        Returns
+        -------
+        float
+            The reproduction number in specified region at time :math:`t_k`.
+
+        Notes
+        -----
+        Always run :meth:`WarwickSEIRModel.simulate`,
+        :meth:`WarwickSEIRModel.check_positives_format` and
+        :meth:`WarwickSEIRModel.compute_transistion_matrix` before running this
+        one.
+
+        """
+        self._check_time_step_format(k)
+        r = self._region
+        a = self._num_ages
+
+        # Read the social distancing parameters of the system
+        theta, phi, q_H, q_S, q_W, q_O = self._compute_soc_dist_parameters(k+1)
+
+        house_cont_mat = \
+            self.house_contacts_timeline.identify_current_contacts(r, k+1)
+        school_cont_mat = \
+            self.school_contacts_timeline.identify_current_contacts(r, k+1)
+        work_cont_mat = \
+            self.work_contacts_timeline.identify_current_contacts(r, k+1)
+        other_cont_mat = \
+            self.other_contacts_timeline.identify_current_contacts(r, k+1)
+
+        house_cont_mat = 1.3 * (1 - phi + phi * q_H) * house_cont_mat
+        nonhouse_cont_mat = (1 - phi + phi * q_S) * school_cont_mat + \
+            ((1 - phi + phi * q_W) * (
+                1 - theta + theta * (1 - phi + phi * q_O))) * work_cont_mat + \
+            ((1 - phi + phi * q_O)**2) * other_cont_mat
+
+        M_from_to = house_cont_mat + nonhouse_cont_mat
+
+        M_from_to_HAT = np.zeros_like(M_from_to)
+
+        # Read parameters of the system
+        sigma, tau, _, __, d = self._c[:5]
+
+        tau = tau * np.ones(a)
+
+        for f in range(a):
+            for t in range(a):
+                M_from_to_HAT[f, t] = \
+                    M_from_to[f, t] * d[t] * sigma[t] * (
+                        1 + tau[f] * (1 - d[f]) / d[f])
+
+        return np.max(np.absolute(np.linalg.eigvals(M_from_to_HAT)))

@@ -6454,12 +6454,13 @@ class TestWarwickSocDistParameters(unittest.TestCase):
             model=model)
 
         self.assertEqual(SocDistParam.model, model)
-        self.assertEqual(SocDistParam.theta, 0.3)
-        self.assertEqual(SocDistParam.phi, 0)
-        self.assertEqual(SocDistParam.q_H, 1.25)
-        self.assertEqual(SocDistParam.q_S, 0.05)
-        self.assertEqual(SocDistParam.q_W, 0.2)
-        self.assertEqual(SocDistParam.q_O, 0.05)
+        self.assertEqual(SocDistParam.theta, [0.3])
+        self.assertEqual(SocDistParam.phi, [0])
+        self.assertEqual(SocDistParam.q_H, [1.25])
+        self.assertEqual(SocDistParam.q_S, [0.05])
+        self.assertEqual(SocDistParam.q_W, [0.2])
+        self.assertEqual(SocDistParam.q_O, [0.05])
+        self.assertEqual(SocDistParam.times_npis, [1])
 
         theta = 0.3
         phi = 0.2
@@ -6467,6 +6468,7 @@ class TestWarwickSocDistParameters(unittest.TestCase):
         q_S = 0.05
         q_W = 0.2
         q_O = 0.05
+        times_npis = [1]
 
         with self.assertRaises(TypeError):
             model1 = {'0': 0}
@@ -6478,7 +6480,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(TypeError):
@@ -6489,7 +6492,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(ValueError):
@@ -6500,7 +6504,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(ValueError):
@@ -6511,7 +6516,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(TypeError):
@@ -6522,7 +6528,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(ValueError):
@@ -6533,7 +6540,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(ValueError):
@@ -6544,7 +6552,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(TypeError):
@@ -6555,7 +6564,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H='0.05',
                 q_S=q_S,
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(ValueError):
@@ -6566,7 +6576,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=0.05,
                 q_S=q_S,
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(TypeError):
@@ -6577,7 +6588,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S='0.2',
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(ValueError):
@@ -6588,7 +6600,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=-0.2,
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(ValueError):
@@ -6599,7 +6612,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=1.2,
                 q_W=q_W,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(TypeError):
@@ -6610,7 +6624,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W='0.05',
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(ValueError):
@@ -6621,7 +6636,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=-0.5,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(ValueError):
@@ -6632,7 +6648,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=1.4,
-                q_O=q_O
+                q_O=q_O,
+                times_npis=times_npis
             )
 
         with self.assertRaises(TypeError):
@@ -6643,7 +6660,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=q_W,
-                q_O='0.9'
+                q_O='0.9',
+                times_npis=times_npis
             )
 
         with self.assertRaises(ValueError):
@@ -6654,7 +6672,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=q_W,
-                q_O=-5
+                q_O=-5,
+                times_npis=times_npis
             )
 
         with self.assertRaises(ValueError):
@@ -6665,7 +6684,8 @@ class TestWarwickSocDistParameters(unittest.TestCase):
                 q_H=q_H,
                 q_S=q_S,
                 q_W=q_W,
-                q_O=3
+                q_O=3,
+                times_npis=times_npis
             )
 
     def test__call__(self):

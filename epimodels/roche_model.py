@@ -506,7 +506,8 @@ class RocheSEIRModel(pints.ForwardModel):
         lam = bA * np.asarray(iA) + bAA * np.asarray(iAA) + bS * \
             np.asarray(iS) + bAS * np.asarray(iAS) + bAAS * np.asarray(iAAS) \
             + bSS * np.asarray(iSS)
-        lam_times_s = np.multiply(s, (1 / self._N) * np.dot(cont_mat, lam))
+        lam_times_s = np.multiply(
+            s, (1 / self._N[r-1]) * np.dot(cont_mat, lam))
 
         dydt = np.concatenate((
             -lam_times_s, lam_times_s - gE * np.asarray(e),
@@ -601,7 +602,7 @@ class RocheSEIRModel(pints.ForwardModel):
         # Split parameters into the features of the model
         self._region = parameters[0]
         self._y_init = parameters[1:13]
-        self._N = np.sum(np.asarray(self._y_init))
+        self._N = np.sum(np.sum(np.asarray(self._y_init), axis=0), axis=1)
         self._c = parameters[13:26]
         self.contacts_timeline = em.MultiTimesContacts(
             self.matrices_contact,
@@ -1096,7 +1097,8 @@ class RocheSEIRModel(pints.ForwardModel):
 
             # fraction of new infectives in delta_t time step
             d_infec[ind, :] = np.multiply(
-                np.asarray(s), (1 / self._N) * np.dot(cont_mat, lam))
+                np.asarray(s),
+                (1 / self._N[self._region-1]) * np.dot(cont_mat, lam))
 
             if np.any(d_infec[ind, :] < 0):  # pragma: no cover
                 d_infec[ind, :] = np.zeros_like(d_infec[ind, :])
@@ -1577,3 +1579,116 @@ class RocheSEIRModel(pints.ForwardModel):
         return binom.rvs(
             n=tests,
             p=self.mean_positives(sens, spec, suscep, pop))
+
+    def compute_transition_matrix(self):
+        """
+        Computes the transition matrix of the Roche model.
+
+        Returns
+        -------
+        numpy.array
+            Transition matrix of the Roche model
+            in specified region at time :math:`t_k`.
+
+        """
+        a = self._num_ages
+        Zs = np.zeros((a, a))
+
+        # Read parameters of the system
+        k, kS, kQ, kR, kRI, Pa, Pss = self._c[:7]
+
+        # Compute transmission rates of the system
+        gE, gS, gQ, gR, gRA = \
+            1/k, 1/kS, 1/kQ, [1/x for x in kR], [1/x for x in kRI]
+
+        # Pre-compute block-matrices
+        gamma_E = gE * np.identity(a)
+        gamma_S = gS * np.identity(a)
+        Pa_gamma_S = gS * np.diag(Pa)
+        one_Pa_gamma_S = gS * np.diag(1-np.array(Pa))
+        gamma_Q = gQ * np.identity(a)
+        gamma_R = np.diag(gR)
+        gamma_RA = np.diag(gRA)
+
+        sigma_matrix = np.block(
+            [[-gamma_E, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [(1-Pss)*gamma_E, -gamma_S, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Pa_gamma_S, -gamma_RA, Zs, Zs, Zs, Zs, Zs],
+             [Zs, one_Pa_gamma_S, Zs, -gamma_Q, Zs, Zs, Zs, Zs],
+             [Pss*gamma_E, Zs, Zs, Zs, -gamma_S, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Pa_gamma_S, -gamma_RA, Zs, Zs],
+             [Zs, Zs, Zs, Zs, one_Pa_gamma_S, Zs, -gamma_Q, Zs],
+             [Zs, Zs, Zs, gamma_Q, Zs, Zs, gamma_Q, -gamma_R]])
+
+        self._inv_trans_matrix = np.linalg.inv(sigma_matrix)
+
+    def compute_rt_trajectory(self, output, k):
+        """
+        Computes the time-dependent reproduction at time :math:`t_k`
+        from the Roche model.
+
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the RocheSEIRModel.
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
+
+        Returns
+        -------
+        float
+            The reproduction number in specified region at time :math:`t_k`.
+
+        Notes
+        -----
+        Always run :meth:`RocheSEIRModel.simulate`,
+        :meth:`RocheSEIRModel.check_positives_format` and
+        :meth:`RocheSEIRModel.compute_transistion_matrix` before running this
+        one.
+
+        """
+        self._check_time_step_format(k)
+        r = self._region
+        a = self._num_ages
+        Zs = np.zeros((a, a))
+
+        # Split compartments into their types
+        suscep = output[k, :a]
+
+        # Read parameters of the system
+        beta_min, beta_max, bss, gamma, s50 = self._c[8:]
+
+        s_index = self._compute_SI(r, k+1)
+
+        # Compute transmission rates of the system
+        bA, bS, bAA, bAS, bSS, bAAS = \
+            self._compute_betas(beta_min, beta_max, bss, gamma, s_index, s50)
+
+        # Identify the appropriate contact matrix for the ODE system
+        cont_mat = self.contacts_timeline.identify_current_contacts(r, k+1)
+
+        # Pre-compute block-matrices
+        beta_a = np.multiply(suscep, (bA / self._N[r-1]) * cont_mat)
+        beta_aa = np.multiply(suscep, (bAA / self._N[r-1]) * cont_mat)
+        beta_s = np.multiply(suscep, (bS / self._N[r-1]) * cont_mat)
+        beta_as = np.multiply(suscep, (bAS / self._N[r-1]) * cont_mat)
+        beta_aas = np.multiply(suscep, (bAAS / self._N[r-1]) * cont_mat)
+        beta_ss = np.multiply(suscep, (bSS / self._N[r-1]) * cont_mat)
+
+        # Compute transmission matrix
+        t_matrix = np.block(
+            [[Zs, beta_a, beta_aa, beta_s, beta_as, beta_aas, beta_ss, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs]])
+
+        # Compute the next-generation matrix
+        next_gen_matrix = - np.matmul(t_matrix, self._inv_trans_matrix)
+
+        return np.max(np.absolute(np.linalg.eigvals(next_gen_matrix)))

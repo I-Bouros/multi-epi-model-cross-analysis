@@ -20,6 +20,8 @@ asymptomatic and symptomatic infections.
 
 from iteration_utilities import deepflatten
 
+import os
+import pandas as pd
 import numpy as np
 import pints
 
@@ -136,9 +138,6 @@ class WarwickLogLik(pints.LogPDF):
         self._wd = wd
         self._wp = wp
 
-        # Set fixed parameters of the model
-        self.set_fixed_parameters()
-
         # Extended population structure and contact matrices
         self._extended_susceptibles = np.array(extended_susceptibles)
         self._extended_infectives_prop = np.array(extended_infectives_prop)
@@ -159,6 +158,9 @@ class WarwickLogLik(pints.LogPDF):
         self._total_cont_mat = \
             self._house_cont_mat + self._nonhouse_cont_mat
 
+        # Set fixed parameters of the model
+        self.set_fixed_parameters()
+
     def n_parameters(self):
         """
         Returns number of parameters for log-likelihood object.
@@ -171,7 +173,7 @@ class WarwickLogLik(pints.LogPDF):
         """
         # return 8
         # return 7
-        return 3
+        return 2
 
     def _update_age_groups(self, parameter_vector):
         """
@@ -371,70 +373,76 @@ class WarwickLogLik(pints.LogPDF):
             free parameters.
 
         """
-        number_E_states = 3
+        # number_E_states = 3
+
+        # # H
+        # self._parameters[-2] = \
+        #     [var_parameters[0]] * len(self._model.regions)
+        # # d
+        # self._parameters[-3] = var_parameters[1] * np.ones(
+        #     self._model._num_ages)
+        # # sigma
+        # self._parameters[-7] = var_parameters[2] * np.ones(
+        #     self._model._num_ages)
+        # tau
+        self._parameters[-6] = var_parameters[-2]
+        # gamma
+        self._parameters[-4] = var_parameters[-1]
+        # # epsilon
+        # self._parameters[-5] = var_parameters[-1]
 
         # Update parameters
-        # alpha
-        alpha = var_parameters[0]
-        # tau
-        self._parameters[-6] = var_parameters[1]
-        # # epsilon
-        # self._parameters[-5] = var_parameters[2]
-        # E0
-        E0_multiplier = var_parameters[2]
+        # # alpha
+        # alpha = var_parameters[0]
+
+        # # E0
+        # E0_multiplier = var_parameters[2]
         # # phi
         # self._model.social_distancing_param[1] = var_parameters[4]
 
-        d, sigma = self._compute_updated_param(alpha, var_parameters[1])
+        # d, sigma = self._compute_updated_param(alpha, var_parameters[1])
 
-        Age_structure, reprod_number_0 = self._compute_r0_age_structure(
-            self._house_cont_mat * 0,
-            self._parameters[-4] * (
-                self._house_cont_mat + self._nonhouse_cont_mat),
-            d, sigma, var_parameters[1], self._parameters[-4])
+        # Age_structure, reprod_number_0 = self._compute_r0_age_structure(
+        #     self._house_cont_mat * 0,
+        #     self._parameters[-4] * (
+        #         self._house_cont_mat + self._nonhouse_cont_mat),
+        #     d, sigma, var_parameters[1], self._parameters[-4])
 
-        exposed_0 = Age_structure / np.sum(Age_structure)
-        detected_0 = Age_structure / np.sum(Age_structure)
-        undetected_0 = Age_structure / np.sum(Age_structure)
+        # exposed_0 = Age_structure / np.sum(Age_structure)
+        # detected_0 = Age_structure / np.sum(Age_structure)
+        # undetected_0 = Age_structure / np.sum(Age_structure)
 
-        # Assign updated initial conditions
-        # Exposed_1_f
-        self._parameters[2] = E0_multiplier * np.asarray(
-            [self._stack_age_groups(exposed_0 / number_E_states, r)
-             for r in range(len(self._model.regions))])
+        # # Assign updated initial conditions
+        # # Exposed_1_f
+        # self._parameters[2] = E0_multiplier * np.asarray(
+        #     [self._stack_age_groups(exposed_0 / number_E_states, r)
+        #      for r in range(len(self._model.regions))])
 
-        # Exposed_2_f
-        self._parameters[6] = E0_multiplier * np.asarray(
-            [self._stack_age_groups(exposed_0 / number_E_states, r)
-             for r in range(len(self._model.regions))])
+        # # Exposed_2_f
+        # self._parameters[6] = E0_multiplier * np.asarray(
+        #     [self._stack_age_groups(exposed_0 / number_E_states, r)
+        #      for r in range(len(self._model.regions))])
 
-        # Exposed_3_f
-        self._parameters[10] = E0_multiplier * np.asarray(
-            [self._stack_age_groups(exposed_0 / number_E_states, r)
-             for r in range(len(self._model.regions))])
+        # # Exposed_3_f
+        # self._parameters[10] = E0_multiplier * np.asarray(
+        #     [self._stack_age_groups(exposed_0 / number_E_states, r)
+        #      for r in range(len(self._model.regions))])
 
-        # Detected_f
-        self._parameters[14] = E0_multiplier * np.asarray(
-            [self._stack_age_groups(detected_0, r)
-             for r in range(len(self._model.regions))])
+        # # Detected_f
+        # self._parameters[14] = E0_multiplier * np.asarray(
+        #     [self._stack_age_groups(detected_0, r)
+        #      for r in range(len(self._model.regions))])
 
-        # Undetected_f
-        self._parameters[19] = E0_multiplier * np.asarray(
-            [self._stack_age_groups(undetected_0, r)
-             for r in range(len(self._model.regions))])
+        # # Undetected_f
+        # self._parameters[19] = E0_multiplier * np.asarray(
+        #     [self._stack_age_groups(undetected_0, r)
+        #      for r in range(len(self._model.regions))])
 
-        # Recompute d and sigma with correct number of age groups
-        d = self._update_age_groups(d)
-        sigma = self._update_age_groups(sigma)
+        # # Recompute d and sigma with correct number of age groups
+        # d = self._update_age_groups(d)
+        # sigma = self._update_age_groups(sigma)
 
         # Update rest of parameters
-        # d
-        self._parameters[-3] = d
-
-        # sigma
-        # self._parameters[-7] = var_parameters[5] * sigma
-        # self._parameters[-7] = var_parameters[3] * sigma
-        self._parameters[-7] = sigma
 
         # Hs and Ds
         # Hs = var_parameters[6]
@@ -598,12 +606,24 @@ class WarwickLogLik(pints.LogPDF):
 
         # Disease-specific parameters
         tau = 0.4
-        d = 0.4 * np.ones(self._model._num_ages)
+        d = pd.read_csv(
+            os.path.join(
+                os.path.dirname(__file__),
+                '../data/risks_death/Risks_United Kingdom.csv'),
+            dtype=np.float64)['symptom_risk'].tolist()
+
+        d = 1.2 * self._update_age_groups(np.array(d))
 
         # Transmission parameters
-        epsilon = 0.1895
+        epsilon = 0.4
         gamma = 0.083
-        sigma = 0.5 * np.ones(self._model._num_ages)
+        sigma = pd.read_csv(
+            os.path.join(
+                os.path.dirname(__file__),
+                '../data/risks_death/Risks_United Kingdom.csv'),
+            dtype=np.float64)['susceptibility'].tolist()
+
+        sigma = 1.1 * self._update_age_groups(np.array(sigma))
 
         self._parameters = [
             0, susceptibles, exposed_1_f, exposed_1_sd, exposed_1_su,
@@ -670,7 +690,7 @@ class WarwickLogPrior(pints.LogPrior):
         """
         # return 8
         # return 7
-        return 3
+        return 2
 
     def __call__(self, x):
         """
@@ -688,29 +708,17 @@ class WarwickLogPrior(pints.LogPrior):
             parameter space.
 
         """
-        # Prior contribution of alpha
-        log_prior = pints.UniformLogPrior([0], [1])(x[0])
+        # # Prior contribution of H
+        # log_prior = pints.UniformLogPrior([0.5], [0.9])(x[0])
 
         # Prior contribution of tau
-        log_prior += pints.UniformLogPrior([0], [0.5])(x[1])
+        log_prior = pints.UniformLogPrior([0], [0.5])(x[0])
+
+        # Prior contribution of gamma
+        log_prior += pints.UniformLogPrior([0.05], [0.5])(x[1])
 
         # # Prior contribution of epsilon
-        # log_prior += pints.UniformLogPrior([0.1], [0.3])(x[2])
-
-        # Prior contribution of E0
-        log_prior += pints.UniformLogPrior([1], [2000])(x[2])
-
-        # # Prior contribution of phi
-        # log_prior += pints.UniformLogPrior([0], [1])(x[4])
-
-        # # Prior contribution of sigmaR
-        # log_prior += pints.UniformLogPrior([0.25], [4])(x[3])
-
-        # # Prior contribution of Hs
-        # log_prior += pints.UniformLogPrior([0.5], [2])(x[4])
-
-        # # Prior contribution of Ds
-        # log_prior += pints.UniformLogPrior([0.5], [2])(x[5])
+        # log_prior += pints.UniformLogPrior([0.1], [0.3])(x[3])
 
         return log_prior
 
@@ -997,7 +1005,7 @@ class WarwickSEIRInfer(object):
         #     'Hs', 'Ds']
 
         param_names = [
-            'alpha', 'tau', 'E0']
+            'tau', 'gamma']
 
         # Check convergence and other properties of chains
         results = pints.MCMCSummary(
@@ -1038,7 +1046,7 @@ class WarwickSEIRInfer(object):
         # Starting points
         # x0 = [0.9, 0, 0.2, 15, 0.5, 1, 1, 1]
         # x0 = [0.9, 0, 0.2, 15, 1, 1, 1]
-        x0 = [0.9, 0.1, 10]
+        x0 = [0.5, 0.2]
 
         # Create optimisation routine
         optimiser = pints.OptimisationController(

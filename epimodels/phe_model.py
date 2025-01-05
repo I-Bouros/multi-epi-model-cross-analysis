@@ -1253,3 +1253,94 @@ class PheSEIRModel(pints.ForwardModel):
         return binom.rvs(
             n=tests,
             p=self.mean_positives(sens, spec, suscep, pop))
+
+    def compute_transistion_matrix(self):
+        """
+        Computes the transition matrix of the PHE model.
+
+        Returns
+        -------
+        numpy.array
+            Transition matrix of the PHE model
+            in specified region at time :math:`t_k`.
+
+        """
+        a = self._num_ages
+        Zs = np.zeros((a, a))
+
+        # Read parameters of the system
+        dL, dI = self._c[1:]
+
+        # Pre-compute block-matrices
+        kappa = 2/dL * np.identity(a)
+        gamma = 2/dI * np.identity(a)
+
+        sigma_matrix = np.block(
+            [[-kappa, Zs, Zs, Zs],
+             [kappa, -kappa, Zs, Zs],
+             [Zs, kappa, -gamma, Zs],
+             [Zs, Zs, gamma, -gamma]])
+
+        self._inv_trans_matrix = np.linalg.inv(sigma_matrix)
+
+    def compute_rt_trajectory(self, output, k):
+        """
+        Computes the time-dependent reproduction at time :math:`t_k`
+        from the PHE model.
+
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the PheSEIRModel.
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
+
+        Returns
+        -------
+        float
+            The reproduction number in specified region at time :math:`t_k`.
+
+        Notes
+        -----
+        Always run :meth:`PheSEIRModel.simulate`,
+        :meth:`PheSEIRModel.check_positives_format` and
+        :meth:`PheSEIRModel.compute_transistion_matrix` before running this
+        one.
+
+        """
+        self._check_time_step_format(k)
+        r = self._region
+        a = self._num_ages
+        Zs = np.zeros((a, a))
+
+        # Split compartments into their types
+        s, i1, i2 = \
+            output[k, :a], output[k, (3*a):(4*a)], output[k, (4*a):(5*a)]
+
+        # Read parameters of the system
+        beta = self._c[0]
+
+        # Identify the appropriate MultiTimesInfectivity matrix for the
+        # ODE system
+        pos = np.where(self._times <= k+1)
+        ind = pos[-1][-1]
+        b = self.infectivity_timeline.compute_prob_infectivity_matrix(
+            r, k+1, s, beta[self._region-1][ind])
+
+        # Compute the current time, age and region-varying
+        # rate with which susceptible individuals become infected
+        lam = self._compute_lambda(s, i1, i2, b)
+
+        # Compute transmission matrix
+        t_matrix = np.block(
+            [[Zs, np.diag(np.multiply(lam, np.asarray(s))), Zs, Zs],
+             [Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs]])
+
+        # Compute the next-generation matrix
+        next_gen_matrix = - np.matmul(t_matrix, self._inv_trans_matrix)
+
+        return np.max(np.absolute(np.linalg.eigvals(next_gen_matrix)))

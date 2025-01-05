@@ -52,7 +52,7 @@ def read_fatality_ratios_data(fr_file: str):
 
 def process_ages(age_groups: list, data: pd.DataFrame, type: str):
     """
-    Parses wwekly data into the correct age structure types.
+    Parses weekly data into the correct age structure types.
 
     Parameters
     ----------

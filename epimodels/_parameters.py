@@ -988,6 +988,33 @@ class RocheICs(object):
                         'The initial numbers of dead must be integer or \
                             float.')
 
+    def total_population(self):
+        """
+        Returns the country-specific total number of individuals in each age
+        group.
+
+        Returns
+        -------
+        List of lists
+            List of the ountry-specific total number of individuals in each age
+            group using the initial conditions of the
+            :class:`WarwickLancSEIRModel` the class relates to.
+
+        """
+        a = self.model._num_ages
+        total_pop = 0
+
+        ics_vac_stat = [self.susceptibles, self.exposed1, self.exposed2,
+                        self.exposed3, self.exposed4, self.exposed5,
+                        self.infectives_sym, self.infectives_asym]
+
+        for _ in ics_vac_stat:
+            total_pop += np.asarray(_)[:, :a] + np.asarray(_)[:, a:(2*a)] + \
+                np.asarray(_)[:, (2*a):(3*a)] + np.asarray(_)[:, (3*a):(4*a)] \
+                + np.asarray(_)[:, (4*a):(5*a)] + np.asarray(_)[:, (5*a):(6*a)]
+
+        return total_pop + np.array(self.recovered)
+
     def __call__(self):
         """
         Returns the initial conditions of the :class:`RocheSEIRModel` the
@@ -2739,23 +2766,28 @@ class WarwickSocDistParameters(object):
 
     Parameters
     ----------
-    theta: int or float
-        Proportion of work interactions in public-facing `industries`.
-    phi : int or float
-        Scaling factor between pre- and full-lockdown contact matrices.
-    q_H : int or float
-        Increase in the amount of household interactions during lockdown.
-    q_S : int or float
-        Reduction in attendance at school during lockdown.
-    q_W : int or float
-        Reduction in attendance at workplaces during lockdown.
-    q_O : int or float
-        Reduction in engagement with shopping and leisure activities during
+    theta: list of int or float
+        List of proportions of work interactions in public-facing `industries`.
+    phi : list of int or float
+        List of scaling factors between pre- and full-lockdown contact
+        matrices.
+    q_H : list of int or float
+        List of increases in the amount of household interactions during
         lockdown.
+    q_S : list of int or float
+        List of reductions in attendance at school during lockdown.
+    q_W : list of int or float
+        List of reductions in attendance at workplaces during lockdown.
+    q_O : list of int or float
+        List of reductions in engagement with shopping and leisure activities
+        during lockdown.
+    times_npis: list of int
+        List of times of points at which the social distancing parameters
+        changes.
 
     """
-    def __init__(self, model, theta=0.3, phi=0, q_H=1.25,
-                 q_S=0.05, q_W=0.2, q_O=0.05):
+    def __init__(self, model, theta=[0.3], phi=[0], q_H=[1.25],
+                 q_S=[0.05], q_W=[0.2], q_O=[0.05], times_npis=[1]):
         super(WarwickSocDistParameters, self).__init__()
 
         # Set model
@@ -2765,93 +2797,210 @@ class WarwickSocDistParameters(object):
         self.model = model
 
         # Check inputs format
-        self._check_parameters_input(theta, phi, q_H, q_S, q_W, q_O)
+        self._check_parameters_input(
+            theta, phi, q_H, q_S, q_W, q_O, times_npis)
 
         # Set other simulation parameters
-        self.theta = theta
-        self.phi = phi
-        self.q_H = q_H
-        self.q_S = q_S
-        self.q_W = q_W
-        self.q_O = q_O
+        self.times_npis = times_npis
+        n_changes = np.asarray(self.times_npis).shape[0]
 
-    def _check_parameters_input(self, theta, phi, q_H, q_S, q_W, q_O):
+        if isinstance(theta, (float, int)):
+            self.theta = theta * np.ones(n_changes)
+        else:
+            self.theta = theta
+
+        if isinstance(phi, (float, int)):
+            self.phi = phi * np.ones(n_changes)
+        else:
+            self.phi = phi
+
+        if isinstance(q_H, (float, int)):
+            self.q_H = q_H * np.ones(n_changes)
+        else:
+            self.q_H = q_H
+
+        if isinstance(q_S, (float, int)):
+            self.q_S = q_S * np.ones(n_changes)
+        else:
+            self.q_S = q_S
+
+        if isinstance(q_W, (float, int)):
+            self.q_W = q_W * np.ones(n_changes)
+        else:
+            self.q_W = q_W
+
+        if isinstance(q_O, (float, int)):
+            self.q_O = q_O * np.ones(n_changes)
+        else:
+            self.q_O = q_O
+
+    def _check_parameters_input(
+            self, theta, phi, q_H, q_S, q_W, q_O, times_npis):
         """
         Check correct format of the simulation method's parameters input.
 
         Parameters
         ----------
-        theta: int or float
-            Proportion of work interactions in public-facing `industries`.
-        phi : int or float
-            Scaling factor between pre- and full-lockdown contact matrices.
-        q_H : int or float
-            Increase in the amount of household interactions during lockdown.
-        q_S : int or float
-            Reduction in attendance at school during lockdown.
-        q_W : int or float
-            Reduction in attendance at workplaces during lockdown.
-        q_O : int or float
-            Reduction in engagement with shopping and leisure activities during
+        theta: list of int or float
+            List of proportions of work interactions in public-facing
+            `industries`.
+        phi : list of int or float
+            List of scaling factors between pre- and full-lockdown contact
+            matrices.
+        q_H : list of int or float
+            List of increases in the amount of household interactions during
             lockdown.
+        q_S : list of int or float
+            List of reductions in attendance at school during lockdown.
+        q_W : list of int or float
+            List of reductions in attendance at workplaces during lockdown.
+        q_O : list of int or float
+            List of reductions in engagement with shopping and leisure
+            activities during lockdown.
+        times_npis: list of int
+            List of times of points at which the social distancing parameters
+            changes.
 
         """
-        if not isinstance(theta, (int, float)):
-            raise TypeError('The proportion of work interactions in \
-                public-facing `industries` must be integer or float.')
-        if theta < 0:
+        if isinstance(theta, (float, int)):
+            theta = [theta]
+        if np.asarray(theta).ndim != 1:
             raise ValueError('The proportion of work interactions in \
-                public-facing `industries` must be >= 0.')
-        if theta > 1:
-            raise ValueError('The proportion of work interactions in \
-                public-facing `industries` must be <= 1.')
+                public-facing `industries` storage format must be\
+                1-dimensional.')
+        if (np.asarray(theta).shape[0] != np.asarray(
+                times_npis).shape[0]) and (np.asarray(theta).shape[0] != 1):
+            raise ValueError(
+                    'Wrong number of age groups for the proportion of work\
+                         interactions in public-facing `industries`.')
+        for _ in theta:
+            if not isinstance(_, (float, int)):
+                raise TypeError('The proportion of work interactions in \
+                    public-facing `industries` must be float or integer.')
+            if _ < 0:
+                raise ValueError('The proportion of work interactions in \
+                    public-facing `industries` must be => 0.')
+            if _ > 1:
+                raise ValueError('The proportion of work interactions in \
+                    public-facing `industries` must be <= 1.')
 
-        if not isinstance(phi, (int, float)):
-            raise TypeError('The scaling factor between pre- and full-lockdown\
-                contact matrices must be integer or float.')
-        if phi < 0:
+        if isinstance(phi, (float, int)):
+            phi = [phi]
+        if np.asarray(phi).ndim != 1:
             raise ValueError('The scaling factor between pre- and \
-                full-lockdown contact matrices must be >= 0.')
-        if phi > 1:
-            raise ValueError('The scaling factor between pre- and \
-                full-lockdown contact matrices must be <= 1.')
+                full-lockdown contact matrices storage format must be\
+                1-dimensional.')
+        if (np.asarray(phi).shape[0] != np.asarray(
+                times_npis).shape[0]) and (np.asarray(phi).shape[0] != 1):
+            raise ValueError(
+                    'Wrong number of age groups for the scaling factor between\
+                    pre- and full-lockdown contact matrices.')
+        for _ in phi:
+            if not isinstance(_, (float, int)):
+                raise TypeError('The scaling factor between pre- and \
+                    full-lockdown contact matrices must be float or integer.')
+            if _ < 0:
+                raise ValueError('The scaling factor between pre- and \
+                    full-lockdown contact matrices must be => 0.')
+            if _ > 1:
+                raise ValueError('The scaling factor between pre- and \
+                    full-lockdown contact matrices must be <= 1.')
 
-        if not isinstance(q_H, (int, float)):
-            raise TypeError('The increase in the amount of household \
-                interactions during lockdown must be integer or float.')
-        if q_H < 1:
+        if isinstance(q_H, (float, int)):
+            q_H = [q_H]
+        if np.asarray(q_H).ndim != 1:
             raise ValueError('The increase in the amount of household \
-                interactions during lockdown must be >= 1.')
+                interactions during lockdown storage format must be\
+                1-dimensional.')
+        if (np.asarray(q_H).shape[0] != np.asarray(
+                times_npis).shape[0]) and (np.asarray(q_H).shape[0] != 1):
+            raise ValueError(
+                    'Wrong number of age groups for the increase in the amount\
+                    of household interactions during lockdown.')
+        for _ in q_H:
+            if not isinstance(_, (float, int)):
+                raise TypeError('The increase in the amount of household \
+                    interactions during lockdown must be float or integer.')
+            if _ < 1:
+                raise ValueError('The increase in the amount of household \
+                    interactions during lockdown must be => 1.')
 
-        if not isinstance(q_S, (int, float)):
-            raise TypeError('The reduction in attendance at school during\
-                lockdown must be integer or float.')
-        if q_S < 0:
+        if isinstance(q_S, (float, int)):
+            q_S = [q_S]
+        if np.asarray(q_S).ndim != 1:
             raise ValueError('The reduction in attendance at school during\
-                lockdown must be >= 0.')
-        if q_S > 1:
-            raise ValueError('The reduction in attendance at school during\
-                lockdown must be <= 1.')
+                lockdown storage format must be 1-dimensional.')
+        if (np.asarray(q_S).shape[0] != np.asarray(
+                times_npis).shape[0]) and (np.asarray(q_S).shape[0] != 1):
+            raise ValueError(
+                    'Wrong number of age groups for the reduction in \
+                        attendance at school during lockdown.')
+        for _ in q_S:
+            if not isinstance(_, (float, int)):
+                raise TypeError('The reduction in attendance at school during\
+                    lockdown must be float or integer.')
+            if _ < 0:
+                raise ValueError('The reduction in attendance at school during\
+                    lockdown must be => 0.')
+            if _ > 1:
+                raise ValueError('The reduction in attendance at school during\
+                    lockdown must be <= 1.')
 
-        if not isinstance(q_W, (int, float)):
-            raise TypeError('The reduction in attendance at workplaces during\
-                lockdown must be integer or float.')
-        if q_W < 0:
+        if isinstance(q_W, (float, int)):
+            q_W = [q_W]
+        if np.asarray(q_W).ndim != 1:
             raise ValueError('The reduction in attendance at workplaces during\
-                lockdown must be >= 0.')
-        if q_W > 1:
-            raise ValueError('The reduction in attendance at workplaces during\
-                lockdown must be <= 1.')
+                lockdown storage format must be 1-dimensional.')
+        if (np.asarray(q_W).shape[0] != np.asarray(
+                times_npis).shape[0]) and (np.asarray(q_W).shape[0] != 1):
+            raise ValueError(
+                    'Wrong number of age groups for the reduction in \
+                        attendance at workplaces during lockdown.')
+        for _ in q_W:
+            if not isinstance(_, (float, int)):
+                raise TypeError('The reduction in attendance at workplaces\
+                    during lockdown must be float or integer.')
+            if _ < 0:
+                raise ValueError('The reduction in attendance at workplaces\
+                    during lockdown must be => 0.')
+            if _ > 1:
+                raise ValueError('The reduction in attendance at workplaces\
+                    during lockdown must be <= 1.')
 
-        if not isinstance(q_O, (int, float)):
-            raise TypeError('The reduction in engagement with shopping and \
-                leisure activities during lockdown must be integer or float.')
-        if q_O < 0:
+        if isinstance(q_O, (float, int)):
+            q_O = [q_O]
+        if np.asarray(q_O).ndim != 1:
             raise ValueError('The reduction in engagement with shopping and \
-                leisure activities during lockdown must be >= 0.')
-        if q_O > 1:
-            raise ValueError('The reduction in engagement with shopping and \
-                leisure activities during lockdown must be <= 1.')
+                leisure activities during lockdown storage format must be\
+                1-dimensional.')
+        if (np.asarray(q_O).shape[0] != np.asarray(
+                times_npis).shape[0]) and (np.asarray(q_O).shape[0] != 1):
+            raise ValueError(
+                    'Wrong number of age groups for the reduction in \
+                    engagement with shopping and leisure activities during\
+                    lockdown.')
+        for _ in q_O:
+            if not isinstance(_, (float, int)):
+                raise TypeError('The reduction in engagement with shopping and\
+                    leisure activities during lockdown must be float or\
+                    integer.')
+            if _ < 0:
+                raise ValueError('The reduction in engagement with shopping \
+                    and leisure activities during lockdown must be => 0.')
+            if _ > 1:
+                raise ValueError('The reduction in engagement with shopping \
+                    and leisure activities during lockdown must be <= 1.')
+
+        if not isinstance(times_npis, list):
+            raise TypeError('Time points of intervention changes must be given\
+                in a list format.')
+        for _ in times_npis:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of intervention changes must be\
+                    integer or float.')
+            if _ <= 0:
+                raise ValueError('Time points of intervention changes must be\
+                    > 0.')
 
     def __call__(self):
         """
@@ -2865,7 +3014,9 @@ class WarwickSocDistParameters(object):
             :class:`WarwickSEIRModel` the class relates to.
 
         """
-        return [self.theta, self.phi, self.q_H, self.q_S, self.q_W, self.q_O]
+        return [
+            self.theta, self.phi, self.q_H, self.q_S, self.q_W, self.q_O,
+            self.times_npis]
 
 #
 # WarwickParametersController Class
