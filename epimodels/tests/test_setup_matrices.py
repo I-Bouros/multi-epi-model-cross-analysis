@@ -66,7 +66,7 @@ class TestContactMatrixClass(unittest.TestCase):
 
         self.assertEqual(
             c.get_age_groups(),
-            "Polpulation is split into 2 age groups: ['0-10', '10-25'].")
+            "Population is split into 2 age groups: ['0-10', '10-25'].")
 
     def test_change_age_groups(self):
         age_groups = ['0-10', '10-25']

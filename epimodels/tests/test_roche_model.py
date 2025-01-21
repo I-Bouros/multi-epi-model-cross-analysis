@@ -1757,7 +1757,7 @@ class TestRocheSEIRModel(unittest.TestCase):
             model.samples_positive_tests(
                 output, tests[0], sens, spec, 3)
 
-    def test_compute_transistion_matrix(self):
+    def test_compute_transition_matrix(self):
         model = em.RocheSEIRModel()
 
         # Populate the model
@@ -1876,7 +1876,7 @@ class TestRocheSEIRModel(unittest.TestCase):
         )
 
         model.simulate(parameters)
-        model.compute_transistion_matrix()
+        model.compute_transition_matrix()
 
         npt.assert_almost_equal(
             model._inv_trans_matrix,
@@ -2026,7 +2026,7 @@ class TestRocheSEIRModel(unittest.TestCase):
         )
 
         output = model.simulate(parameters)
-        model.compute_transistion_matrix()
+        model.compute_transition_matrix()
 
         self.assertGreater(
             model.compute_rt_trajectory(output, 1),

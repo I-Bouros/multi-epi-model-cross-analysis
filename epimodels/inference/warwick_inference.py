@@ -602,7 +602,7 @@ class WarwickLogLik(pints.LogPDF):
             self._model._num_ages)).tolist()
 
         # Regional household quarantine proportions
-        h = [0.8] * len(self._model.regions)
+        h = [0.9] * len(self._model.regions)
 
         # Disease-specific parameters
         tau = 0.4
@@ -612,10 +612,10 @@ class WarwickLogLik(pints.LogPDF):
                 '../data/risks_death/Risks_United Kingdom.csv'),
             dtype=np.float64)['symptom_risk'].tolist()
 
-        d = 1.2 * self._update_age_groups(np.array(d))
+        d = 1.43 * self._update_age_groups(np.array(d))
 
         # Transmission parameters
-        epsilon = 0.4
+        epsilon = 0.2
         gamma = 0.083
         sigma = pd.read_csv(
             os.path.join(
@@ -623,7 +623,7 @@ class WarwickLogLik(pints.LogPDF):
                 '../data/risks_death/Risks_United Kingdom.csv'),
             dtype=np.float64)['susceptibility'].tolist()
 
-        sigma = 1.1 * self._update_age_groups(np.array(sigma))
+        sigma = 1.09 * self._update_age_groups(np.array(sigma))
 
         self._parameters = [
             0, susceptibles, exposed_1_f, exposed_1_sd, exposed_1_su,
