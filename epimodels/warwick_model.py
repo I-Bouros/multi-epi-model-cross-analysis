@@ -1885,9 +1885,15 @@ class WarwickSEIRModel(pints.ForwardModel):
             n=tests,
             p=self.mean_positives(sens, spec, suscep, pop))
 
-    def compute_transistion_matrix(self):
+    def compute_transition_matrix(self, k):
         """
         Computes the transition matrix of the Warwick-Household model.
+
+        Parameters
+        ----------
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
 
         Returns
         -------
@@ -1902,7 +1908,10 @@ class WarwickSEIRModel(pints.ForwardModel):
         # Read parameters of the system
         eps, gamma, d, h_all = self._c[2:6]
 
-        h = h_all[self._region-1]
+        # Read the social distancing parameters of the system
+        phi = self._compute_soc_dist_parameters(k+1)[1]
+
+        h = h_all[self._region-1] * phi
 
         # Pre-compute block-matrices
         eps_3 = 3 * eps * np.identity(a)
@@ -1954,7 +1963,7 @@ class WarwickSEIRModel(pints.ForwardModel):
              [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, one_d_eps_3,
                 Zs, Zs, Zs, Zs, Zs, Zs, Zs, -gamma_m]])
 
-        self._inv_trans_matrix = np.linalg.inv(sigma_matrix)
+        return np.linalg.inv(sigma_matrix)
 
     def compute_rt_trajectory(self, output, k):
         """
@@ -2062,7 +2071,8 @@ class WarwickSEIRModel(pints.ForwardModel):
                 Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs]])
 
         # Compute the next-generation matrix
-        next_gen_matrix = - np.matmul(t_matrix, self._inv_trans_matrix)
+        inv_trans_matrix = self.compute_transition_matrix(k)
+        next_gen_matrix = - np.matmul(t_matrix, inv_trans_matrix)
 
         return np.max(np.absolute(np.linalg.eigvals(next_gen_matrix)))
 
