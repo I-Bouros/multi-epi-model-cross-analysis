@@ -1885,15 +1885,9 @@ class WarwickSEIRModel(pints.ForwardModel):
             n=tests,
             p=self.mean_positives(sens, spec, suscep, pop))
 
-    def compute_transition_matrix(self, k):
+    def compute_transition_matrix(self):
         """
         Computes the transition matrix of the Warwick-Household model.
-
-        Parameters
-        ----------
-        k : int
-            Index of day for which we intend to sample the number of positive
-            test results by age group.
 
         Returns
         -------
@@ -1905,65 +1899,68 @@ class WarwickSEIRModel(pints.ForwardModel):
         a = self._num_ages
         Zs = np.zeros((a, a))
 
+        self._inv_trans_matrix = []
+
         # Read parameters of the system
         eps, gamma, d, h_all = self._c[2:6]
 
         # Read the social distancing parameters of the system
-        phi = self._compute_soc_dist_parameters(k+1)[1]
+        for k in range(self._times[0], self._times[-1]+1):
+            phi = self._compute_soc_dist_parameters(k)[1]
 
-        h = h_all[self._region-1] * phi
+            h = h_all[self._region-1] * phi
 
-        # Pre-compute block-matrices
-        eps_3 = 3 * eps * np.identity(a)
-        gamma_m = gamma * np.identity(a)
-        d_eps_3 = 3 * eps * np.diag(d)
-        one_d_eps_3 = 3 * eps * np.diag(1-np.array(d))
-        H_d_eps_3 = 3 * eps * h * np.diag(d)
-        one_H_d_eps_3 = 3 * eps * (1-h) * np.diag(d)
+            # Pre-compute block-matrices
+            eps_3 = 3 * eps * np.identity(a)
+            gamma_m = gamma * np.identity(a)
+            d_eps_3 = 3 * eps * np.diag(d)
+            one_d_eps_3 = 3 * eps * np.diag(1-np.array(d))
+            H_d_eps_3 = 3 * eps * h * np.diag(d)
+            one_H_d_eps_3 = 3 * eps * (1-h) * np.diag(d)
 
-        sigma_matrix = np.block(
-            [[-eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, Zs, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, Zs, Zs, Zs, Zs, -eps_3, Zs, Zs, Zs, Zs, Zs,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, -eps_3, Zs, Zs,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, one_H_d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
-                -gamma_m, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, one_d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
-                Zs, -gamma_m, Zs, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, H_d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
-                Zs, Zs, -gamma_m, Zs, Zs, Zs, Zs, Zs],
-             [Zs, Zs, Zs, Zs, Zs, d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs,
-                Zs, Zs, Zs, -gamma_m, Zs, Zs, Zs, Zs],
-             [Zs, Zs, Zs, Zs, Zs, one_d_eps_3, Zs, Zs, one_d_eps_3, Zs, Zs, Zs,
-                Zs, Zs, Zs, Zs, -gamma_m, Zs, Zs, Zs],
-             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, one_H_d_eps_3, Zs, Zs, Zs,
-                Zs, Zs, Zs, Zs, Zs, -gamma_m, Zs, Zs],
-             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, H_d_eps_3, Zs, Zs, d_eps_3,
-                Zs, Zs, Zs, Zs, Zs, Zs, -gamma_m, Zs],
-             [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, one_d_eps_3,
-                Zs, Zs, Zs, Zs, Zs, Zs, Zs, -gamma_m]])
+            sigma_matrix = np.block(
+                [[-eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, Zs, Zs, Zs, -eps_3, Zs, Zs, Zs, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, -eps_3, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3, Zs,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, eps_3, -eps_3,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, one_H_d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                    -gamma_m, Zs, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, one_d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                    Zs, -gamma_m, Zs, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, H_d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs,
+                    Zs, Zs, -gamma_m, Zs, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, Zs, Zs, d_eps_3, Zs, Zs, Zs, Zs, Zs, Zs,
+                    Zs, Zs, Zs, -gamma_m, Zs, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, Zs, Zs, one_d_eps_3, Zs, Zs, one_d_eps_3, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, -gamma_m, Zs, Zs, Zs],
+                 [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, one_H_d_eps_3, Zs, Zs, Zs,
+                    Zs, Zs, Zs, Zs, Zs, -gamma_m, Zs, Zs],
+                 [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, H_d_eps_3, Zs, Zs, d_eps_3,
+                    Zs, Zs, Zs, Zs, Zs, Zs, -gamma_m, Zs],
+                 [Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs, one_d_eps_3,
+                    Zs, Zs, Zs, Zs, Zs, Zs, Zs, -gamma_m]])
 
-        return np.linalg.inv(sigma_matrix)
+            self._inv_trans_matrix.append(np.linalg.inv(sigma_matrix))
 
     def compute_rt_trajectory(self, output, k):
         """
@@ -2071,8 +2068,7 @@ class WarwickSEIRModel(pints.ForwardModel):
                 Zs, Zs, Zs, Zs, Zs, Zs, Zs, Zs]])
 
         # Compute the next-generation matrix
-        inv_trans_matrix = self.compute_transition_matrix(k)
-        next_gen_matrix = - np.matmul(t_matrix, inv_trans_matrix)
+        next_gen_matrix = - np.matmul(t_matrix, self._inv_trans_matrix[k])
 
         return np.max(np.absolute(np.linalg.eigvals(next_gen_matrix)))
 
