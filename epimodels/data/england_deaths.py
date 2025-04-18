@@ -97,12 +97,14 @@ def process_death_data(
 
     age_groups = [
         '0-1', '1-5', '5-15', '15-25', '25-45', '45-65', '65-75', '75+']
-    deaths = pd.DataFrame(columns=age_groups)
+    lst_deaths = []
     for t in data['time'].unique():
         daily_data = data[data['time'] == t]
         newrow = process_ages(age_groups, daily_data)
 
-        deaths = deaths.append(newrow, ignore_index=True)
+        lst_deaths.append(newrow)
+
+    deaths = pd.DataFrame(lst_deaths)
 
     return deaths.to_numpy()
 
