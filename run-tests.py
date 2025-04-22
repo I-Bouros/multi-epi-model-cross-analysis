@@ -147,6 +147,7 @@ def doctest_rst_and_public_interface():
         'epimodels._parameters',
         'epimodels.phe_model',
         'epimodels.roche_model',
+        'epimodels.warwick_model',
         'epimodels.inference'
         ]
 
