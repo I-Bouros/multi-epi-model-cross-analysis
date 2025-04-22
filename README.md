@@ -10,6 +10,7 @@
 A collection of multiple epidemiological models used in the modelling of cases observed during the COVID-19 pandemic. Amongst the models curated in this collection are:
 - *PHE & Cambridge*: an official model used by the UK government for policy making.
 - *Roche*: a model developed by F. Hoffmann-La Roche Ltd.
+- *Warwick-Household*: model is built by the University of Warwick and used by the UK government for policy making.
 
 All features of our software are described in detail in our
 [full API documentation](https://multi-epi-model-cross-analysis.readthedocs.io/en/latest/).
@@ -21,6 +22,8 @@ papers:
 [1] Birrell, Paul and Blake, Joshua and van Leeuwen, Edwin and , and Gent, Nick and De Angelis, Daniela (2020). [Real-time Nowcasting and Forecasting of COVID-19 Dynamics in England: the first wave?](https://www.medrxiv.org/content/early/2020/08/30/2020.08.24.20180737). In medRxiv. 
 
 [2] Lemenuel-Diot, Annabelle and Clinch, Barry and Hurt, Aeron C. and Boutry, Paul and Laurent, Johann and Leddin, Mathias and Frings, Stefan and Charoin, Jean Eric (2020). [A COVID-19 transmission model informing medication development and supply chain needs](https://www.medrxiv.org/content/early/2020/12/02/2020.11.23.20237404). In medRxiv.
+
+[3] Keeling MJ, Hill EM, Gorsich EE, Penman B, Guyver-Fletcher G, et al. (2021). [Predictions of COVID-19 dynamics in the UK: Short-term forecasting and analysis of potential exit strategies](https://doi.org/10.1371/journal.pcbi.1008619). In PLOS Computational Biology 17(1): e1008619.
 
 ## Installation procedure
 ***
