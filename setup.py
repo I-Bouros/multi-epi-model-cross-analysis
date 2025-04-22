@@ -67,7 +67,7 @@ setup(
     # List of dependencies
     install_requires=[
         # Dependencies go here!
-        'numpy>=1.8',
+        'numpy>=1.8, <2.0',
         'openpyxl',
         'pandas',
         'scipy',
