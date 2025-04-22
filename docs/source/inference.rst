@@ -1,6 +1,6 @@
-***************************
-List of Epidemiology Models
-***************************
+*****************
+Inference Classes
+*****************
 
 This section documents the classes used for the parameter inference of epidemiological models curated in this collection.
 
