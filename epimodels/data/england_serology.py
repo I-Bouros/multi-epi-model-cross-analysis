@@ -97,20 +97,21 @@ def process_tests_data(
 
     age_groups = [
         '0-1', '1-5', '5-15', '15-25', '25-45', '45-65', '65-75', '75+']
-    positives = pd.DataFrame(columns=age_groups)
-    tests = pd.DataFrame(columns=age_groups)
+    lst_positives = []
+    lts_tests = []
     for t in data['time'].unique():
         # Process positive results
         daily_data = data[data['time'] == t]
         newrow = process_ages(age_groups, daily_data, type='positives')
-
-        positives = positives.append(newrow, ignore_index=True)
+        lst_positives.append(newrow)
 
         # Process test numbers
         daily_data = data[data['time'] == t]
         newrow = process_ages(age_groups, daily_data, type='tests')
+        lts_tests.append(newrow)
 
-        tests = tests.append(newrow, ignore_index=True)
+    positives = pd.DataFrame(lst_positives)
+    tests = pd.DataFrame(lts_tests)
 
     return positives.to_numpy(), tests.to_numpy()
 
@@ -217,7 +218,7 @@ def main(files: list):
     -------
     csv
         Processed serology data files for each different region found in the
-        fiven file.
+        given file.
 
     """
 

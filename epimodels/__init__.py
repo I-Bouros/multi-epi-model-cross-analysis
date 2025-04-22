@@ -7,7 +7,7 @@
 # released under the MIT license. See accompanying LICENSE for copyright
 # notice and full license details.
 #
-"""epimodels is a Epidemiology Modelling library.
+"""epimodels is an Epidemiology Modelling library.
 It contains functionality for creating regional, contact population matrices
 as well as modelling of the number of cases of infections by compartment
 during an outbreak of the SARS-Cov-2 virus.
@@ -26,6 +26,7 @@ from . import inference  # noqa
 # Import models
 from .phe_model import PheSEIRModel  # noqa
 from .roche_model import RocheSEIRModel  # noqa
+from .warwick_model import WarwickSEIRModel  # noqa
 
 # Import auxiliary matrices
 from ._setup_matrices import (  # noqa
@@ -54,4 +55,15 @@ from._parameters import (  # noqa
     RocheTransmission,
     RocheSimParameters,
     RocheParametersController
+)
+
+# For Warwick
+from._parameters import (  # noqa
+    WarwickICs,
+    WarwickRegParameters,
+    WarwickDiseaseParameters,
+    WarwickTransmission,
+    WarwickSimParameters,
+    WarwickSocDistParameters,
+    WarwickParametersController
 )

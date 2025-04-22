@@ -67,7 +67,8 @@ setup(
     # List of dependencies
     install_requires=[
         # Dependencies go here!
-        'numpy>=1.8',
+        'numpy>=1.8, <2.0',
+        'openpyxl',
         'pandas',
         'scipy',
         'pints @ git+https://github.com/pints-team/pints.git#egg=pints-latest',
@@ -80,7 +81,7 @@ setup(
             # Sphinx for doc generation. Version 1.7.3 has a bug:
             'sphinx>=1.5, !=1.7.3',
             # Nice theme for docs
-            'sphinx_rtd_theme',
+            'alabaster',
         ],
         'dev': [
             # Flake8 for code style checking

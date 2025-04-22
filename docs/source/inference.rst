@@ -1,16 +1,27 @@
-***************************
-List of Epidemiology Models
-***************************
+*****************
+Inference Classes
+*****************
 
-This section documents the classes used for the parameetr inference of epidemiological models curated in this collection.
+This section documents the classes used for the parameter inference of epidemiological models curated in this collection.
 
 .. currentmodule:: epimodels.inference
 
 Overview:
 
-- :class:`PheSEIRInfer`
-- :class:`PHELogLik`
-- :class:`PHELogPrior`
+- Inference & Optimisation Controller Classes:
+    - :class:`PheSEIRInfer`
+    - :class:`RocheSEIRInfer`
+    - :class:`WarwickSEIRInfer`
+
+- Log-likelihood Initial Conditions Classes:
+    - :class:`PHELogLik`
+    - :class:`RocheLogLik`
+    - :class:`WarwickLogLik`
+
+- Prior Classes:
+    - :class:`PHELogPrior`
+    - :class:`RocheLogPrior`
+    - :class:`WarwickLogPrior`
 
 Public Health England & Cambridge Model
 ***************************************
@@ -22,4 +33,28 @@ Public Health England & Cambridge Model
   :members:
 
 .. autoclass:: PHELogPrior
+  :members:
+
+Roche SEIRD Model
+*****************
+
+.. autoclass:: RocheSEIRInfer
+  :members:
+
+.. autoclass:: RocheLogLik
+  :members:
+
+.. autoclass:: RocheLogPrior
+  :members:
+
+Warwick-Household Model
+***********************
+
+.. autoclass:: WarwickSEIRInfer
+  :members:
+
+.. autoclass:: WarwickLogLik
+  :members:
+
+.. autoclass:: WarwickLogPrior
   :members:

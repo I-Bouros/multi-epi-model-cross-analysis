@@ -8,7 +8,7 @@
 #
 """
 This script contains code for modelling the extended SEIR model created by
-Public Health England and Univerity of Cambridge. This is one of the
+Public Health England and University of Cambridge. This is one of the
 official models used by the UK government for policy making.
 
 It uses an extended version of an SEIR model and contact and region specific
@@ -47,27 +47,28 @@ class PheSEIRModel(pints.ForwardModel):
 
         \begin{eqnarray}
             \frac{dS(r, t, i)}{dt} &=& -\lambda_{r, t, i} S(r, t, i) \\
-            \frac{dE_1(r, t, i)}{dt} &=& \lambda_{r, t, i} S(
-                r, t, i) - \kappa E_1(r, t, i) \\
-            \frac{dE_2(r, t, i)}{dt} &=& \kappa E_1(r, t, i) - \kappa E_2(
+            \frac{dE^1(r, t, i)}{dt} &=& \lambda_{r, t, i} S(
+                r, t, i) - \kappa E^1(r, t, i) \\
+            \frac{dE^2(r, t, i)}{dt} &=& \kappa E^1(r, t, i) - \kappa E^2(
                 r, t, i) \\
-            \frac{dI_1(r, t, i)}{dt} &=& \kappa E_2(r, t, i) - \gamma I_1(
+            \frac{dI^1(r, t, i)}{dt} &=& \kappa E^2(r, t, i) - \gamma I^1(
                 r, t, i) \\
-            \frac{dI_2(r, t, i)}{dt} &=& \gamma I_1(r, t, i) - \gamma I_2(
+            \frac{dI^2(r, t, i)}{dt} &=& \gamma I^1(r, t, i) - \gamma I^2(
                 r, t, i) \\
-            \frac{dR(r, t, i)}{dt} &=& \gamma I_2(r, t, i)
+            \frac{dR(r, t, i)}{dt} &=& \gamma I^2(r, t, i)
         \end{eqnarray}
 
-    where :math:`S(0) = S_0, E(0) = E_0, I(0) = I_0, R(0) = R_0` are also
-    parameters of the model (evaluation at 0 refers to the compartments'
-    structure at intial time.
+    where :math:`S(0) = S_0`, :math:`E^1(0) = E^1_0`, :math:`E^2(0) = E^1_0`,
+    :math:`I^1(0) = I^1_0`, :math:`I^2(0) = I^2_0`, :math:`R(0) = R_0` are
+    also parameters of the model (evaluation at 0 refers to the compartments'
+    structure at initial time.
 
     The parameter :math:`\lambda_{r, t, i}` is the time, age and region-varying
     rate with which susceptible individuals become infected, which in the
     context of the PHE model depends on contact and region-specific relative
     susceptibility matrices. The other two parameters, :math:`\kappa` and
-    :math:`\gamma` are virsus specific and so do not depend with region, age or
-    time:
+    :math:`\gamma` are disease-specific and so do not depend with region, age
+    or time:
 
     .. math::
         :nowrap:
@@ -263,7 +264,7 @@ class PheSEIRModel(pints.ForwardModel):
             List of the times point values for which we want to keep the
             values recorded.
         list
-            List of the indeces these times point values for which we want
+            List of the indices these times point values for which we want
             to keep the values recorded with respect to the finer timescale.
 
         """
@@ -312,7 +313,7 @@ class PheSEIRModel(pints.ForwardModel):
         c : list
             List of values used to compute the parameters of the ODEs
             system. It assumes c = [beta, kappa, gamma], where :math:`beta`
-            encaplsulates temporal fluctuations in transmission for all ages.
+            encapsulates temporal fluctuations in transmission for all ages.
         num_a_groups : int
             Number of age groups in which the population is split. It
             refers to the number of compartments of each type.
@@ -320,7 +321,7 @@ class PheSEIRModel(pints.ForwardModel):
         Returns
         -------
         numpy.array
-            Age-strictured matrix representation of the RHS of the ODEs system.
+            Age-structured matrix representation of the RHS of the ODEs system.
 
         """
         # Read in the number of age-groups
@@ -469,7 +470,7 @@ class PheSEIRModel(pints.ForwardModel):
         parameters : list
             List of quantities that characterise the PHE SEIR model in
             this order: index of region for which we wish to simulate,
-            initial conditions matrices classifed by age (column name) and
+            initial conditions matrices classified by age (column name) and
             region (row name) for each type of compartment (s, e1, e2, i1, i2,
             r), temporal and regional fluctuation matrix :math:`\beta`,
             mean latent period :math:`d_L`, mean infection period :math:`d_I`
@@ -568,7 +569,7 @@ class PheSEIRModel(pints.ForwardModel):
         Parameters
         ----------
         matrices_region : lists of RegionMatrix
-            List of ime-dependent and region-specific relative susceptibility
+            List of time-dependent and region-specific relative susceptibility
             matrices used for the modelling.
         time_changes_region : list
             List of times at which the next instances of region-specific
@@ -622,7 +623,7 @@ class PheSEIRModel(pints.ForwardModel):
             (1) initial values of the reproduction number
             by region,
             (2) index of region for which we wish to simulate,
-            (3) initial conditions matrices classifed by age (column name) and
+            (3) initial conditions matrices classified by age (column name) and
             region (row name) for each type of compartment (s, e1, e2, i1, i2,
             r),
             (4) temporal and regional fluctuation matrix :math:`\beta`,
@@ -630,7 +631,7 @@ class PheSEIRModel(pints.ForwardModel):
             (6) mean infection period :math:`d_I`,
             (7) time step for the 'homemade' solver and
             (8) (str) the type of solver implemented by the simulator.
-            Splited into the formats necessary for the :meth:`_simulate`
+            Split into the formats necessary for the :meth:`_simulate`
             method.
         times : list
             List of time points at which we wish to evaluate the ODEs
@@ -757,7 +758,7 @@ class PheSEIRModel(pints.ForwardModel):
 
         Returns
         -------
-        nunmpy.array
+        numpy.array
             Age-structured matrix of the number of new infections from the
             simulation method for the PheSEIRModel.
 
@@ -862,7 +863,7 @@ class PheSEIRModel(pints.ForwardModel):
             if _ < 0:
                 raise ValueError('Observed number of deaths must be => 0.')
 
-        # Compute mean of negative-binomial
+        # Compute mean of negative binomial
         return nbinom.logpmf(
             k=obs_death,
             n=(1/niu) * self.mean_deaths(
@@ -1047,7 +1048,7 @@ class PheSEIRModel(pints.ForwardModel):
             for the PheSEIRModel.
         tests : list
             List of conducted tests in specified region and at time point k
-            classifed by age groups.
+            classified by age groups.
         sens : float or int
             Sensitivity of the test (or ratio of true positives).
         spec : float or int
@@ -1059,7 +1060,7 @@ class PheSEIRModel(pints.ForwardModel):
         Returns
         -------
         numpy.array
-            Age-structured matrix of log-likelihoods for the obsereved number
+            Age-structured matrix of log-likelihoods for the observed number
             of positive test results for each age group in specified region at
             time :math:`t_k`.
 
@@ -1073,17 +1074,17 @@ class PheSEIRModel(pints.ForwardModel):
 
         # Check correct format for observed number of positive results
         if np.asarray(obs_pos).ndim != 1:
-            raise ValueError('Observed number of postive tests results by age \
-                category storage format is 1-dimensional.')
+            raise ValueError('Observed number of positive tests results by \
+                age category storage format is 1-dimensional.')
         if np.asarray(obs_pos).shape[0] != self._num_ages:
             raise ValueError('Wrong number of age groups for observed number \
-                of postive tests results.')
+                of positive tests results.')
         for _ in obs_pos:
             if not isinstance(_, (int, np.integer)):
-                raise TypeError('Observed number of postive tests results must\
-                    be integer.')
+                raise TypeError('Observed number of positive tests results \
+                    must be integer.')
             if _ < 0:
-                raise ValueError('Observed number of postive tests results \
+                raise ValueError('Observed number of positive tests results \
                     must be => 0.')
 
         # Check correct format for number of tests based on the observed number
@@ -1128,7 +1129,7 @@ class PheSEIRModel(pints.ForwardModel):
             for the PheSEIRModel.
         tests : list
             List of conducted tests in specified region and at time point k
-            classifed by age groups.
+            classified by age groups.
         sens : float or int
             Sensitivity of the test (or ratio of true positives).
         spec : float or int
@@ -1219,7 +1220,7 @@ class PheSEIRModel(pints.ForwardModel):
             for the PheSEIRModel.
         tests : list
             List of conducted tests in specified region and at time point k
-            classifed by age groups.
+            classified by age groups.
         sens : float or int
             Sensitivity of the test (or ratio of true positives).
         spec : float or int
@@ -1252,3 +1253,94 @@ class PheSEIRModel(pints.ForwardModel):
         return binom.rvs(
             n=tests,
             p=self.mean_positives(sens, spec, suscep, pop))
+
+    def compute_transition_matrix(self):
+        """
+        Computes the transition matrix of the PHE model.
+
+        Returns
+        -------
+        numpy.array
+            Transition matrix of the PHE model
+            in specified region at time :math:`t_k`.
+
+        """
+        a = self._num_ages
+        Zs = np.zeros((a, a))
+
+        # Read parameters of the system
+        dL, dI = self._c[1:]
+
+        # Pre-compute block-matrices
+        kappa = 2/dL * np.identity(a)
+        gamma = 2/dI * np.identity(a)
+
+        sigma_matrix = np.block(
+            [[-kappa, Zs, Zs, Zs],
+             [kappa, -kappa, Zs, Zs],
+             [Zs, kappa, -gamma, Zs],
+             [Zs, Zs, gamma, -gamma]])
+
+        self._inv_trans_matrix = np.linalg.inv(sigma_matrix)
+
+    def compute_rt_trajectory(self, output, k):
+        """
+        Computes the time-dependent reproduction at time :math:`t_k`
+        from the PHE model.
+
+        Parameters
+        ----------
+        output : numpy.array
+            Age-structured output matrix of the simulation method
+            for the PheSEIRModel.
+        k : int
+            Index of day for which we intend to sample the number of positive
+            test results by age group.
+
+        Returns
+        -------
+        float
+            The reproduction number in specified region at time :math:`t_k`.
+
+        Notes
+        -----
+        Always run :meth:`PheSEIRModel.simulate`,
+        :meth:`PheSEIRModel.check_positives_format` and
+        :meth:`PheSEIRModel.compute_transistion_matrix` before running this
+        one.
+
+        """
+        self._check_time_step_format(k)
+        r = self._region
+        a = self._num_ages
+        Zs = np.zeros((a, a))
+
+        # Split compartments into their types
+        s, i1, i2 = \
+            output[k, :a], output[k, (3*a):(4*a)], output[k, (4*a):(5*a)]
+
+        # Read parameters of the system
+        beta = self._c[0]
+
+        # Identify the appropriate MultiTimesInfectivity matrix for the
+        # ODE system
+        pos = np.where(self._times <= k+1)
+        ind = pos[-1][-1]
+        b = self.infectivity_timeline.compute_prob_infectivity_matrix(
+            r, k+1, s, beta[self._region-1][ind])
+
+        # Compute the current time, age and region-varying
+        # rate with which susceptible individuals become infected
+        lam = self._compute_lambda(s, i1, i2, b)
+
+        # Compute transmission matrix
+        t_matrix = np.block(
+            [[Zs, np.diag(np.multiply(lam, np.asarray(s))), Zs, Zs],
+             [Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs],
+             [Zs, Zs, Zs, Zs]])
+
+        # Compute the next-generation matrix
+        next_gen_matrix = - np.matmul(t_matrix, self._inv_trans_matrix)
+
+        return np.max(np.absolute(np.linalg.eigvals(next_gen_matrix)))

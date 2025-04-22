@@ -35,10 +35,10 @@ class ContactMatrix():
 
     """
     def __init__(self, age_groups, data_matrix):
-        # Chech age_groups have correct format
+        # Check age_groups have correct format
         self._check_age_groups_format(age_groups)
 
-        # Chech data_matrix has correct format
+        # Check data_matrix has correct format
         self._check_data_matrix_format(data_matrix, age_groups)
 
         self.ages = age_groups
@@ -86,7 +86,7 @@ class ContactMatrix():
             The number of age groups and their names of the contact matrix.
 
         """
-        return ('Polpulation is split into {} age groups: {}.'.format(
+        return ('Population is split into {} age groups: {}.'.format(
             self._num_a_groups, self.ages))
 
     def _check_age_groups_format(self, age_groups):
@@ -165,10 +165,10 @@ class ContactMatrix():
             yaxis_title="Infected Age")
         self.figure.show()
 
+
 #
 # RegionMatrix Class
 #
-
 
 class RegionMatrix(ContactMatrix):
     r"""RegionMatrix Class:
@@ -196,13 +196,13 @@ class RegionMatrix(ContactMatrix):
 
     """
     def __init__(self, region_name, age_groups, data_matrix):
-        # Chech region_name have correct format
+        # Check region_name have correct format
         self._check_region_name_format(region_name)
 
-        # Chech age_groups have correct format
+        # Check age_groups have correct format
         self._check_age_groups_format(age_groups)
 
-        # Chech data_matrix has correct format
+        # Check data_matrix has correct format
         self._check_data_matrix_format(data_matrix, age_groups)
 
         self.region = region_name
@@ -292,10 +292,10 @@ class RegionMatrix(ContactMatrix):
         ----------
         new_age_groups : list
             List of the new age intervals according to which the population is
-            split when cosntructing the contact matrix.
+            split when constructing the contact matrix.
 
         """
-        # Chech new_age_groups have correct format
+        # Check new_age_groups have correct format
         self._check_age_groups_format(new_age_groups)
 
         if len(new_age_groups) != self.num_a_groups:
@@ -327,10 +327,10 @@ class RegionMatrix(ContactMatrix):
             yaxis_title="Infected Age")
         self.figure.show()
 
+
 #
 # UniNextGenMatrix Class
 #
-
 
 class UniNextGenMatrix(object):
     r"""UniNextGenMatrix
@@ -359,7 +359,7 @@ class UniNextGenMatrix(object):
         different age groups a person can have, dependent of which age group
         they falls into.
     region_matrix : RegionMatrix
-        Matrix which encodes the relative suceptibility to
+        Matrix which encodes the relative susceptibility to
         infection a person can have, depending of which age group they falls
         into, if they come into contact with people from various age groups.
     dI : float
@@ -433,7 +433,7 @@ class UniNextGenMatrix(object):
             Normalised next generation matrix.
 
         """
-        # Computes next genearation matrix. Element (i, j) refers to the
+        # Computes next generation matrix. Element (i, j) refers to the
         # expected number of new infections in age group j caused by infectious
         # in age group j.
         self.C_tilde = self._compute_unnormalised_next_gen_matrix()
@@ -475,10 +475,10 @@ class UniNextGenMatrix(object):
         return max([x for x in np.linalg.eigvals(
             self.generator) if np.isreal(x) and x > 0])
 
+
 #
 # UniInfectivityMatrix Class
 #
-
 
 class UniInfectivityMatrix(object):
     r"""UniInfectivityMatrix Class:
@@ -519,8 +519,9 @@ class UniInfectivityMatrix(object):
         r"""
         Computes the matrix of probabilities of susceptible individuals in
         a given region and specified time point of getting infected. The
-        :math:`(i, j)` element of the matrix refers to the probabiity of people
-        in age group :math:`i` to be infected by those in age group :math:`j`.
+        :math:`(i, j)` element of the matrix refers to the probability of
+        people in age group :math:`i` to be infected by those in age group
+        :math:`j`.
 
         The matrix is computed using this formula:
 
@@ -540,7 +541,7 @@ class UniInfectivityMatrix(object):
             Further temporal correction term, linked to fluctuations in
             transmission.
         later_nextgen_matrix : UniNextGenMatrix
-            Next generation matrix at given time during the the epidemic.
+            Next generation matrix at given time during the epidemic.
 
         Returns
         -------
@@ -589,7 +590,7 @@ class UniInfectivityMatrix(object):
             Further temporal correction term, linked to fluctuations in
             transmission.
         later_nextgen_matrix : UniNextGenMatrix
-            Next generation matrix at given time during the the epidemic.
+            Next generation matrix at given time during the epidemic.
 
         Returns
         -------
@@ -607,10 +608,10 @@ class UniInfectivityMatrix(object):
         return later_nextgen_matrix.compute_dom_eigenvalue() * (
             self._constant * temp_variation)
 
+
 #
 # MultiTimesContacts Class
 #
-
 
 class MultiTimesContacts(UniNextGenMatrix):
     """MultiTimesContacts Class:
@@ -753,10 +754,10 @@ class MultiTimesContacts(UniNextGenMatrix):
 
         return np.multiply(current_contacts._data, current_rel_susc._data)
 
+
 #
 # MultiTimesInfectivity Class
 #
-
 
 class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
     r"""MultiTimesInfectivity Class:
@@ -765,9 +766,9 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
     as the reproduction number for subsequent time points, evaluating at
     multiple time points and in multiple regions.
 
-    In the computation of both quanities time-dependent progressions of contact
-    matrices and region matrices, accompanied by vectors of the times at which
-    the changes occur.
+    In the computation of both quantities time-dependent progressions of
+    contact matrices and region matrices, accompanied by vectors of the
+    times at which the changes occur.
 
     Parameters
     ----------
@@ -979,7 +980,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         Checks the correct format for the input of the two main methods
         for the class.
 
-        Paramaters
+        Parameters
         ----------
         r : int
             Index of the region at which the next generation matrix
@@ -1024,7 +1025,7 @@ class MultiTimesInfectivity(UniInfectivityMatrix, UniNextGenMatrix):
         r"""
         Computes the matrix of probabilities of susceptible individuals in
         a given region and specified time point of getting infected. The
-        :math:`(i, j)` element of the matrix refer to the probabiity of people
+        :math:`(i, j)` element of the matrix refer to the probability of people
         in age group :math:`i` to be infected by those in age group :math:`j`.
 
         The matrix is computed using this formula:

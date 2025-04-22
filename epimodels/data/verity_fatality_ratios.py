@@ -52,7 +52,7 @@ def read_fatality_ratios_data(fr_file: str):
 
 def process_ages(age_groups: list, data: pd.DataFrame, type: str):
     """
-    Parses wwekly data into the correct age structure types.
+    Parses weekly data into the correct age structure types.
 
     Parameters
     ----------
@@ -144,13 +144,13 @@ def main():
     age_groups = [
         '0-1', '1-5', '5-15', '15-25', '25-45', '45-65', '65-75', '75+']
 
-    # Process cfr results
+    # Process CFR results
     newcol = process_ages(age_groups, data, type='cfr')
     cfr_values = pd.DataFrame.from_dict(
         newcol, orient='index', columns=['cfr'])
     cfr_values.index.name = 'age'
 
-    # Process ifr results
+    # Process IFR results
     newcol = process_ages(age_groups, data, type='ifr')
     ifr_values = pd.DataFrame.from_dict(
         newcol, orient='index', columns=['ifr'])

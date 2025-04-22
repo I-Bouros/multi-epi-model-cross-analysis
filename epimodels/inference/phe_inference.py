@@ -8,8 +8,8 @@
 #
 """
 This script contains code for parameter inference of the extended SEIR model
-created by Public Health England and Univerity of Cambridge. This is one of the
-official models used by the UK government for policy making.
+created by Public Health England and University of Cambridge. This is one of
+the official models used by the UK government for policy making.
 
 It uses an extended version of an SEIR model with contact and region-specific
 matrices.
@@ -268,10 +268,10 @@ class PHELogLik(pints.LogPDF):
         """
         return self._log_likelihood(x[:-1])
 
+
 #
 # PHELogPrior Class
 #
-
 
 class PHELogPrior(pints.LogPrior):
     """PHELogPrior Class:
@@ -346,10 +346,10 @@ class PHELogPrior(pints.LogPrior):
 
         return log_prior
 
+
 #
 # PheSEIRInfer Class
 #
-
 
 class PheSEIRInfer(object):
     """PheSEIRInfer Class:
@@ -374,7 +374,7 @@ class PheSEIRInfer(object):
     def read_model_data(
             self, susceptibles_data, infectives_data):
         """
-        Sets the serology data used for the model's parameters optimisation or
+        Sets the initial data used for the model's parameters optimisation or
         inference.
 
         Parameters

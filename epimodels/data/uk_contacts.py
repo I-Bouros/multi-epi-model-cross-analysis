@@ -33,22 +33,22 @@ def read_contact_matrices(
         file_index: int = 2,
         state: str = 'United Kingdom of Great Britain'):
     """
-    Read the baseline contact matices for different activities recorded
+    Read the baseline contact matrices for different activities recorded
     for the given state from the appropriate Excel file.
 
     Parameters
     ----------
     file_index : int
-        Index of the file containg the baseline contact matrices
+        Index of the file containing the baseline contact matrices
         used in the model.
     state : str
-        Name of the country whose the baseline contact matrices are used in
+        Name of the country whose baseline contact matrices are used in
         the model.
 
-    Retruns
+    Returns
     -------
     list of pandas.Dataframe
-        List of the baseline contact matices for each activitiy recorded
+        List of the baseline contact matrices for each activity recorded
         for different for the given state.
 
     """
@@ -141,20 +141,28 @@ def compute_contact_matrices(
             'time', 'shop', 'grocery', 'parks', 'transit', 'work', 'home'
         ]]
 
-    activities = ['shop', 'grocery', 'parks', 'transit', 'work', 'home']
+    activities = [
+        'shop', 'grocery', 'parks', 'transit', 'work', 'home', 'school']
     multipliers = pd.DataFrame(columns=activities)
     for t in data['time'].unique():
         daily_data = data[data['time'] == t]
         daily_data = daily_data[daily_data['sub_region_2'].isna()]
         newrow = {}
         for a in activities:
-            daily_data['{}_subtotal'.format(a)] = daily_data[
-                'population'] * daily_data[a]
+            if a == 'school':
+                daily_data['{}_subtotal'.format(a)] = daily_data[
+                    'population'] * daily_data['work']
 
-            newrow[a] = daily_data['{}_subtotal'.format(
-                a)].sum() / daily_data['population'].sum()
+                newrow[a] = daily_data['{}_subtotal'.format(
+                    a)].sum() / daily_data['population'].sum()
+            else:
+                daily_data['{}_subtotal'.format(a)] = daily_data[
+                    'population'] * daily_data[a]
 
-        multipliers = multipliers.append(newrow, ignore_index=True)
+                newrow[a] = daily_data['{}_subtotal'.format(
+                    a)].sum() / daily_data['population'].sum()
+
+        multipliers.loc[len(multipliers)] = newrow
 
     return multipliers
 
@@ -207,8 +215,8 @@ def change_age_groups(matrix: np.array):
 
     for i in range(8):
         for j in range(8):
-            new_matrix[i, j] = np.mean(
-                matrix[ind_old[i][:, None], ind_old[j]][:, None])
+            new_matrix[i, j] = np.mean(np.sum(
+                matrix[ind_old[i][:, None], ind_old[j]][:, None], axis=0))
 
     return new_matrix
 
@@ -229,8 +237,21 @@ def main():
     activity = ['school', 'home', 'work', 'others']
     baseline_matrices = read_contact_matrices()
     baseline_contact_matrix = np.zeros_like(baseline_matrices[0])
+    house_baseline_contact_matrix = np.zeros_like(baseline_matrices[0])
+    school_baseline_contact_matrix = np.zeros_like(baseline_matrices[0])
+    work_baseline_contact_matrix = np.zeros_like(baseline_matrices[0])
+    other_baseline_contact_matrix = np.zeros_like(baseline_matrices[0])
     for ind, a in enumerate(activity):
         baseline_contact_matrix += baseline_matrices[ind]
+
+        if a == 'home':
+            house_baseline_contact_matrix += baseline_matrices[ind]
+        elif a == 'school':
+            school_baseline_contact_matrix += baseline_matrices[ind]
+        elif a == 'work':
+            work_baseline_contact_matrix += baseline_matrices[ind]
+        else:
+            other_baseline_contact_matrix += baseline_matrices[ind]
 
     all_regions = ['EE', 'London', 'Mid', 'NE', 'NW', 'SE', 'SW']
 
@@ -240,17 +261,24 @@ def main():
         days = range(multipliers.shape[0])
         weeks = [days[x:x+7] for x in range(0, len(days), 7)]
         week_mean = pd.Series(
-            np.zeros(6),
-            index=['shop', 'grocery', 'parks', 'transit', 'work', 'home'])
+            np.zeros(7),
+            index=[
+                'shop', 'grocery', 'parks', 'transit', 'work', 'home',
+                'school'])
         for w, week in enumerate(weeks):
             contact_matrix = np.zeros_like(baseline_matrices[0])
+            house_contact_matrix = np.zeros_like(baseline_matrices[0])
+            school_contact_matrix = np.zeros_like(baseline_matrices[0])
+            work_contact_matrix = np.zeros_like(baseline_matrices[0])
+            other_contact_matrix = np.zeros_like(baseline_matrices[0])
+            nonhouse_contact_matrix = np.zeros_like(baseline_matrices[0])
             to_replace = np.where(multipliers.iloc[week].mean().notna())[0]
             for _ in to_replace:
                 week_mean[_] = multipliers.iloc[week].mean()[_]
             week_multi = week_mean/100 + 1
             act_week_multi = pd.Series(
                 [
-                    week_multi.get(key='work'),
+                    week_multi.get(key='school'),
                     week_multi.get(key='home'),
                     week_multi.get(key='work'),
                     week_multi.get(
@@ -258,8 +286,24 @@ def main():
                 ])
             act_week_multi.index = activity
             for ind, a in enumerate(activity):
-                contact_matrix += act_week_multi.get(
-                    key=a) * baseline_matrices[ind]
+                if a == 'home':
+                    house_contact_matrix += act_week_multi.get(
+                        key=a) * baseline_matrices[ind]
+                elif a == 'school':
+                    school_contact_matrix += act_week_multi.get(
+                        key=a) * baseline_matrices[ind]
+                elif a == 'work':
+                    work_contact_matrix += act_week_multi.get(
+                        key=a) * baseline_matrices[ind]
+                else:
+                    other_contact_matrix += act_week_multi.get(
+                        key=a) * baseline_matrices[ind]
+
+                nonhouse_contact_matrix = (
+                    school_contact_matrix + work_contact_matrix +
+                    other_contact_matrix)
+
+                contact_matrix = house_contact_matrix + nonhouse_contact_matrix
 
             # Transform recorded matrix of serial intervals to csv file
             path_ = os.path.join(
@@ -267,11 +311,59 @@ def main():
             path = os.path.join(
                     path_,
                     '{}_W{}.csv'.format(region, w+1))
-            path1 = os.path.join(path_, 'BASE.csv')
+            path1 = os.path.join(
+                    path_,
+                    'house_{}_W{}.csv'.format(region, w+1))
+            path2 = os.path.join(
+                    path_,
+                    'school_{}_W{}.csv'.format(region, w+1))
+            path3 = os.path.join(
+                    path_,
+                    'work_{}_W{}.csv'.format(region, w+1))
+            path4 = os.path.join(
+                    path_,
+                    'other_{}_W{}.csv'.format(region, w+1))
+            path5 = os.path.join(
+                    path_,
+                    'nonhouse_{}_W{}.csv'.format(region, w+1))
+            path6 = os.path.join(path_, 'BASE.csv')
+            path7 = os.path.join(path_, 'house_BASE.csv')
+            path8 = os.path.join(path_, 'school_BASE.csv')
+            path9 = os.path.join(path_, 'work_BASE.csv')
+            path10 = os.path.join(path_, 'other_BASE.csv')
 
-            np.savetxt(path, change_age_groups(contact_matrix), delimiter=',')
             np.savetxt(
-                path1, change_age_groups(baseline_contact_matrix),
+                path, change_age_groups(contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path1, change_age_groups(house_contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path2, change_age_groups(school_contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path3, change_age_groups(work_contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path4, change_age_groups(other_contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path5, change_age_groups(nonhouse_contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path6, change_age_groups(baseline_contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path7, change_age_groups(house_baseline_contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path8, change_age_groups(school_baseline_contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path9, change_age_groups(work_baseline_contact_matrix),
+                delimiter=',')
+            np.savetxt(
+                path10, change_age_groups(other_baseline_contact_matrix),
                 delimiter=',')
 
 

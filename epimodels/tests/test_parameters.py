@@ -3143,3 +3143,4177 @@ class TestRocheParametersController(unittest.TestCase):
              2.57, 1, 9, 9, 10, 10, 0.658, 0.658, 0.0955, 0.05, 0.05, 0.228,
              0.927, 3.11, 1, 35.3, 'RK45']
         )
+
+#
+# Warwick Model Examples
+#
+
+
+exampleWarwickmodel = em.WarwickSEIRModel()
+exampleWarwickmodel2 = em.WarwickSEIRModel()
+
+# Initial state of the system
+house_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+house_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
+
+school_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+school_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
+
+work_contact_data_matrix_0 = 0.3 * np.array([[10, 5.2], [0, 3]])
+work_contact_data_matrix_1 = 0.3 * np.array([[1, 0], [0, 3]])
+
+other_contact_data_matrix_0 = 0.2 * np.array([[10, 5.2], [0, 3]])
+other_contact_data_matrix_1 = 0.2 * np.array([[1, 0], [0, 3]])
+
+house_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+house_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+house_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+house_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2], [0.29, 4.6]])
+
+school_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+school_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+school_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+school_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2], [0.29, 4.6]])
+
+work_region_data_matrix_0_0 = 0.3 * np.array([[1, 10], [1, 6]])
+work_region_data_matrix_0_1 = 0.3 * np.array([[0.5, 3], [0.3, 3]])
+work_region_data_matrix_1_0 = 0.3 * np.array([[0.85, 1], [0.9, 6]])
+work_region_data_matrix_1_1 = 0.3 * np.array([[0.5, 0.2], [0.29, 4.6]])
+
+other_region_data_matrix_0_0 = 0.2 * np.array([[1, 10], [1, 6]])
+other_region_data_matrix_0_1 = 0.2 * np.array([[0.5, 3], [0.3, 3]])
+other_region_data_matrix_1_0 = 0.2 * np.array([[0.85, 1], [0.9, 6]])
+other_region_data_matrix_1_1 = 0.2 * np.array([[0.5, 0.2], [0.29, 4.6]])
+
+
+house_contacts_0 = em.ContactMatrix(age_groups, house_contact_data_matrix_0)
+house_contacts_1 = em.ContactMatrix(age_groups, house_contact_data_matrix_1)
+house_regional_0_0 = em.RegionMatrix(
+    regions[0], age_groups, house_region_data_matrix_0_0)
+house_regional_0_1 = em.RegionMatrix(
+    regions[1], age_groups, house_region_data_matrix_0_1)
+house_regional_1_0 = em.RegionMatrix(
+    regions[0], age_groups, house_region_data_matrix_1_0)
+house_regional_1_1 = em.RegionMatrix(
+    regions[1], age_groups, house_region_data_matrix_1_1)
+
+school_contacts_0 = em.ContactMatrix(
+    age_groups, school_contact_data_matrix_0)
+school_contacts_1 = em.ContactMatrix(
+    age_groups, school_contact_data_matrix_1)
+school_regional_0_0 = em.RegionMatrix(
+    regions[0], age_groups, school_region_data_matrix_0_0)
+school_regional_0_1 = em.RegionMatrix(
+    regions[1], age_groups, school_region_data_matrix_0_1)
+school_regional_1_0 = em.RegionMatrix(
+    regions[0], age_groups, school_region_data_matrix_1_0)
+school_regional_1_1 = em.RegionMatrix(
+    regions[1], age_groups, school_region_data_matrix_1_1)
+
+work_contacts_0 = em.ContactMatrix(
+    age_groups, work_contact_data_matrix_0)
+work_contacts_1 = em.ContactMatrix(
+    age_groups, work_contact_data_matrix_1)
+work_regional_0_0 = em.RegionMatrix(
+    regions[0], age_groups, work_region_data_matrix_0_0)
+work_regional_0_1 = em.RegionMatrix(
+    regions[1], age_groups, work_region_data_matrix_0_1)
+work_regional_1_0 = em.RegionMatrix(
+    regions[0], age_groups, work_region_data_matrix_1_0)
+work_regional_1_1 = em.RegionMatrix(
+    regions[1], age_groups, work_region_data_matrix_1_1)
+
+other_contacts_0 = em.ContactMatrix(
+    age_groups, other_contact_data_matrix_0)
+other_contacts_1 = em.ContactMatrix(
+    age_groups, other_contact_data_matrix_1)
+other_regional_0_0 = em.RegionMatrix(
+    regions[0], age_groups, other_region_data_matrix_0_0)
+other_regional_0_1 = em.RegionMatrix(
+    regions[1], age_groups, other_region_data_matrix_0_1)
+other_regional_1_0 = em.RegionMatrix(
+    regions[0], age_groups, other_region_data_matrix_1_0)
+other_regional_1_1 = em.RegionMatrix(
+    regions[1], age_groups, other_region_data_matrix_1_1)
+
+
+# Matrices contact
+house_matrices_contact = [house_contacts_0, house_contacts_1]
+school_matrices_contact = [school_contacts_0, school_contacts_1]
+work_matrices_contact = [work_contacts_0, work_contacts_1]
+other_matrices_contact = [other_contacts_0, other_contacts_1]
+time_changes_contact = [1, 2]
+
+house_matrices_region = [
+    [house_regional_0_0, house_regional_0_1],
+    [house_regional_1_0, house_regional_1_1]]
+school_matrices_region = [
+    [school_regional_0_0, school_regional_0_1],
+    [school_regional_1_0, school_regional_1_1]]
+work_matrices_region = [
+    [work_regional_0_0, work_regional_0_1],
+    [work_regional_1_0, work_regional_1_1]]
+other_matrices_region = [
+    [other_regional_0_0, other_regional_0_1],
+    [other_regional_1_0, other_regional_1_1]]
+time_changes_region = [1, 3]
+
+house_matrices_contact2 = [house_contacts_0, house_contacts_1]
+school_matrices_contact2 = [school_contacts_0, school_contacts_1]
+work_matrices_contact2 = [work_contacts_0, work_contacts_1]
+other_matrices_contact2 = [other_contacts_0, other_contacts_1]
+time_changes_contact2 = [1, 5]
+
+house_matrices_region2 = [
+    [house_regional_0_0, house_regional_0_1],
+    [house_regional_1_0, house_regional_1_1]]
+house_matrices_region2 = [
+    [house_regional_0_0, house_regional_0_1],
+    [house_regional_1_0, house_regional_1_1]]
+school_matrices_region2 = [
+    [school_regional_0_0, school_regional_0_1],
+    [school_regional_1_0, school_regional_1_1]]
+work_matrices_region2 = [
+    [work_regional_0_0, work_regional_0_1],
+    [work_regional_1_0, work_regional_1_1]]
+other_matrices_region2 = [
+    [other_regional_0_0, other_regional_0_1],
+    [other_regional_1_0, other_regional_1_1]]
+time_changes_region = [1, 3]
+time_changes_region2 = [1, 10]
+
+exampleWarwickmodel.set_regions(regions)
+exampleWarwickmodel.set_age_groups(age_groups)
+exampleWarwickmodel.read_contact_data(
+    house_matrices_contact, school_matrices_contact, work_matrices_contact,
+    other_matrices_contact, time_changes_contact)
+exampleWarwickmodel.read_regional_data(
+    house_matrices_region, school_matrices_region, work_matrices_region,
+    other_matrices_region, time_changes_region)
+
+exampleWarwickmodel2.set_regions(regions)
+exampleWarwickmodel2.set_age_groups(age_groups)
+exampleWarwickmodel2.read_contact_data(
+    house_matrices_contact2, school_matrices_contact2, work_matrices_contact2,
+    other_matrices_contact2, time_changes_contact2)
+exampleWarwickmodel2.read_regional_data(
+    house_matrices_region2, school_matrices_region2, work_matrices_region2,
+    other_matrices_region2, time_changes_region2)
+
+#
+# Test WarwickICs Class
+#
+
+
+class TestWarwickICs(unittest.TestCase):
+    """
+    Test the 'WarwickICs' class.
+    """
+    def test__init__(self):
+        model = exampleWarwickmodel
+
+        # ICs parameters
+        susceptibles = [[1500, 600], [700, 400]]
+        exposed_1_f = [[0, 0], [0, 0]]
+        exposed_1_sd = [[0, 0], [0, 0]]
+        exposed_1_su = [[0, 0], [0, 0]]
+        exposed_1_q = [[0, 0], [0, 0]]
+        exposed_2_f = [[0, 0], [0, 0]]
+        exposed_2_sd = [[0, 0], [0, 0]]
+        exposed_2_su = [[0, 0], [0, 0]]
+        exposed_2_q = [[0, 0], [0, 0]]
+        exposed_3_f = [[0, 0], [0, 0]]
+        exposed_3_sd = [[0, 0], [0, 0]]
+        exposed_3_su = [[0, 0], [0, 0]]
+        exposed_3_q = [[0, 0], [0, 0]]
+        detected_f = [[0, 10], [2, 4]]
+        detected_qf = [[0, 0], [0, 0]]
+        detected_sd = [[10, 20], [0, 5]]
+        detected_su = [[20, 20], [15, 35]]
+        detected_qs = [[0, 0], [0, 0]]
+        undetected_f = [[7, 13], [14, 2]]
+        undetected_s = [[0, 10], [0, 0]]
+        undetected_q = [[0, 0], [0, 0]]
+        recovered = [[0, 0], [0, 0]]
+
+        ICs = em.WarwickICs(
+            model=model,
+            susceptibles_IC=susceptibles,
+            exposed_1_f_IC=exposed_1_f,
+            exposed_1_sd_IC=exposed_1_sd,
+            exposed_1_su_IC=exposed_1_su,
+            exposed_1_q_IC=exposed_1_q,
+            exposed_2_f_IC=exposed_2_f,
+            exposed_2_sd_IC=exposed_2_sd,
+            exposed_2_su_IC=exposed_2_su,
+            exposed_2_q_IC=exposed_2_q,
+            exposed_3_f_IC=exposed_3_f,
+            exposed_3_sd_IC=exposed_3_sd,
+            exposed_3_su_IC=exposed_3_su,
+            exposed_3_q_IC=exposed_3_q,
+            detected_f_IC=detected_f,
+            detected_qf_IC=detected_qf,
+            detected_sd_IC=detected_sd,
+            detected_su_IC=detected_su,
+            detected_qs_IC=detected_qs,
+            undetected_f_IC=undetected_f,
+            undetected_s_IC=undetected_s,
+            undetected_q_IC=undetected_q,
+            recovered_IC=recovered
+        )
+
+        self.assertEqual(ICs.model, model)
+
+        npt.assert_array_equal(np.array(ICs.susceptibles),
+                               np.array([[1500, 600], [700, 400]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_1_f),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_1_sd),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_1_su),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_1_q),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_2_f),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_2_sd),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_2_su),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_2_q),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_3_f),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_3_sd),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_3_su),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.exposed_3_q),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.detected_f),
+                               np.array([[0, 10], [2, 4]]))
+
+        npt.assert_array_equal(np.array(ICs.detected_qf),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.detected_sd),
+                               np.array([[10, 20], [0, 5]]))
+
+        npt.assert_array_equal(np.array(ICs.detected_su),
+                               np.array([[20, 20], [15, 35]]))
+
+        npt.assert_array_equal(np.array(ICs.detected_qs),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.undetected_f),
+                               np.array([[7, 13], [14, 2]]))
+
+        npt.assert_array_equal(np.array(ICs.undetected_s),
+                               np.array([[0, 10], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.undetected_q),
+                               np.array([[0, 0], [0, 0]]))
+
+        npt.assert_array_equal(np.array(ICs.recovered),
+                               np.array([[0, 0], [0, 0]]))
+
+        with self.assertRaises(TypeError):
+            model1 = 0
+
+            em.WarwickICs(
+                model=model1,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            susceptibles1 = [1500, 600]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles1,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            susceptibles1 = [[1500, 600], [700, 400], [100, 200]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles1,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            susceptibles1 = [[1500, 600, 700], [400, 100, 200]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles1,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            susceptibles1 = [[1500, '600'], [700, 400]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles1,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_f1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f1,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_f1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f1,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_f1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f1,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_1_f1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f1,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_sd1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd1,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_sd1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd1,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_sd1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd1,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_1_sd1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd1,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_su1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su1,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_su1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su1,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_su1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su1,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_1_su1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su1,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_q1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q1,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_q1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q1,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_1_q1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q1,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_1_q1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q1,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_f1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f1,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_f1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f1,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_f1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f1,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_2_f1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f1,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_sd1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd1,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_sd1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd1,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_sd1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd1,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_2_sd1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd1,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_su1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su1,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_su1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su1,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_su1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su1,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_2_su1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su1,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_q1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q1,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_q1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q1,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_2_q1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q1,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_2_q1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q1,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_f1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f1,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_f1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f1,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_f1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f1,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_3_f1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f1,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_sd1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd1,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_sd1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd1,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_sd1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd1,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_3_sd1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd1,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_su1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su1,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_su1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su1,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_su1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su1,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_3_su1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su1,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_q1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q1,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_q1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q1,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            exposed_3_q1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q1,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            exposed_3_q1 = [[0, '0'], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q1,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_f1 = [40, 20]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f1,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_f1 = [[40, 20], [50, 32], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f1,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_f1 = [[40, 20, 50], [32, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f1,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            detected_f1 = [[40, '20'], [50, 32]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f1,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_qf1 = [0, 10]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf1,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_qf1 = [[0, 10], [0, 2], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf1,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_qf1 = [[0, 10, 0], [2, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf1,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            detected_qf1 = [[0, '10'], [0, 2]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf1,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_sd1 = [10, 20]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd1,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_sd1 = [[10, 20], [20, 32], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd1,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_sd1 = [[10, 20, 20], [32, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd1,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            detected_sd1 = [[10, 20], [20, '32']]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd1,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_su1 = [2, 3]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su1,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_su1 = [[2, 3], [10, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su1,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_su1 = [[2, 3, 10], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su1,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            detected_su1 = [['2', 3], [10, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su1,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_qs1 = [1, 1]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs1,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_qs1 = [[1, 1], [1, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs1,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            detected_qs1 = [[1, 1, 1], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs1,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            detected_qs1 = [[1, 1], [1, '0']]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs1,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            undetected_f1 = [4, 5]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f1,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            undetected_f1 = [[4, 5], [1, 2], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f1,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            undetected_f1 = [[4, 5, 1], [2, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f1,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            undetected_f1 = [['4', 5], [1, 2]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f1,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            undetected_s1 = [4, 5]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s1,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            undetected_s1 = [[4, 5], [1, 2], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s1,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            undetected_s1 = [[4, 5, 1], [2, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s1,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            undetected_s1 = [['4', 5], [1, 2]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s1,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            undetected_q1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q1,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            undetected_q1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q1,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            undetected_q1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q1,
+                recovered_IC=recovered)
+
+        with self.assertRaises(TypeError):
+            undetected_q1 = [['0', 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q1,
+                recovered_IC=recovered)
+
+        with self.assertRaises(ValueError):
+            recovered1 = [0, 0]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered1)
+
+        with self.assertRaises(ValueError):
+            recovered1 = [[0, 0], [0, 0], [0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered1)
+
+        with self.assertRaises(ValueError):
+            recovered1 = [[0, 0, 0], [0, 0, 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered1)
+
+        with self.assertRaises(TypeError):
+            recovered1 = [[0, 0], ['0', 0]]
+
+            em.WarwickICs(
+                model=model,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=exposed_1_f,
+                exposed_1_sd_IC=exposed_1_sd,
+                exposed_1_su_IC=exposed_1_su,
+                exposed_1_q_IC=exposed_1_q,
+                exposed_2_f_IC=exposed_2_f,
+                exposed_2_sd_IC=exposed_2_sd,
+                exposed_2_su_IC=exposed_2_su,
+                exposed_2_q_IC=exposed_2_q,
+                exposed_3_f_IC=exposed_3_f,
+                exposed_3_sd_IC=exposed_3_sd,
+                exposed_3_su_IC=exposed_3_su,
+                exposed_3_q_IC=exposed_3_q,
+                detected_f_IC=detected_f,
+                detected_qf_IC=detected_qf,
+                detected_sd_IC=detected_sd,
+                detected_su_IC=detected_su,
+                detected_qs_IC=detected_qs,
+                undetected_f_IC=undetected_f,
+                undetected_s_IC=undetected_s,
+                undetected_q_IC=undetected_q,
+                recovered_IC=recovered1)
+
+    def test__call__(self):
+        model = exampleWarwickmodel
+
+        # ICs parameters
+        susceptibles = [[1500, 600], [700, 400]]
+        exposed_1_f = [[0, 0], [0, 0]]
+        exposed_1_sd = [[0, 0], [0, 0]]
+        exposed_1_su = [[0, 0], [0, 0]]
+        exposed_1_q = [[0, 0], [0, 0]]
+        exposed_2_f = [[0, 0], [0, 0]]
+        exposed_2_sd = [[0, 0], [0, 0]]
+        exposed_2_su = [[0, 0], [0, 0]]
+        exposed_2_q = [[0, 0], [0, 0]]
+        exposed_3_f = [[0, 0], [0, 0]]
+        exposed_3_sd = [[0, 0], [0, 0]]
+        exposed_3_su = [[0, 0], [0, 0]]
+        exposed_3_q = [[0, 0], [0, 0]]
+        detected_f = [[0, 10], [2, 4]]
+        detected_qf = [[0, 0], [0, 0]]
+        detected_sd = [[10, 20], [0, 5]]
+        detected_su = [[20, 20], [15, 35]]
+        detected_qs = [[0, 0], [0, 0]]
+        undetected_f = [[7, 13], [14, 2]]
+        undetected_s = [[0, 10], [0, 0]]
+        undetected_q = [[0, 0], [0, 0]]
+        recovered = [[0, 0], [0, 0]]
+
+        ICs = em.WarwickICs(
+            model=model,
+            susceptibles_IC=susceptibles,
+            exposed_1_f_IC=exposed_1_f,
+            exposed_1_sd_IC=exposed_1_sd,
+            exposed_1_su_IC=exposed_1_su,
+            exposed_1_q_IC=exposed_1_q,
+            exposed_2_f_IC=exposed_2_f,
+            exposed_2_sd_IC=exposed_2_sd,
+            exposed_2_su_IC=exposed_2_su,
+            exposed_2_q_IC=exposed_2_q,
+            exposed_3_f_IC=exposed_3_f,
+            exposed_3_sd_IC=exposed_3_sd,
+            exposed_3_su_IC=exposed_3_su,
+            exposed_3_q_IC=exposed_3_q,
+            detected_f_IC=detected_f,
+            detected_qf_IC=detected_qf,
+            detected_sd_IC=detected_sd,
+            detected_su_IC=detected_su,
+            detected_qs_IC=detected_qs,
+            undetected_f_IC=undetected_f,
+            undetected_s_IC=undetected_s,
+            undetected_q_IC=undetected_q,
+            recovered_IC=recovered
+        )
+
+        self.assertEqual(
+            ICs(),
+            [susceptibles, exposed_1_f, exposed_1_sd, exposed_1_su,
+             exposed_1_q, exposed_2_f, exposed_2_sd, exposed_2_su,
+             exposed_2_q, exposed_3_f, exposed_3_sd, exposed_3_su,
+             exposed_3_q, detected_f, detected_qf, detected_sd, detected_su,
+             detected_qs, undetected_f, undetected_s, undetected_q, recovered]
+        )
+
+#
+# Test WarwickRegParameters Class
+#
+
+
+class TestWarwickRegParameters(unittest.TestCase):
+    """
+    Test the 'WarwickRegParameters' class.
+    """
+    def test__init__(self):
+        model = exampleWarwickmodel
+
+        region_index = 2
+        H_all = [0.8, 0.7]
+
+        RegParameters = em.WarwickRegParameters(
+            model=model,
+            region_index=region_index,
+            H=H_all
+        )
+
+        self.assertEqual(RegParameters.model, model)
+
+        self.assertEqual(RegParameters.region_index, 2)
+
+        npt.assert_array_equal(np.array(RegParameters.H),
+                               np.array([0.8, 0.7]))
+
+        with self.assertRaises(TypeError):
+            model1 = '0'
+
+            em.WarwickRegParameters(
+                model=model1,
+                region_index=region_index,
+                H=H_all
+            )
+
+        with self.assertRaises(ValueError):
+            H_all1 = [[0.8], [0.7]]
+
+            em.WarwickRegParameters(
+                model=model,
+                region_index=region_index,
+                H=H_all1
+            )
+
+        with self.assertRaises(ValueError):
+            H_all1 = [0.3, 0.4, 0.5]
+
+            em.WarwickRegParameters(
+                model=model,
+                region_index=region_index,
+                H=H_all1
+            )
+
+        with self.assertRaises(TypeError):
+            H_all1 = ['0.1', 0.2]
+
+            em.WarwickRegParameters(
+                model=model,
+                region_index=region_index,
+                H=H_all1
+            )
+
+        with self.assertRaises(ValueError):
+            H_all1 = [-0.3, 0.1]
+
+            em.WarwickRegParameters(
+                model=model,
+                region_index=region_index,
+                H=H_all1
+            )
+
+        with self.assertRaises(ValueError):
+            H_all1 = [0.9, 1.1]
+
+            em.WarwickRegParameters(
+                model=model,
+                region_index=region_index,
+                H=H_all1
+            )
+
+        with self.assertRaises(TypeError):
+            region_index1 = 0.5
+
+            em.WarwickRegParameters(
+                model=model,
+                region_index=region_index1,
+                H=H_all
+            )
+
+        with self.assertRaises(ValueError):
+            region_index1 = 0
+
+            em.WarwickRegParameters(
+                model=model,
+                region_index=region_index1,
+                H=H_all
+            )
+
+        with self.assertRaises(ValueError):
+            region_index1 = 3
+
+            em.WarwickRegParameters(
+                model=model,
+                region_index=region_index1,
+                H=H_all
+            )
+
+    def test__call__(self):
+        model = exampleWarwickmodel
+
+        region_index = 2
+        H_all = [0.8, 0.7]
+
+        RegParameters = em.WarwickRegParameters(
+            model=model,
+            region_index=region_index,
+            H=H_all
+        )
+
+        self.assertEqual(RegParameters(), [region_index, H_all])
+
+#
+# Test WarwickDiseaseParameters Class
+#
+
+
+class TestWarwickDiseaseParameters(unittest.TestCase):
+    """
+    Test the 'WarwickDiseaseParameters' class.
+    """
+    def test__init__(self):
+        model = exampleWarwickmodel
+
+        tau = 0.4
+        d = 0.05
+
+        DiseaseParameters = em.WarwickDiseaseParameters(
+            model=model,
+            tau=tau,
+            d=d
+        )
+
+        self.assertEqual(DiseaseParameters.model, model)
+        self.assertEqual(DiseaseParameters.tau, 0.4)
+        npt.assert_array_equal(DiseaseParameters.d, np.array([0.05, 0.05]))
+
+        d = [0.05, 0.02]
+
+        DiseaseParameters = em.WarwickDiseaseParameters(
+            model=model,
+            tau=tau,
+            d=d
+        )
+
+        self.assertEqual(DiseaseParameters.model, model)
+        self.assertEqual(DiseaseParameters.tau, 0.4)
+        npt.assert_array_equal(DiseaseParameters.d, np.array([0.05, 0.02]))
+
+        with self.assertRaises(TypeError):
+            model1 = [4]
+
+            em.WarwickDiseaseParameters(
+                model=model1,
+                tau=tau,
+                d=d
+            )
+
+        with self.assertRaises(TypeError):
+            tau1 = '4'
+
+            em.WarwickDiseaseParameters(
+                model=model,
+                tau=tau1,
+                d=d
+            )
+
+        with self.assertRaises(ValueError):
+            tau1 = -1
+
+            em.WarwickDiseaseParameters(
+                model=model,
+                tau=tau1,
+                d=d
+            )
+
+        with self.assertRaises(ValueError):
+            tau1 = 1.2
+
+            em.WarwickDiseaseParameters(
+                model=model,
+                tau=tau1,
+                d=d
+            )
+
+        with self.assertRaises(TypeError):
+            d1 = ['0.4', 0.2]
+
+            em.WarwickDiseaseParameters(
+                model=model,
+                tau=tau,
+                d=d1
+            )
+
+        with self.assertRaises(ValueError):
+            d1 = [[0.2], [0.4]]
+
+            em.WarwickDiseaseParameters(
+                model=model,
+                tau=tau,
+                d=d1
+            )
+
+        with self.assertRaises(ValueError):
+            d1 = [0.2, 0.4, 0.7]
+
+            em.WarwickDiseaseParameters(
+                model=model,
+                tau=tau,
+                d=d1
+            )
+
+        with self.assertRaises(ValueError):
+            d1 = -0.2
+
+            em.WarwickDiseaseParameters(
+                model=model,
+                tau=tau,
+                d=d1
+            )
+
+        with self.assertRaises(ValueError):
+            d1 = [0.2, 1.3]
+
+            em.WarwickDiseaseParameters(
+                model=model,
+                tau=tau,
+                d=d1
+            )
+
+    def test__call__(self):
+        model = exampleWarwickmodel
+
+        tau = 0.4
+        d = [0.05, 0.02]
+
+        DiseaseParameters = em.WarwickDiseaseParameters(
+            model=model,
+            tau=tau,
+            d=d
+        )
+
+        self.assertEqual(DiseaseParameters(), [0.4, [0.05, 0.02]])
+#
+# Test WarwickTransmission Class
+#
+
+
+class TestWarwickTransmission(unittest.TestCase):
+    """
+    Test the 'WarwickTransmission' class.
+    """
+    def test__init__(self):
+        model = exampleWarwickmodel
+
+        # Transmission parameters
+        epsilon = 0.5
+        gamma = 1
+        sigma = 0.5
+
+        TransmissionParam = em.WarwickTransmission(
+            model=model,
+            epsilon=epsilon,
+            gamma=gamma,
+            sigma=sigma
+        )
+
+        self.assertEqual(TransmissionParam.model, model)
+        self.assertEqual(TransmissionParam.epsilon, 0.5)
+        self.assertEqual(TransmissionParam.gamma, 1)
+        npt.assert_array_equal(TransmissionParam.sigma, np.array([0.5, 0.5]))
+
+        with self.assertRaises(TypeError):
+            model1 = '0'
+
+            em.WarwickTransmission(
+                model=model1,
+                epsilon=epsilon,
+                gamma=gamma,
+                sigma=sigma
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickTransmission(
+                model=model,
+                epsilon='0.5',
+                gamma=gamma,
+                sigma=sigma
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickTransmission(
+                model=model,
+                epsilon=-1,
+                gamma=gamma,
+                sigma=sigma
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickTransmission(
+                model=model,
+                epsilon=epsilon,
+                gamma='0.2',
+                sigma=sigma
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickTransmission(
+                model=model,
+                epsilon=epsilon,
+                gamma=-1,
+                sigma=sigma
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickTransmission(
+                model=model,
+                epsilon=epsilon,
+                gamma=gamma,
+                sigma={'0.9': 0}
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickTransmission(
+                model=model,
+                epsilon=epsilon,
+                gamma=gamma,
+                sigma=[[0.4], [2.3]]
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickTransmission(
+                model=model,
+                epsilon=epsilon,
+                gamma=gamma,
+                sigma=[0.5, 0.9, 2]
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickTransmission(
+                model=model,
+                epsilon=epsilon,
+                gamma=gamma,
+                sigma=[0.5, '2']
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickTransmission(
+                model=model,
+                epsilon=epsilon,
+                gamma=gamma,
+                sigma=[-3, 2]
+            )
+
+    def test__call__(self):
+        model = exampleWarwickmodel
+
+        # Transmission parameters
+        epsilon = 0.5
+        gamma = 1
+        sigma = [0.5, 0.5]
+
+        TransmissionParam = em.WarwickTransmission(
+            model=model,
+            epsilon=epsilon,
+            gamma=gamma,
+            sigma=sigma
+        )
+
+        self.assertEqual(TransmissionParam(), [0.5, 1, [0.5, 0.5]])
+
+#
+# Test WarwickSimParameters Class
+#
+
+
+class TestWarwickSimParameters(unittest.TestCase):
+    """
+    Test the 'WarwickSimParameters' class.
+    """
+    def test__init__(self):
+        model = exampleWarwickmodel
+
+        method = 'RK45'
+        times = [1, 2]
+
+        SimulationParam = em.WarwickSimParameters(
+            model=model,
+            method=method,
+            times=times
+        )
+
+        self.assertEqual(SimulationParam.model, model)
+        self.assertEqual(SimulationParam.method, 'RK45')
+        self.assertEqual(SimulationParam.times, [1, 2])
+
+        with self.assertRaises(TypeError):
+            model1 = {'0': 0}
+
+            em.WarwickSimParameters(
+                model=model1,
+                method=method,
+                times=times
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickSimParameters(
+                model=model,
+                method=3,
+                times=times
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSimParameters(
+                model=model,
+                method='my-solver',
+                times=times
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickSimParameters(
+                model=model,
+                method=method,
+                times='0'
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickSimParameters(
+                model=model,
+                method=method,
+                times=[1, '2']
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSimParameters(
+                model=model,
+                method=method,
+                times=[0, 1]
+            )
+
+    def test__call__(self):
+        model = exampleWarwickmodel
+
+        # Set other simulation parameters
+        method = 'RK45'
+        times = [1, 2]
+
+        SimulationParam = em.WarwickSimParameters(
+            model=model,
+            method=method,
+            times=times
+        )
+
+        self.assertEqual(SimulationParam(), 'RK45')
+
+#
+# Test WarwickSocDistParameters Class
+#
+
+
+class TestWarwickSocDistParameters(unittest.TestCase):
+    """
+    Test the 'WarwickSocDistParameters' class.
+    """
+    def test__init__(self):
+        model = exampleWarwickmodel
+
+        SocDistParam = em.WarwickSocDistParameters(
+            model=model)
+
+        self.assertEqual(SocDistParam.model, model)
+        self.assertEqual(SocDistParam.theta, [0.3])
+        self.assertEqual(SocDistParam.phi, [0])
+        self.assertEqual(SocDistParam.q_H, [1.25])
+        self.assertEqual(SocDistParam.q_S, [0.05])
+        self.assertEqual(SocDistParam.q_W, [0.2])
+        self.assertEqual(SocDistParam.q_O, [0.05])
+        self.assertEqual(SocDistParam.times_npis, [1])
+
+        theta = 0.3
+        phi = 0.2
+        q_H = 1.25
+        q_S = 0.05
+        q_W = 0.2
+        q_O = 0.05
+        times_npis = [1]
+
+        with self.assertRaises(TypeError):
+            model1 = {'0': 0}
+
+            em.WarwickSocDistParameters(
+                model=model1,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=[[0.3]],
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=[0.3, 0.3],
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=['0.3'],
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=[-0.3],
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=[1.1],
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=[[0.1]],
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=[0.1, 0.2],
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=['0'],
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=[-0.1],
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=[2],
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=[[0.05]],
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=[0.05, 1.1],
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=['0.05'],
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=[0.05],
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=[[0.2]],
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=[0.2, 0.2],
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=['0.2'],
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=[-0.2],
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=[1.2],
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=[[0.5]],
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=[0.5, 0.2],
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=['0.05'],
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=[-0.5],
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=[1.4],
+                q_O=q_O,
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=[[0.5]],
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=[0.5, 0.3],
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=['0.9'],
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=[-5],
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=[3],
+                times_npis=times_npis
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=1
+            )
+
+        with self.assertRaises(TypeError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=['1']
+            )
+
+        with self.assertRaises(ValueError):
+            em.WarwickSocDistParameters(
+                model=model,
+                theta=theta,
+                phi=phi,
+                q_H=q_H,
+                q_S=q_S,
+                q_W=q_W,
+                q_O=q_O,
+                times_npis=[1, -2]
+            )
+
+    def test__call__(self):
+        model = exampleWarwickmodel
+
+        # Set other simulation parameters
+        theta = 0.3
+        phi = 0.2
+        q_H = 1.25
+        q_S = 0.05
+        q_W = 0.2
+        q_O = 0.05
+        times_npis = [1]
+
+        SocDistParam = em.WarwickSocDistParameters(
+            model=model,
+            theta=theta,
+            phi=phi,
+            q_H=q_H,
+            q_S=q_S,
+            q_W=q_W,
+            q_O=q_O,
+            times_npis=times_npis)
+
+        self.assertEqual(
+            SocDistParam(),
+            [[0.3], [0.2], [1.25], [0.05], [0.2], [0.05], [1]])
+
+#
+# Test WarwickParametersController Class
+#
+
+
+class TestWarwickParametersController(unittest.TestCase):
+    """
+    Test the 'WarwickParametersController' class.
+    """
+    def test__init__(self):
+        model = exampleWarwickmodel
+
+        # Set regional and time dependent parameters
+        regional_parameters = em.WarwickRegParameters(
+            model=model,
+            region_index=1,
+            H=[0.8, 0.8]
+        )
+
+        # Set ICs parameters
+        ICs = em.WarwickICs(
+            model=model,
+            susceptibles_IC=[[1500, 600], [700, 400]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
+            detected_f_IC=[[0, 10], [2, 4]],
+            detected_qf_IC=[[0, 0], [0, 0]],
+            detected_sd_IC=[[10, 20], [0, 5]],
+            detected_su_IC=[[20, 20], [15, 35]],
+            detected_qs_IC=[[0, 0], [0, 0]],
+            undetected_f_IC=[[7, 13], [14, 2]],
+            undetected_s_IC=[[0, 10], [0, 0]],
+            undetected_q_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
+        )
+
+        # Set disease-specific parameters
+        disease_parameters = em.WarwickDiseaseParameters(
+            model=model,
+            tau=0.4,
+            d=0.4 * np.ones(len(age_groups))
+        )
+
+        # Set transmission parameters
+        transmission_parameters = em.WarwickTransmission(
+            model=model,
+            epsilon=0.5,
+            gamma=1,
+            sigma=0.5 * np.ones(len(age_groups))
+        )
+
+        # Set other simulation parameters
+        simulation_parameters = em.WarwickSimParameters(
+            model=model,
+            method='RK45',
+            times=np.arange(1, 20.5, 0.5).tolist()
+        )
+
+        # Set social distancing parameters to default
+
+        # Set all parameters in the controller
+        parameters = em.WarwickParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            transmission_parameters=transmission_parameters,
+            simulation_parameters=simulation_parameters
+        )
+
+        self.assertEqual(parameters.model, model)
+        self.assertEqual(parameters.ICs, ICs)
+        self.assertEqual(parameters.regional_parameters, regional_parameters)
+        self.assertEqual(parameters.disease_parameters, disease_parameters)
+        self.assertEqual(parameters.transmission_parameters,
+                         transmission_parameters)
+        self.assertEqual(parameters.simulation_parameters,
+                         simulation_parameters)
+        self.assertEqual(parameters.soc_dist_parameters(),
+                         [[0.3], [0], [1.25], [0.05], [0.2], [0.05], [1]])
+
+        # Set social distancing parameters
+        soc_dist_parameters = em.WarwickSocDistParameters(
+            model=model,
+            theta=0.3,
+            phi=0.2,
+            q_H=1.25,
+            q_S=0.05,
+            q_W=0.2,
+            q_O=0.05)
+
+        parameters = em.WarwickParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            transmission_parameters=transmission_parameters,
+            simulation_parameters=simulation_parameters,
+            soc_dist_parameters=soc_dist_parameters
+        )
+
+        self.assertEqual(parameters.soc_dist_parameters,
+                         soc_dist_parameters)
+
+        with self.assertRaises(TypeError):
+            model1 = 0.3
+
+            em.WarwickParametersController(
+                model=model1,
+                regional_parameters=regional_parameters,
+                ICs=ICs,
+                disease_parameters=disease_parameters,
+                transmission_parameters=transmission_parameters,
+                simulation_parameters=simulation_parameters
+            )
+
+        with self.assertRaises(TypeError):
+            regional_parameters1 = 0
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters1,
+                ICs=ICs,
+                disease_parameters=disease_parameters,
+                transmission_parameters=transmission_parameters,
+                simulation_parameters=simulation_parameters
+            )
+
+        with self.assertRaises(ValueError):
+            regional_parameters1 = em.WarwickRegParameters(
+                model=exampleWarwickmodel2,
+                region_index=1,
+                H=[0.8, 0.8]
+            )
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters1,
+                ICs=ICs,
+                disease_parameters=disease_parameters,
+                transmission_parameters=transmission_parameters,
+                simulation_parameters=simulation_parameters
+            )
+
+        with self.assertRaises(TypeError):
+            ICs1 = '0'
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters,
+                ICs=ICs1,
+                disease_parameters=disease_parameters,
+                transmission_parameters=transmission_parameters,
+                simulation_parameters=simulation_parameters
+            )
+
+        with self.assertRaises(ValueError):
+            ICs1 = em.WarwickICs(
+                model=exampleWarwickmodel2,
+                susceptibles_IC=[[1500, 600], [700, 400]],
+                exposed_1_f_IC=[[0, 0], [0, 0]],
+                exposed_1_sd_IC=[[0, 0], [0, 0]],
+                exposed_1_su_IC=[[0, 0], [0, 0]],
+                exposed_1_q_IC=[[0, 0], [0, 0]],
+                exposed_2_f_IC=[[0, 0], [0, 0]],
+                exposed_2_sd_IC=[[0, 0], [0, 0]],
+                exposed_2_su_IC=[[0, 0], [0, 0]],
+                exposed_2_q_IC=[[0, 0], [0, 0]],
+                exposed_3_f_IC=[[0, 0], [0, 0]],
+                exposed_3_sd_IC=[[0, 0], [0, 0]],
+                exposed_3_su_IC=[[0, 0], [0, 0]],
+                exposed_3_q_IC=[[0, 0], [0, 0]],
+                detected_f_IC=[[0, 10], [2, 4]],
+                detected_qf_IC=[[0, 0], [0, 0]],
+                detected_sd_IC=[[10, 20], [0, 5]],
+                detected_su_IC=[[20, 20], [15, 35]],
+                detected_qs_IC=[[0, 0], [0, 0]],
+                undetected_f_IC=[[7, 13], [14, 2]],
+                undetected_s_IC=[[0, 10], [0, 0]],
+                undetected_q_IC=[[0, 0], [0, 0]],
+                recovered_IC=[[0, 0], [0, 0]]
+            )
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters,
+                ICs=ICs1,
+                disease_parameters=disease_parameters,
+                transmission_parameters=transmission_parameters,
+                simulation_parameters=simulation_parameters
+            )
+
+        with self.assertRaises(TypeError):
+            disease_parameters1 = [0]
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters,
+                ICs=ICs,
+                disease_parameters=disease_parameters1,
+                transmission_parameters=transmission_parameters,
+                simulation_parameters=simulation_parameters
+            )
+
+        with self.assertRaises(ValueError):
+            disease_parameters1 = em.WarwickDiseaseParameters(
+                model=exampleWarwickmodel2,
+                tau=0.4,
+                d=0.4 * np.ones(len(age_groups))
+            )
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters,
+                ICs=ICs,
+                disease_parameters=disease_parameters1,
+                transmission_parameters=transmission_parameters,
+                simulation_parameters=simulation_parameters
+            )
+
+        with self.assertRaises(TypeError):
+            transmission_parameters1 = [0]
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters,
+                ICs=ICs,
+                disease_parameters=disease_parameters,
+                transmission_parameters=transmission_parameters1,
+                simulation_parameters=simulation_parameters
+            )
+
+        with self.assertRaises(ValueError):
+            transmission_parameters1 = em.WarwickTransmission(
+                model=exampleWarwickmodel2,
+                epsilon=0.5,
+                gamma=1,
+                sigma=0.5 * np.ones(len(age_groups))
+            )
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters,
+                ICs=ICs,
+                disease_parameters=disease_parameters,
+                transmission_parameters=transmission_parameters1,
+                simulation_parameters=simulation_parameters
+            )
+
+        with self.assertRaises(TypeError):
+            simulation_parameters1 = {'0': 0}
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters,
+                ICs=ICs,
+                disease_parameters=disease_parameters,
+                transmission_parameters=transmission_parameters,
+                simulation_parameters=simulation_parameters1
+            )
+
+        with self.assertRaises(ValueError):
+            simulation_parameters1 = em.WarwickSimParameters(
+                model=exampleWarwickmodel2,
+                method='RK45',
+                times=np.arange(1, 20.5, 0.5).tolist()
+            )
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters,
+                ICs=ICs,
+                disease_parameters=disease_parameters,
+                transmission_parameters=transmission_parameters,
+                simulation_parameters=simulation_parameters1
+            )
+
+        with self.assertRaises(TypeError):
+            soc_dist_parameters1 = {'0': 0}
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters,
+                ICs=ICs,
+                disease_parameters=disease_parameters,
+                transmission_parameters=transmission_parameters,
+                simulation_parameters=simulation_parameters,
+                soc_dist_parameters=soc_dist_parameters1
+            )
+
+        with self.assertRaises(ValueError):
+            soc_dist_parameters1 = em.WarwickSocDistParameters(
+                model=exampleWarwickmodel2,
+                theta=0.3,
+                phi=0.2,
+                q_H=1.25,
+                q_S=0.05,
+                q_W=0.2,
+                q_O=0.05)
+
+            em.WarwickParametersController(
+                model=model,
+                regional_parameters=regional_parameters,
+                ICs=ICs,
+                disease_parameters=disease_parameters,
+                transmission_parameters=transmission_parameters,
+                simulation_parameters=simulation_parameters,
+                soc_dist_parameters=soc_dist_parameters1
+            )
+
+    def test__call__(self):
+        model = exampleWarwickmodel
+
+        # Set regional and time dependent parameters
+        regional_parameters = em.WarwickRegParameters(
+            model=model,
+            region_index=1,
+            H=[0.8, 0.8]
+        )
+
+        # Set ICs parameters
+        ICs = em.WarwickICs(
+            model=model,
+            susceptibles_IC=[[1500, 600], [700, 400]],
+            exposed_1_f_IC=[[0, 0], [0, 0]],
+            exposed_1_sd_IC=[[0, 0], [0, 0]],
+            exposed_1_su_IC=[[0, 0], [0, 0]],
+            exposed_1_q_IC=[[0, 0], [0, 0]],
+            exposed_2_f_IC=[[0, 0], [0, 0]],
+            exposed_2_sd_IC=[[0, 0], [0, 0]],
+            exposed_2_su_IC=[[0, 0], [0, 0]],
+            exposed_2_q_IC=[[0, 0], [0, 0]],
+            exposed_3_f_IC=[[0, 0], [0, 0]],
+            exposed_3_sd_IC=[[0, 0], [0, 0]],
+            exposed_3_su_IC=[[0, 0], [0, 0]],
+            exposed_3_q_IC=[[0, 0], [0, 0]],
+            detected_f_IC=[[0, 10], [2, 4]],
+            detected_qf_IC=[[0, 0], [0, 0]],
+            detected_sd_IC=[[10, 20], [0, 5]],
+            detected_su_IC=[[20, 20], [15, 35]],
+            detected_qs_IC=[[0, 0], [0, 0]],
+            undetected_f_IC=[[7, 13], [14, 2]],
+            undetected_s_IC=[[0, 10], [0, 0]],
+            undetected_q_IC=[[0, 0], [0, 0]],
+            recovered_IC=[[0, 0], [0, 0]]
+        )
+
+        # Set disease-specific parameters
+        disease_parameters = em.WarwickDiseaseParameters(
+            model=model,
+            tau=0.4,
+            d=0.4 * np.ones(len(age_groups))
+        )
+
+        # Set transmission parameters
+        transmission_parameters = em.WarwickTransmission(
+            model=model,
+            epsilon=0.5,
+            gamma=1,
+            sigma=0.5 * np.ones(len(age_groups))
+        )
+
+        # Set other simulation parameters
+        simulation_parameters = em.WarwickSimParameters(
+            model=model,
+            method='RK45',
+            times=np.arange(1, 20.5, 0.5).tolist()
+        )
+
+        # Set social distancing parameters
+        soc_dist_parameters = em.WarwickSocDistParameters(
+            model=model,
+            theta=0.3,
+            phi=0.2,
+            q_H=1.25,
+            q_S=0.05,
+            q_W=0.2,
+            q_O=0.05)
+
+        # Set all parameters in the controller
+        parameters = em.WarwickParametersController(
+            model=model,
+            regional_parameters=regional_parameters,
+            ICs=ICs,
+            disease_parameters=disease_parameters,
+            transmission_parameters=transmission_parameters,
+            simulation_parameters=simulation_parameters,
+            soc_dist_parameters=soc_dist_parameters
+        )
+
+        self.assertEqual(
+            parameters(),
+            [1, 1500, 600, 700, 400, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 10, 2, 4, 0, 0, 0, 0, 10, 20, 0, 5,
+             20, 20, 15, 35, 0, 0, 0, 0, 7, 13, 14, 2,
+             0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0.5, 0.5, 0.4, 0.5, 1, 0.4, 0.4, 0.8, 0.8, 'RK45']
+        )
