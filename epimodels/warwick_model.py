@@ -1074,16 +1074,16 @@ class WarwickSEIRModel(pints.ForwardModel):
         if np.asarray(dDtoH).shape[0] < 30:
             raise ValueError('Wrong number of delays between onset of \
                 symptoms and hospitalisation.')
-        if np.sum(dDtoH) != 1:
-            raise ValueError('Distribution of delays between onset of\
-                symptoms and hospitalisation must be normalised.')
-        for _ in pDtoH:
+        for _ in dDtoH:
             if not isinstance(_, (int, float)):
                 raise TypeError('Delays between onset of symptoms and \
                     hospitalisation must be integer or float.')
             if (_ < 0) or (_ > 1):
                 raise ValueError('Delays between onset of symptoms and \
                     hospitalisation must be => 0 and <=1.')
+        if np.sum(dDtoH) != 1:
+            raise ValueError('Distribution of delays between onset of\
+                symptoms and hospitalisation must be normalised.')
 
     def new_icu(self, new_infections, pDtoI, dDtoI):
         """
@@ -1128,8 +1128,8 @@ class WarwickSEIRModel(pints.ForwardModel):
         for ind, _ in enumerate(self._times.tolist()):
             if ind >= 30:
                 n_daily_icu[ind, :] = np.array(pDtoI) * np.sum(np.matmul(
-                    np.diag(dDtoI[:31][::-1]),
-                    new_infections[(ind-30):(ind+1), :]), axis=0)
+                    np.diag(dDtoI[:30][::-1]),
+                    new_infections[(ind-29):(ind+1), :]), axis=0)
             else:
                 n_daily_icu[ind, :] = np.array(pDtoI) * np.sum(np.matmul(
                     np.diag(dDtoI[:(ind+1)][::-1]),
@@ -1181,16 +1181,16 @@ class WarwickSEIRModel(pints.ForwardModel):
         if np.asarray(dDtoI).shape[0] < 30:
             raise ValueError('Wrong number of delays between onset of \
                 symptoms and ICU admission.')
-        if np.sum(dDtoI) != 1:
-            raise ValueError('Distribution of delays between onset of\
-                symptoms and ICU admission must be normalised.')
-        for _ in pDtoI:
+        for _ in dDtoI:
             if not isinstance(_, (int, float)):
                 raise TypeError('Delays between onset of symptoms and \
                     ICU admission must be integer or float.')
             if (_ < 0) or (_ > 1):
                 raise ValueError('Delays between onset of symptoms and \
                     ICU admission must be => 0 and <=1.')
+        if np.sum(dDtoI) != 1:
+            raise ValueError('Distribution of delays between onset of\
+                symptoms and ICU admission must be normalised.')
 
     def new_deaths(self, new_hospitalisation, pHtoDeath, dHtoDeath):
         """
@@ -1291,9 +1291,6 @@ class WarwickSEIRModel(pints.ForwardModel):
         if np.asarray(dHtoDeath).shape[0] < 30:
             raise ValueError('Wrong number of delays between hospital \
                 admission and death.')
-        if np.sum(dHtoDeath) != 1:
-            raise ValueError('Distribution of delays between hospital \
-                admission and death must be normalised.')
         for _ in dHtoDeath:
             if not isinstance(_, (int, float)):
                 raise TypeError('Delays between  hospital \
@@ -1301,6 +1298,9 @@ class WarwickSEIRModel(pints.ForwardModel):
             if (_ < 0) or (_ > 1):
                 raise ValueError('Delays between  hospital \
                     admission and death must be => 0 and <=1.')
+        if np.sum(dHtoDeath) != 1:
+            raise ValueError('Distribution of delays between hospital \
+                admission and death must be normalised.')
 
     def new_hospital_beds(self, new_hospitalisations, new_icu, tH, tItoH):
         """
@@ -1346,10 +1346,10 @@ class WarwickSEIRModel(pints.ForwardModel):
             if ind >= 30:
                 n_hosp_occ[ind, :] = np.sum(np.matmul(
                     np.diag(tH[:30][::-1]),
-                    new_hospitalisations[(ind-20):(ind+1), :]) +
+                    new_hospitalisations[(ind-29):(ind+1), :]) +
                     np.matmul(
                     np.diag(tItoH[:30][::-1]),
-                    new_icu[(ind-20):(ind+1), :]), axis=0)
+                    new_icu[(ind-29):(ind+1), :]), axis=0)
             else:
                 n_hosp_occ[ind, :] = np.sum(np.matmul(
                     np.diag(tH[:(ind+1)][::-1]),
@@ -1396,9 +1396,6 @@ class WarwickSEIRModel(pints.ForwardModel):
         if np.asarray(tH).shape[0] < 30:
             raise ValueError('Wrong number of weighting distribution of\
                 the times spent in hospital.')
-        if np.sum(tH) != 1:
-            raise ValueError('Weighting distribution of the times spent in\
-                hospital must be normalised.')
         for _ in tH:
             if not isinstance(_, (int, float)):
                 raise TypeError('Weighting distribution of the times spent in\
@@ -1406,6 +1403,9 @@ class WarwickSEIRModel(pints.ForwardModel):
             if (_ < 0) or (_ > 1):
                 raise ValueError('Weighting distribution of the times spent in\
                     hospital must be => 0 and <=1.')
+        if np.sum(tH) != 1:
+            raise ValueError('Weighting distribution of the times spent in\
+                hospital must be normalised.')
 
         if np.asarray(tItoH).ndim != 1:
             raise ValueError('Weighting distribution of the times spent in\
@@ -1414,9 +1414,6 @@ class WarwickSEIRModel(pints.ForwardModel):
         if np.asarray(tItoH).shape[0] < 30:
             raise ValueError('Wrong number of weighting distribution of\
                 the times spent in icu before being moved to a non-icu bed.')
-        if np.sum(tItoH) != 1:
-            raise ValueError('Weighting distribution of the times spent in\
-                icu before being moved to a non-icu bed must be normalised.')
         for _ in tItoH:
             if not isinstance(_, (int, float)):
                 raise TypeError('Weighting distribution of the times spent in\
@@ -1426,6 +1423,9 @@ class WarwickSEIRModel(pints.ForwardModel):
                 raise ValueError('Weighting distribution of the times spent in\
                     icu before being moved to a non-icu bed must be => 0 and\
                     <=1.')
+        if np.sum(tItoH) != 1:
+            raise ValueError('Weighting distribution of the times spent in\
+                icu before being moved to a non-icu bed must be normalised.')
 
     def new_icu_beds(self, new_icu, tI):
         """
@@ -1475,6 +1475,40 @@ class WarwickSEIRModel(pints.ForwardModel):
                     ind, :])
 
         return n_daily_icu_beds
+
+    def check_new_icu_beds_format(self, new_icu, tI):
+        """
+        Checks correct format of the inputs of number of ICU beds occupied
+        calculation.
+
+        Parameters
+        ----------
+        new_icu : numpy.array
+            Age-structured array of the daily number of new symptomatic
+            infections admitted to icu.
+        tI : list
+            Weighting probability distribution of that an ICU
+            admitted case is still in ICU q days later. Must be normalised.
+
+        """
+        self._check_new_infections_format(new_icu)
+
+        if np.asarray(tI).ndim != 1:
+            raise ValueError('Weighting distribution of the times spent in\
+                ICU storage format is 1-dimensional.')
+        if np.asarray(tI).shape[0] < 30:
+            raise ValueError('Wrong number of weighting distribution of\
+                the times spent in ICU.')
+        for _ in tI:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Weighting distribution of the times spent in\
+                    ICU must be integer or float.')
+            if (_ < 0) or (_ > 1):
+                raise ValueError('Weighting distribution of the times spent in\
+                    ICU must be => 0 and <=1.')
+        if np.sum(tI) != 1:
+            raise ValueError('Weighting distribution of the times spent in\
+                ICU must be normalised.')
 
     def loglik_deaths(self, obs_death, new_deaths, niu, k):
         r"""
@@ -2079,9 +2113,6 @@ class WarwickSEIRModel(pints.ForwardModel):
 
         Parameters
         ----------
-        output : numpy.array
-            Age-structured output matrix of the simulation method
-            for the WarwickSEIRModel.
         k : int
             Index of day for which we intend to sample the number of positive
             test results by age group.
@@ -2089,14 +2120,8 @@ class WarwickSEIRModel(pints.ForwardModel):
         Returns
         -------
         float
-            The reproduction number in specified region at time :math:`t_k`.
-
-        Notes
-        -----
-        Always run :meth:`WarwickSEIRModel.simulate`,
-        :meth:`WarwickSEIRModel.check_positives_format` and
-        :meth:`WarwickSEIRModel.compute_transistion_matrix` before running this
-        one.
+            The basic reproduction number in specified region at time
+            :math:`t_k`.
 
         """
         self._check_time_step_format(k)

@@ -171,8 +171,6 @@ class WarwickLogLik(pints.LogPDF):
             Number of parameters for log-likelihood object.
 
         """
-        # return 8
-        # return 7
         return 2
 
     def _update_age_groups(self, parameter_vector):
@@ -197,164 +195,6 @@ class WarwickLogLik(pints.LogPDF):
 
         return new_vector
 
-    def _stack_age_groups(self, parameter_vector, r):
-        """
-        """
-        new_vector = np.empty(8)
-
-        ind_old = [
-            np.array([0]),
-            np.array([0]),
-            np.array(range(1, 3)),
-            np.array(range(3, 5)),
-            np.array(range(5, 9)),
-            np.array(range(9, 13)),
-            np.array(range(13, 15)),
-            np.array(range(15, 21))]
-
-        if np.asarray(self._susceptibles).ndim != 1:
-            new_vector[0] = \
-                parameter_vector[0] * self._susceptibles[r][0] / (
-                    self._susceptibles[r][0] + self._susceptibles[r][1])
-
-            new_vector[1] = \
-                parameter_vector[0] * self._susceptibles[r][1] / (
-                    self._susceptibles[r][0] + self._susceptibles[r][1])
-
-        else:
-            new_vector[0] = \
-                parameter_vector[0] * self._susceptibles[0] / (
-                    self._susceptibles[0] + self._susceptibles[1])
-
-            new_vector[1] = \
-                parameter_vector[0] * self._susceptibles[1] / (
-                    self._susceptibles[0] + self._susceptibles[1])
-
-        for _ in range(2, 8):
-            new_vector[_] = np.sum(parameter_vector[ind_old[_][:, None]])
-
-        return new_vector
-
-    def _compute_updated_param(self, alpha, tau):
-        """
-        Computes updated parameters values based on current values of
-        alpha and tau.
-
-        Parameters
-        ----------
-        alpha : int or float
-            The current guess of the auxiliary scenario weight parameter alpha.
-        tau : int or float
-            The current guess of the reduction in the transmission rate of
-            infection for asymptomatic individuals.
-
-        Returns
-        -------
-        tuple of lists
-            Tuple of the updated values of the d, sigma and gamma parameters
-            of the model.
-
-        """
-        # Compute Q
-        Q_guess = np.array([
-            0.0185, 0.0019, 0.0029, 0.0041, 0.0200, 0.0355, 0.0383,
-            0.0319, 0.0368, 0.0507, 0.0947, 0.1497, 0.1939, 0.4396,
-            0.5789, 0.4939, 0.7038, 0.9309, 0.9818, 0.8767, 1.0000])
-
-        for _ in range(100):
-            Q_guess = self._compute_updated_Q(
-                Q_guess, alpha, tau)
-
-        # Compute d
-        d = 0.9 * np.power(Q_guess, 1-alpha)
-
-        # Compute sigma
-        sigma = (1/0.9) * np.power(Q_guess, alpha)
-
-        return d, sigma
-
-    def _compute_updated_Q(self, Q, alpha, tau):
-        """
-        Updates stepwise the current guess of the auxiliary parameter value Q
-        used in computing the model parameters for the guesses of alpha and
-        tau.
-
-        Parameters
-        ----------
-        Q : int or float
-            The current guess of the auxiliary parameter value Q.
-        alpha : int or float
-            The current guess of the auxiliary scenario weight parameter alpha.
-        tau : int or float
-            The current guess of the reduction in the transmission rate of
-            infection for asymptomatic individuals.
-
-        Returns
-        -------
-        tuple of lists
-            Tuple of the updated guess of the auxiliary parameter value Q
-            and force of infection vector.
-
-        """
-        # Compute symptom probability vector
-        d = np.power(Q, 1-alpha)
-
-        # Compute asymptomatic cases U from known symptomatic cases D
-        symp_cases = self._extended_infectives_prop
-        asymp_cases = np.multiply(np.divide(1, d), symp_cases) - symp_cases
-
-        # New unnormalised value for Q
-        transmission = np.dot(
-            symp_cases + tau * asymp_cases,
-            self._total_cont_mat)
-
-        nQ = np.divide(symp_cases, transmission)
-
-        # Normalise new value of Q
-        nQ = nQ / np.max(nQ)
-
-        # Return updated guess of Q based on prior value and transmission
-        # vector
-        return 0.9 * Q + 0.1 * nQ
-
-    def _compute_r0_age_structure(self, house_cont_mat, nonhouse_cont_mat,
-                                  d, sigma, tau, gamma):
-        """
-        """
-        # Compute eigenvalues and vectors of the
-        M_from_to_HAT = self._compute_next_gen_matrix(
-            house_cont_mat, nonhouse_cont_mat,
-            d, sigma, tau)
-
-        eigvals, eigvecs = np.linalg.eig(M_from_to_HAT)
-
-        reprod_number_0, i = np.max(
-            np.absolute(eigvals)), np.argmax(abs(eigvals))
-
-        reprod_number_0 = reprod_number_0 / gamma
-        Age_structure = abs(eigvecs[:, i])
-
-        return Age_structure, reprod_number_0
-
-    def _compute_next_gen_matrix(self, house_cont_mat, other_cont_mat,
-                                 d, sigma, tau):
-        """
-        """
-        M_from_to = house_cont_mat + other_cont_mat
-
-        M_from_to_HAT = np.zeros_like(M_from_to)
-        k = np.shape(M_from_to_HAT)[0]
-
-        tau = tau * np.ones(k)
-
-        for f in range(k):
-            for t in range(k):
-                M_from_to_HAT[f, t] = \
-                    M_from_to[f, t] * d[t] * sigma[t] * (
-                        1 + tau[f] * (1 - d[f]) / d[f])
-
-        return M_from_to_HAT
-
     def _log_likelihood(self, var_parameters):
         """
         Computes the log-likelihood of the non-fixed parameters
@@ -373,81 +213,13 @@ class WarwickLogLik(pints.LogPDF):
             free parameters.
 
         """
-        # number_E_states = 3
-
-        # # H
-        # self._parameters[-2] = \
-        #     [var_parameters[0]] * len(self._model.regions)
-        # # d
-        # self._parameters[-3] = var_parameters[1] * np.ones(
-        #     self._model._num_ages)
-        # # sigma
-        # self._parameters[-7] = var_parameters[2] * np.ones(
-        #     self._model._num_ages)
         # tau
         self._parameters[-6] = var_parameters[-2]
         # gamma
         self._parameters[-4] = var_parameters[-1]
-        # # epsilon
-        # self._parameters[-5] = var_parameters[-1]
-
-        # Update parameters
-        # # alpha
-        # alpha = var_parameters[0]
-
-        # # E0
-        # E0_multiplier = var_parameters[2]
-        # # phi
-        # self._model.social_distancing_param[1] = var_parameters[4]
-
-        # d, sigma = self._compute_updated_param(alpha, var_parameters[1])
-
-        # Age_structure, reprod_number_0 = self._compute_r0_age_structure(
-        #     self._house_cont_mat * 0,
-        #     self._parameters[-4] * (
-        #         self._house_cont_mat + self._nonhouse_cont_mat),
-        #     d, sigma, var_parameters[1], self._parameters[-4])
-
-        # exposed_0 = Age_structure / np.sum(Age_structure)
-        # detected_0 = Age_structure / np.sum(Age_structure)
-        # undetected_0 = Age_structure / np.sum(Age_structure)
-
-        # # Assign updated initial conditions
-        # # Exposed_1_f
-        # self._parameters[2] = E0_multiplier * np.asarray(
-        #     [self._stack_age_groups(exposed_0 / number_E_states, r)
-        #      for r in range(len(self._model.regions))])
-
-        # # Exposed_2_f
-        # self._parameters[6] = E0_multiplier * np.asarray(
-        #     [self._stack_age_groups(exposed_0 / number_E_states, r)
-        #      for r in range(len(self._model.regions))])
-
-        # # Exposed_3_f
-        # self._parameters[10] = E0_multiplier * np.asarray(
-        #     [self._stack_age_groups(exposed_0 / number_E_states, r)
-        #      for r in range(len(self._model.regions))])
-
-        # # Detected_f
-        # self._parameters[14] = E0_multiplier * np.asarray(
-        #     [self._stack_age_groups(detected_0, r)
-        #      for r in range(len(self._model.regions))])
-
-        # # Undetected_f
-        # self._parameters[19] = E0_multiplier * np.asarray(
-        #     [self._stack_age_groups(undetected_0, r)
-        #      for r in range(len(self._model.regions))])
-
-        # # Recompute d and sigma with correct number of age groups
-        # d = self._update_age_groups(d)
-        # sigma = self._update_age_groups(sigma)
-
-        # Update rest of parameters
 
         # Hs and Ds
-        # Hs = var_parameters[6]
         Hs = 1
-        # Ds = var_parameters[7]
         Ds = 1
 
         total_log_lik = 0
@@ -688,8 +460,6 @@ class WarwickLogPrior(pints.LogPrior):
             Number of parameters for log-prior object.
 
         """
-        # return 8
-        # return 7
         return 2
 
     def __call__(self, x):
@@ -708,17 +478,11 @@ class WarwickLogPrior(pints.LogPrior):
             parameter space.
 
         """
-        # # Prior contribution of H
-        # log_prior = pints.UniformLogPrior([0.5], [0.9])(x[0])
-
         # Prior contribution of tau
         log_prior = pints.UniformLogPrior([0], [0.5])(x[0])
 
         # Prior contribution of gamma
         log_prior += pints.UniformLogPrior([0.05], [0.5])(x[1])
-
-        # # Prior contribution of epsilon
-        # log_prior += pints.UniformLogPrior([0.1], [0.3])(x[3])
 
         return log_prior
 
@@ -995,14 +759,6 @@ class WarwickSEIRInfer(object):
         print('Running...')
         chains = mcmc.run()
         print('Done!')
-
-        # param_names = [
-        #     'alpha', 'tau', 'epsilon', 'E0', 'phi', 'sigmaR',
-        #     'Hs', 'Ds']
-
-        # param_names = [
-        #     'alpha', 'tau', 'epsilon', 'E0', 'sigmaR',
-        #     'Hs', 'Ds']
 
         param_names = [
             'tau', 'gamma']

@@ -1254,7 +1254,7 @@ class PheSEIRModel(pints.ForwardModel):
             n=tests,
             p=self.mean_positives(sens, spec, suscep, pop))
 
-    def compute_transistion_matrix(self):
+    def compute_transition_matrix(self):
         """
         Computes the transition matrix of the PHE model.
 

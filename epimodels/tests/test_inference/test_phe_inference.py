@@ -71,11 +71,8 @@ class TestPHEModel(em.PheSEIRModel):
         dI = 4
         dL = 4
 
-        # Initial R number by region - use mean value from prior for psi
-        psis = (31.36/224)*np.ones(len(self.regions))
-        initial_r = np.multiply(
-            dI*psis,
-            np.divide(np.square((dL/2)*psis+1), 1-1/np.square((dI/2)*psis+1)))
+        # Initial R number by region
+        initial_r = [0.5]
 
         # List of times at which we wish to evaluate the states of the
         # compartments of the model

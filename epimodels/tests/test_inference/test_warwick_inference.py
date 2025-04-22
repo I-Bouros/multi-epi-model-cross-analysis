@@ -456,7 +456,7 @@ class TestWarwickLogLik(unittest.TestCase):
             tests_data, positives_data, serology_times,
             sens, spec, wd=1, wp=1)
 
-        self.assertEqual(log_lik.n_parameters(), 3)
+        self.assertEqual(log_lik.n_parameters(), 2)
 
 
 #
@@ -494,7 +494,7 @@ class TestWarwickLogPrior(unittest.TestCase):
         # Set log-prior object
         log_prior = em.inference.WarwickLogPrior(model, times)
 
-        self.assertEqual(log_prior.n_parameters(), 3)
+        self.assertEqual(log_prior.n_parameters(), 2)
 
 
 #
@@ -736,7 +736,7 @@ class TestWarwickSEIRInfer(unittest.TestCase):
         # Set up and run the optimisation problem
         found, log_post_value = optimisation.optimisation_problem_setup(times)
 
-        self.assertEqual(len(found), 3)
+        self.assertEqual(len(found), 2)
         self.assertIsInstance(log_post_value, (int, float))
         self.assertEqual(log_post_value < 0, True)
 
@@ -788,4 +788,4 @@ class TestWarwickSEIRInfer(unittest.TestCase):
         samples = inference.inference_problem_setup(times, num_iter=600)
 
         self.assertEqual(len(samples), 3)
-        self.assertEqual(samples[0].shape, (600, 3))
+        self.assertEqual(samples[0].shape, (600, 2))

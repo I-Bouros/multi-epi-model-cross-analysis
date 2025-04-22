@@ -988,33 +988,6 @@ class RocheICs(object):
                         'The initial numbers of dead must be integer or \
                             float.')
 
-    def total_population(self):
-        """
-        Returns the country-specific total number of individuals in each age
-        group.
-
-        Returns
-        -------
-        List of lists
-            List of the ountry-specific total number of individuals in each age
-            group using the initial conditions of the
-            :class:`WarwickLancSEIRModel` the class relates to.
-
-        """
-        a = self.model._num_ages
-        total_pop = 0
-
-        ics_vac_stat = [self.susceptibles, self.exposed1, self.exposed2,
-                        self.exposed3, self.exposed4, self.exposed5,
-                        self.infectives_sym, self.infectives_asym]
-
-        for _ in ics_vac_stat:
-            total_pop += np.asarray(_)[:, :a] + np.asarray(_)[:, a:(2*a)] + \
-                np.asarray(_)[:, (2*a):(3*a)] + np.asarray(_)[:, (3*a):(4*a)] \
-                + np.asarray(_)[:, (4*a):(5*a)] + np.asarray(_)[:, (5*a):(6*a)]
-
-        return total_pop + np.array(self.recovered)
-
     def __call__(self):
         """
         Returns the initial conditions of the :class:`RocheSEIRModel` the
@@ -2862,6 +2835,17 @@ class WarwickSocDistParameters(object):
             changes.
 
         """
+        if not isinstance(times_npis, list):
+            raise TypeError('Time points of intervention changes must be given\
+                in a list format.')
+        for _ in times_npis:
+            if not isinstance(_, (int, float)):
+                raise TypeError('Time points of intervention changes must be\
+                    integer or float.')
+            if _ <= 0:
+                raise ValueError('Time points of intervention changes must be\
+                    > 0.')
+
         if isinstance(theta, (float, int)):
             theta = [theta]
         if np.asarray(theta).ndim != 1:
@@ -2990,17 +2974,6 @@ class WarwickSocDistParameters(object):
             if _ > 1:
                 raise ValueError('The reduction in engagement with shopping \
                     and leisure activities during lockdown must be <= 1.')
-
-        if not isinstance(times_npis, list):
-            raise TypeError('Time points of intervention changes must be given\
-                in a list format.')
-        for _ in times_npis:
-            if not isinstance(_, (int, float)):
-                raise TypeError('Time points of intervention changes must be\
-                    integer or float.')
-            if _ <= 0:
-                raise ValueError('Time points of intervention changes must be\
-                    > 0.')
 
     def __call__(self):
         """
