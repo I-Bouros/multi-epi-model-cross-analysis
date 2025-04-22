@@ -23,13 +23,13 @@ class TestWarwickSEIRModel(unittest.TestCase):
         self.assertEqual(
             model._output_names, [
                 'S', 'E1f', 'E1sd', 'E1su', 'E1q', 'E2f', 'E2sd', 'E2su',
-                'E2q', 'E3f', 'E3sd', 'E3su', 'E3q', 'Df', 'Dsd', 'Dsu', 'Dqf',
-                'Dqs', 'Uf', 'Us', 'Uq', 'R', 'Incidence'])
+                'E2q', 'E3f', 'E3sd', 'E3su', 'E3q', 'If', 'Isd', 'Isu', 'Iqf',
+                'Iqs', 'Af', 'As', 'Aq', 'R', 'Incidence'])
         self.assertEqual(
             model._parameter_names, [
                 'S0', 'E1f0', 'E1sd0', 'E1su0', 'E1q0', 'E2f0', 'E2sd0',
-                'E2su0', 'E2q0', 'E3f0', 'E3sd0', 'E3su0', 'E3q0', 'Df0',
-                'Dsd0', 'Dsu0', 'Dqf0', 'Dqs0', 'Uf0', 'Us0', 'Uq0', 'R0',
+                'E2su0', 'E2q0', 'E3f0', 'E3sd0', 'E3su0', 'E3q0', 'If0',
+                'Isd0', 'Isu0', 'Iqf0', 'Iqs0', 'Af0', 'As0', 'Aq0', 'R0',
                 'sig', 'tau', 'eps', 'gamma', 'd', 'H'])
         self.assertEqual(model._n_outputs, 23)
         self.assertEqual(model._n_parameters, 28)
@@ -47,16 +47,16 @@ class TestWarwickSEIRModel(unittest.TestCase):
         self.assertEqual(
             model.output_names(),
             ['S', 'E1f', 'E1sd', 'E1su', 'E1q', 'E2f', 'E2sd', 'E2su',
-             'E2q', 'E3f', 'E3sd', 'E3su', 'E3q', 'Df', 'Dsd', 'Dsu', 'Dqf',
-             'Dqs', 'Uf', 'Us', 'Uq', 'R', 'Incidence'])
+             'E2q', 'E3f', 'E3sd', 'E3su', 'E3q', 'If', 'Isd', 'Isu', 'Iqf',
+             'Iqs', 'Af', 'As', 'Aq', 'R', 'Incidence'])
 
     def test_parameter_names(self):
         model = em.WarwickSEIRModel()
         self.assertEqual(
             model.parameter_names(),
             ['S0', 'E1f0', 'E1sd0', 'E1su0', 'E1q0', 'E2f0', 'E2sd0', 'E2su0',
-             'E2q0', 'E3f0', 'E3sd0', 'E3su0', 'E3q0', 'Df0', 'Dsd0', 'Dsu0',
-             'Dqf0', 'Dqs0', 'Uf0', 'Us0', 'Uq0', 'R0', 'sig', 'tau', 'eps',
+             'E2q0', 'E3f0', 'E3sd0', 'E3su0', 'E3q0', 'If0', 'Isd0', 'Isu0',
+             'Iqf0', 'Iqs0', 'Af0', 'As0', 'Aq0', 'R0', 'sig', 'tau', 'eps',
              'gamma', 'd', 'H'])
 
     def test_set_regions(self):
@@ -79,11 +79,11 @@ class TestWarwickSEIRModel(unittest.TestCase):
 
     def test_set_outputs(self):
         model = em.WarwickSEIRModel()
-        outputs = ['S', 'Df', 'Dsd', 'Incidence']
+        outputs = ['S', 'If', 'Isd', 'Incidence']
         model.set_outputs(outputs)
 
         with self.assertRaises(ValueError):
-            outputs1 = ['S', 'E', 'Df', 'Dsd', 'Incidence']
+            outputs1 = ['S', 'E', 'If', 'Isd', 'Incidence']
             model.set_outputs(outputs1)
 
     def test_simulate(self):
