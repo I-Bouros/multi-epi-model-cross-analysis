@@ -1,0 +1,297 @@
+#
+# This file is part of EPIMODELS
+# (https://github.com/I-Bouros/multi-epi-model-cross-analysis.git) which is
+# released under the MIT license. See accompanying LICENSE for copyright
+# notice and full license details.
+#
+"""Processing script for serology data from [1]_.
+
+It computes the region-specific, age-structured weekly number of tests and
+positive results from the REACT1 study data which are then stored in separate
+csv files.
+
+References
+----------
+.. [1] Nicholson et al. (2021). Improving local prevalence estimates of
+       SARS-CoV-2 infections using a causal debiasing framework. In Nature
+       Microbiology (Vol. 7, Issue 1, pp. 97–107).
+       Springer Science and Business Media LLC.
+       https://doi.org/10.1038/s41564-021-01029-0
+
+"""
+
+import datetime
+import os
+import pandas as pd
+import numpy as np
+
+
+def read_tests_data(tests_file: str):
+    """
+    Parses the csv document containing the age-structured weekly
+    serology data for all regions.
+
+    Parameters
+    ----------
+    tests_file : str
+        The name of the region- and age-structured serology data file used.
+
+    Returns
+    -------
+    pandas.Dataframe
+        Dataframe of the age-structured weekly number of tests and positive
+        results in all given regions.
+
+    """
+    # Select data from the given state
+    path = os.path.join(
+            os.path.dirname(__file__), 'serology_data/REACT_data/')
+    data = pd.read_csv(
+        os.path.join(path, tests_file))
+
+    return data
+
+
+def process_tests_data(
+        data: pd.DataFrame,
+        start_date: str = '2020-04-27',
+        end_date: str = '2020-06-01'):
+    """
+    Computes the matrix of age-structured number of tests and positive results
+    for a given region.
+
+    Parameters
+    ----------
+    data : pandas.Dataframe
+        Dataframe of age-structured daily number of serology in a given region.
+    start_date : str
+        The initial date (year-month-date) from which the number of tests and
+        positive results are calculated.
+    end_date : str
+        The final date (year-month-date) from which the number of tests and
+        positive results are calculated.
+
+    Returns
+    -------
+    tuple of numpy.array
+        Tuple of processed regional tests data and positive results data as a
+        matrix.
+
+    """
+    data = data.sort_values('date')
+
+    # Keep only those values within the date range
+    data = data[data['date'] >= start_date]
+    data = data[data['date'] <= end_date]
+
+    # Add a column 'Time', which is the number of days from start_date
+    start = datetime.date(*map(int, start_date.split('-')))
+    data['time'] = [(datetime.date(*map(int, x.split('-'))) - start).days + 1
+                    for x in data['date']]
+
+    # Keep only those columns we need
+    data = data[
+        [
+            'region', 'date', 'time', 'age', 'positives', 'tests'
+        ]]
+
+    age_groups = [
+        '0-5', '5-10', '10-15', '15-20', '20-25', '25-30', '30-35',
+        '35-40', '40-45', '45-50', '50-55', '55-60', '60-65', '65-70',
+        '70-75', '75+']
+    lst_positives = []
+    lts_tests = []
+    for t in data['time'].unique():
+        # Process positive results
+        daily_data = data[data['time'] == t]
+        newrow = process_ages(age_groups, daily_data, type='positives')
+        lst_positives.append(newrow)
+
+        # Process test numbers
+        daily_data = data[data['time'] == t]
+        newrow = process_ages(age_groups, daily_data, type='tests')
+        lts_tests.append(newrow)
+
+    positives = pd.DataFrame(lst_positives)
+    tests = pd.DataFrame(lts_tests)
+
+    return positives.to_numpy(), tests.to_numpy()
+
+
+def process_ages(age_groups: list, data: pd.DataFrame, type: str):
+    """
+    Parses wwekly data into the correct age structure types.
+
+    Parameters
+    ----------
+    age_groups : list
+        List of the names for the age groups the data is split into.
+    data : pandas.Dataframe
+        Dataframe of age-structured weekly number of tests
+        or positive results in a given region.
+    type : str
+        Column name for the data we want to parse for.
+
+    Returns
+    -------
+    pandas.Dataframe
+        Processed dataframe row.
+
+    """
+    newrow = {}
+    # Process 0-5
+    newrow[age_groups[0]] = 0
+
+    # Process 5-15
+    newrow[age_groups[1]] = \
+        np.floor(0.75 * data[data['age'].isin(['5-12'])][type].sum())
+
+    # Process 10-15
+    newrow[age_groups[2]] = \
+        np.floor(0.25 * data[data['age'].isin(['5-12'])][type].sum()) + \
+        np.floor(0.5 * data[data['age'].isin(['13-17'])][type].sum())
+
+    # Process 15-20
+    newrow[age_groups[3]] = \
+        np.floor(0.5 * data[data['age'].isin(['13-17'])][type].sum()) + \
+        np.floor(0.25 * data[data['age'].isin(['18-24'])][type].sum())
+
+    # Process 20-25
+    newrow[age_groups[4]] = \
+        np.floor(0.75 * data[data['age'].isin(['18-24'])][type].sum())
+
+    # Process 25-30
+    newrow[age_groups[5]] = \
+        np.floor(0.5 * data[data['age'].isin(['25-34'])][type].sum())
+
+    # Process 30-35
+    newrow[age_groups[6]] = \
+        np.ceil(0.5 * data[data['age'].isin(['25-34'])][type].sum())
+
+    # Process 35-40
+    newrow[age_groups[7]] = \
+        np.floor(0.5 * data[data['age'].isin(['35-44'])][type].sum())
+
+    # Process 40-45
+    newrow[age_groups[8]] = \
+        np.ceil(0.5 * data[data['age'].isin(['35-44'])][type].sum())
+
+    # Process 45-50
+    newrow[age_groups[9]] = \
+        np.floor(0.5 * data[data['age'].isin(['45-54'])][type].sum())
+
+    # Process 50-55
+    newrow[age_groups[10]] = \
+        np.ceil(0.5 * data[data['age'].isin(['45-54'])][type].sum())
+
+    # Process 55-60
+    newrow[age_groups[11]] = \
+        np.floor(0.5 * data[data['age'].isin(['55-64'])][type].sum())
+
+    # Process 60-65
+    newrow[age_groups[12]] = \
+        np.ceil(0.5 * data[data['age'].isin(['55-64'])][type].sum())
+
+    # Process 65-70
+    newrow[age_groups[13]] = \
+        np.floor(0.4 * data[data['age'].isin(['65+'])][type].sum())
+
+    # Process 70-75
+    newrow[age_groups[14]] = \
+        np.floor(0.4 * data[data['age'].isin(['65+'])][type].sum())
+
+    # Process 75+
+    newrow[age_groups[15]] = \
+        np.ceil(0.2 * data[data['age'].isin(['65+'])][type].sum())
+
+    return newrow
+
+
+def process_regions(region: str):
+    """
+    Processes regions into standard `epimodels` name format.
+
+    Parameters
+    ----------
+    region : str
+        Name of the region being processed.
+
+    Returns
+    -------
+    str
+        Name of the region in the standard `epimodels` name format.
+
+    """
+    if region == 'South West':
+        return 'SW'
+    elif region == 'London':
+        return 'London'
+    elif region == 'South East':
+        return 'SE'
+    elif region == 'East of England':
+        return 'EE'
+    elif region in ['East Midlands', 'West Midlands', 'Midlands']:
+        return 'Mid'
+    elif region in ['North East', 'Yorkshire and The Humber',
+                    'North East and Yorkshire']:
+        return 'NE'
+    else:
+        return 'NW'
+
+
+def main(files: list):
+    """
+    Computes the matrices of age-structured weekly number of tests and the
+    matrices of age-structured number of positive results for all regions.
+
+    Parameters
+    ----------
+    files : list
+        List of file names from which to extract the data.
+
+    Returns
+    -------
+    csv
+        Processed serology data files for each different region found in the
+        given file.
+
+    """
+
+    data = pd.concat(
+        [read_tests_data(file) for file in files],
+        ignore_index=True)
+
+    # Rename the columns of interest
+    data = data.rename(columns={
+        'nhs_region': 'region',
+        'react_week_start_date': 'date',
+        'age_group': 'age',
+        'number_positive': 'positives',
+        'number_samples': 'tests'})
+    data['region'] = [process_regions(x) for x in data['region']]
+
+    all_regions = ['EE', 'London', 'Mid', 'NE', 'NW', 'SE', 'SW']
+
+    for region in all_regions:
+        positives, tests = process_tests_data(
+            data[data['region'] == region],
+            start_date='2020-05-04',
+            end_date='2021-07-12')
+
+        # Transform recorded deaths to csv file
+        path_ = os.path.join(
+            os.path.dirname(__file__), 'serology_data/')
+        path = os.path.join(
+                path_,
+                '{}_positives_{}.csv'.format(region, files[0][21:-6]))
+
+        path1 = os.path.join(
+                path_,
+                '{}_tests_{}.csv'.format(region, files[0][21:-6]))
+
+        np.savetxt(path, positives, fmt="%d", delimiter=',')
+        np.savetxt(path1, tests, fmt="%d", delimiter=',')
+
+
+if __name__ == '__main__':
+    main(['Region_England_cases_nhs_{}.csv'.format(w) for w in range(1, 14)])

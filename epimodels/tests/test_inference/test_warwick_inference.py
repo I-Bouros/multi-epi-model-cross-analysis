@@ -137,7 +137,7 @@ class TestWarwickModel(em.WarwickSEIRModel):
             work_matrices_region, other_matrices_region,
             time_changes_region)
 
-    def set_initial_conditions(self):
+    def set_initial_conditions(self, total_days):
         # Initial number of susceptibles
         susceptibles = [np.loadtxt(os.path.join(
             os.path.dirname(__file__),
@@ -161,59 +161,84 @@ class TestWarwickModel(em.WarwickSEIRModel):
         gamma = 0.083
         sigma = 0.5 * np.ones(self._num_ages)
 
+        # List of times at which we wish to evaluate the states of the
+        # compartments of the model
+        times = np.arange(1, total_days+1, 1).tolist()
+
         # List of common initial conditions and parameters that characterise
         # the model
-        parameters = [
-            1, susceptibles,
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            detected_f,
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            sigma, tau, epsilon, gamma, d, h]
+        parameters = em.WarwickParametersController(
+            model=self,
+            regional_parameters=em.WarwickRegParameters(
+                model=self,
+                region_index=1,
+                H=h
+            ),
+            ICs=em.WarwickICs(
+                model=self,
+                susceptibles_IC=susceptibles,
+                exposed_1_f_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed_1_sd_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed_1_su_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed_1_q_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed_2_f_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed_2_sd_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed_2_su_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed_2_q_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed_3_f_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed_3_sd_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed_3_su_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed_3_q_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                detected_f_IC=detected_f,
+                detected_qf_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                detected_sd_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                detected_su_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                detected_qs_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                undetected_f_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                undetected_s_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                undetected_q_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                recovered_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+            ),
+            disease_parameters=em.WarwickDiseaseParameters(
+                model=self,
+                tau=tau,
+                d=d
+            ),
+            transmission_parameters=em.WarwickTransmission(
+                model=self,
+                epsilon=epsilon,
+                gamma=gamma,
+                sigma=sigma
+            ),
+            simulation_parameters=em.WarwickSimParameters(
+                model=self,
+                method='RK45',
+                times=times
+            ),
+            soc_dist_parameters=em.WarwickSocDistParameters(self)
+        )
 
-        # Simulate using the ODE solver from scipy
-        scipy_method = 'RK45'
-        parameters.append(scipy_method)
-
-    def set_social_distancing_parameters(self):
-        self.social_distancing_param = em.WarwickSocDistParameters(self)()
+        self.simulate(parameters)
 
 
 #
@@ -380,8 +405,7 @@ class TestWarwickLogLik(unittest.TestCase):
         # Set toy model, death, serology, delay, extended population
         # and extended contact data
         model = TestWarwickModel()
-        model.set_initial_conditions()
-        model.set_social_distancing_parameters()
+        model.set_initial_conditions(len(times))
         extended_susceptibles, extended_infectives_prop = \
             TestExtendedPopData()()
         extended_house_cont_mat, extended_school_cont_mat, \
@@ -423,8 +447,7 @@ class TestWarwickLogLik(unittest.TestCase):
         # Set toy model, death, serology, delay, extended population
         # and extended contact data
         model = TestWarwickModel()
-        model.set_initial_conditions()
-        model.set_social_distancing_parameters()
+        model.set_initial_conditions(len(times))
         extended_susceptibles, extended_infectives_prop = \
             TestExtendedPopData()()
         extended_house_cont_mat, extended_school_cont_mat, \
@@ -473,8 +496,7 @@ class TestWarwickLogPrior(unittest.TestCase):
 
         # Set toy model
         model = TestWarwickModel()
-        model.set_initial_conditions()
-        model.set_social_distancing_parameters()
+        model.set_initial_conditions(len(times))
 
         # Set log-prior object
         log_prior = em.inference.WarwickLogPrior(model, times)
@@ -488,8 +510,7 @@ class TestWarwickLogPrior(unittest.TestCase):
 
         # Set toy model
         model = TestWarwickModel()
-        model.set_initial_conditions()
-        model.set_social_distancing_parameters()
+        model.set_initial_conditions(len(times))
 
         # Set log-prior object
         log_prior = em.inference.WarwickLogPrior(model, times)
@@ -506,10 +527,12 @@ class TestWarwickSEIRInfer(unittest.TestCase):
     Test the 'WarwickSEIRInfer' class.
     """
     def test__init__(self):
+        # Set times for inference
+        times = np.arange(1, 50, 1).tolist()
+
         # Set toy model
         model = TestWarwickModel()
-        model.set_initial_conditions()
-        model.set_social_distancing_parameters()
+        model.set_initial_conditions(len(times))
 
         # Set up Warwick Inference class
         inference = em.inference.WarwickSEIRInfer(model)
@@ -526,8 +549,7 @@ class TestWarwickSEIRInfer(unittest.TestCase):
         # Set toy model, death, serology, delay, extended population
         # and extended contact data
         model = TestWarwickModel()
-        model.set_initial_conditions()
-        model.set_social_distancing_parameters()
+        model.set_initial_conditions(len(times))
         extended_susceptibles, extended_infectives_prop = \
             TestExtendedPopData()()
         extended_house_cont_mat, extended_school_cont_mat, \
@@ -646,8 +668,7 @@ class TestWarwickSEIRInfer(unittest.TestCase):
         # Set toy model, death, serology, delay, extended population
         # and extended contact data
         model = TestWarwickModel()
-        model.set_initial_conditions()
-        model.set_social_distancing_parameters()
+        model.set_initial_conditions(len(times))
         extended_susceptibles, extended_infectives_prop = \
             TestExtendedPopData()()
         extended_house_cont_mat, extended_school_cont_mat, \
@@ -696,8 +717,7 @@ class TestWarwickSEIRInfer(unittest.TestCase):
         # Set toy model, death, serology, delay, extended population
         # and extended contact data
         model = TestWarwickModel()
-        model.set_initial_conditions()
-        model.set_social_distancing_parameters()
+        model.set_initial_conditions(len(times))
         extended_susceptibles, extended_infectives_prop = \
             TestExtendedPopData()()
         extended_house_cont_mat, extended_school_cont_mat, \
@@ -747,8 +767,7 @@ class TestWarwickSEIRInfer(unittest.TestCase):
         # Set toy model, death, serology, delay, extended population
         # and extended contact data
         model = TestWarwickModel()
-        model.set_initial_conditions()
-        model.set_social_distancing_parameters()
+        model.set_initial_conditions(len(times))
         extended_susceptibles, extended_infectives_prop = \
             TestExtendedPopData()()
         extended_house_cont_mat, extended_school_cont_mat, \

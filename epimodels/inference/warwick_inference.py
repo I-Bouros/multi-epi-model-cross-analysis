@@ -20,8 +20,6 @@ asymptomatic and symptomatic infections.
 
 from iteration_utilities import deepflatten
 
-import os
-import pandas as pd
 import numpy as np
 import pints
 
@@ -172,28 +170,6 @@ class WarwickLogLik(pints.LogPDF):
 
         """
         return 2
-
-    def _update_age_groups(self, parameter_vector):
-        """
-        """
-        new_vector = np.empty(8)
-
-        ind_old = [
-            np.array([0]),
-            np.array([0]),
-            np.array(range(1, 3)),
-            np.array(range(3, 5)),
-            np.array(range(5, 9)),
-            np.array(range(9, 13)),
-            np.array(range(13, 15)),
-            np.array(range(15, 21))]
-
-        for _ in range(8):
-            new_vector[_] = np.average(
-                parameter_vector[ind_old[_][:, None]],
-                weights=self._pop[ind_old[_][:, None]])
-
-        return new_vector
 
     def _log_likelihood(self, var_parameters):
         """
@@ -374,28 +350,16 @@ class WarwickLogLik(pints.LogPDF):
             self._model._num_ages)).tolist()
 
         # Regional household quarantine proportions
-        h = [0.9] * len(self._model.regions)
+        h = self._model._c[5]
 
         # Disease-specific parameters
         tau = 0.4
-        d = pd.read_csv(
-            os.path.join(
-                os.path.dirname(__file__),
-                '../data/risks_death/Risks_United Kingdom.csv'),
-            dtype=np.float64)['symptom_risk'].tolist()
-
-        d = 1.43 * self._update_age_groups(np.array(d))
+        d = self._model._c[4]
 
         # Transmission parameters
-        epsilon = 0.2
+        epsilon = self._model._c[2]
         gamma = 0.083
-        sigma = pd.read_csv(
-            os.path.join(
-                os.path.dirname(__file__),
-                '../data/risks_death/Risks_United Kingdom.csv'),
-            dtype=np.float64)['susceptibility'].tolist()
-
-        sigma = 1.09 * self._update_age_groups(np.array(sigma))
+        sigma = self._model._c[0]
 
         self._parameters = [
             0, susceptibles, exposed_1_f, exposed_1_sd, exposed_1_su,

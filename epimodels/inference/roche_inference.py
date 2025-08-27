@@ -16,9 +16,7 @@ matrices.
 
 """
 
-import os
 import numpy as np
-import pandas as pd
 import pints
 from iteration_utilities import deepflatten
 
@@ -270,27 +268,23 @@ class RocheLogLik(pints.LogPDF):
             self._model._num_ages)).tolist()
 
         # Average times in compartments
-        k = 6.8
-        kS = 5
-        kQ = 2.5
-        kR = 8 * np.ones(self._model._num_ages)
-        kRI = 10.5 * np.ones(self._model._num_ages)
+        k = self._model._c[0]
+        kS = self._model._c[1]
+        kQ = self._model._c[2]
+        kR = self._model._c[3]
+        kRI = self._model._c[4]
 
         # Proportion of asymptomatic, super-spreader and dead cases
-        Pa = 0.6 * np.ones(self._model._num_ages)
-        Pss = 0.15
-        Pd = pd.read_csv(
-            os.path.join(
-                os.path.dirname(__file__),
-                '../data/fatality_ratio_data/CFR.csv'),
-            usecols=['cfr'], dtype=np.float64)['cfr'].values.tolist()
+        Pa = self._model._c[5]
+        Pss = self._model._c[6]
+        Pd = self._model._c[7]
 
         # Transmission parameters
         beta_min = 0.228
-        beta_max = 1.8
+        beta_max = self._model._c[9]
         bss = 3.11
-        gamma = 12
-        s50 = 50
+        gamma = self._model._c[11]
+        s50 = self._model._c[12]
 
         self._parameters = [
             0, susceptibles, exposed, infectives_pre,

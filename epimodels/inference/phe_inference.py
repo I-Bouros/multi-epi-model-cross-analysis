@@ -234,9 +234,9 @@ class PHELogLik(pints.LogPDF):
         betas = np.ones((len(self._model.regions), len(self._times))).tolist()
 
         # Other Parameters
-        dI = 4
-        dL = 4
-        delta_t = 0.5
+        dI = self._model._c[-1]
+        dL = self._model._c[-2]
+        delta_t = self._model._delta_t
 
         self._parameters = [
             np.zeros(len(self._model.regions)).tolist(),
