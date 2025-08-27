@@ -72,6 +72,7 @@ setup(
         'pandas',
         'scipy',
         'pints @ git+https://github.com/pints-team/pints.git#egg=pints-latest',
+        'pyEpiabm @ git+https://github.com/SABS-R3-Epidemiology/epiabm.git#egg=epiabm-latest&subdirectory=pyEpiabm',  # noqa
         'plotly',
         'kaleido',
         'iteration_utilities'

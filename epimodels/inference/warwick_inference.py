@@ -20,8 +20,6 @@ asymptomatic and symptomatic infections.
 
 from iteration_utilities import deepflatten
 
-import os
-import pandas as pd
 import numpy as np
 import pints
 
@@ -374,28 +372,16 @@ class WarwickLogLik(pints.LogPDF):
             self._model._num_ages)).tolist()
 
         # Regional household quarantine proportions
-        h = [0.9] * len(self._model.regions)
+        h = self._model._c[5]
 
         # Disease-specific parameters
         tau = 0.4
-        d = pd.read_csv(
-            os.path.join(
-                os.path.dirname(__file__),
-                '../data/risks_death/Risks_United Kingdom.csv'),
-            dtype=np.float64)['symptom_risk'].tolist()
-
-        d = 1.43 * self._update_age_groups(np.array(d))
+        d = self._model._c[4]
 
         # Transmission parameters
-        epsilon = 0.2
+        epsilon = self._model._c[2]
         gamma = 0.083
-        sigma = pd.read_csv(
-            os.path.join(
-                os.path.dirname(__file__),
-                '../data/risks_death/Risks_United Kingdom.csv'),
-            dtype=np.float64)['susceptibility'].tolist()
-
-        sigma = 1.09 * self._update_age_groups(np.array(sigma))
+        sigma = self._model._c[0]
 
         self._parameters = [
             0, susceptibles, exposed_1_f, exposed_1_sd, exposed_1_su,
