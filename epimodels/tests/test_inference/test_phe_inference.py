@@ -83,20 +83,40 @@ class TestPHEModel(em.PheSEIRModel):
 
         # List of common initial conditions and parameters that characterise
         # the model
-        parameters = [
-            initial_r, 1, susceptibles,
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            infectives1, infectives2,
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            betas, dL, dI, 0.5]
+        parameters = em.PheParametersController(
+            model=self,
+            regional_parameters=em.PheRegParameters(
+                model=self,
+                initial_r=initial_r,
+                region_index=1,
+                betas=betas,
+                times=times
+            ),
+            ICs=em.PheICs(
+                model=self,
+                susceptibles_IC=susceptibles,
+                exposed1_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                exposed2_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                infectives1_IC=infectives1,
+                infectives2_IC=infectives2,
+                recovered_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist()
+            ),
+            disease_parameters=em.PheDiseaseParameters(
+                model=self,
+                dL=dL,
+                dI=dI
+            ),
+            simulation_parameters=em.PheSimParameters(
+                model=self,
+                delta_t=0.5,
+                method='RK45'
+            )
+        )
 
-        # Simulate using the ODE solver from scipy
-        scipy_method = 'RK45'
-        parameters.append(scipy_method)
+        self.simulate(parameters)
 
 
 #

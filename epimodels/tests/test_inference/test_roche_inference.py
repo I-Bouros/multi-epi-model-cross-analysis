@@ -77,7 +77,7 @@ class TestRocheModel(em.RocheSEIRModel):
                             reg_levels_npi, time_changes_npi,
                             time_changes_flag)
 
-    def set_initial_conditions(self):
+    def set_initial_conditions(self, total_days):
         # Initial number of susceptibles
         susceptibles = [np.loadtxt(os.path.join(
             os.path.dirname(__file__),
@@ -112,37 +112,69 @@ class TestRocheModel(em.RocheSEIRModel):
         gamma = 12
         s50 = 50
 
+        # List of times at which we wish to evaluate the states of the
+        # compartments of the model
+        times = np.arange(1, total_days+1, 1).tolist()
+
         # List of common initial conditions and parameters that characterise
         # the model
-        parameters = [
-            1, susceptibles,
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            infectives_sym,
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            np.zeros(
-                (len(self.regions), self._num_ages)).tolist(),
-            k, kS, kQ, kR, kRI, Pa, Pss, Pd,
-            beta_min, beta_max, bss, gamma, s50]
+        parameters = em.RocheParametersController(
+            model=self,
+            ICs=em.RocheICs(
+                model=self,
+                susceptibles_IC=susceptibles,
+                exposed_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                infectives_pre_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                infectives_asym_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                infectives_sym_IC=infectives_sym,
+                infectives_pre_ss_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                infectives_asym_ss_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                infectives_sym_ss_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                infectives_q_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                recovered_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                recovered_asym_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist(),
+                dead_IC=np.zeros(
+                    (len(self.regions), self._num_ages)).tolist()
+            ),
+            compartment_times=em.RocheCompartmentTimes(
+                model=self,
+                k=k,
+                kS=kS,
+                kQ=kQ,
+                kR=kR,
+                kRI=kRI
+            ),
+            proportion_parameters=em.RocheProportions(
+                model=self,
+                Pa=Pa,
+                Pss=Pss,
+                Pd=Pd),
+            transmission_parameters=em.RocheTransmission(
+                model=self,
+                beta_min=beta_min,
+                beta_max=beta_max,
+                bss=bss,
+                gamma=gamma,
+                s50=s50
+            ),
+            simulation_parameters=em.RocheSimParameters(
+                model=self,
+                region_index=1,
+                method='RK45',
+                times=times
+            )
+        )
 
-        # Simulate using the ODE solver from scipy
-        scipy_method = 'RK45'
-        parameters.append(scipy_method)
+        self.simulate(parameters)
 
 
 #
@@ -226,7 +258,7 @@ class TestRocheLogLik(unittest.TestCase):
 
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
-        model.set_initial_conditions()
+        model.set_initial_conditions(len(times))
         deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
@@ -259,7 +291,7 @@ class TestRocheLogLik(unittest.TestCase):
 
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
-        model.set_initial_conditions()
+        model.set_initial_conditions(len(times))
         deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
@@ -300,7 +332,7 @@ class TestRocheLogPrior(unittest.TestCase):
 
         # Set toy model
         model = TestRocheModel()
-        model.set_initial_conditions()
+        model.set_initial_conditions(len(times))
 
         # Set log-prior object
         log_prior = em.inference.RocheLogPrior(model, times)
@@ -314,7 +346,7 @@ class TestRocheLogPrior(unittest.TestCase):
 
         # Set toy model
         model = TestRocheModel()
-        model.set_initial_conditions()
+        model.set_initial_conditions(len(times))
 
         # Set log-prior object
         log_prior = em.inference.RocheLogPrior(model, times)
@@ -331,9 +363,12 @@ class TestRocheSEIRInfer(unittest.TestCase):
     Test the 'RocheSEIRInfer' class.
     """
     def test__init__(self):
+        # Set times for inference
+        times = np.arange(1, 50, 1).tolist()
+
         # Set toy model
         model = TestRocheModel()
-        model.set_initial_conditions()
+        model.set_initial_conditions(len(times))
 
         # Set up Roche Inference class
         inference = em.inference.RocheSEIRInfer(model)
@@ -349,7 +384,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
 
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
-        model.set_initial_conditions()
+        model.set_initial_conditions(len(times))
         deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
@@ -425,7 +460,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
 
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
-        model.set_initial_conditions()
+        model.set_initial_conditions(len(times))
         deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
@@ -466,7 +501,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
 
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
-        model.set_initial_conditions()
+        model.set_initial_conditions(len(times))
         deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
@@ -508,7 +543,7 @@ class TestRocheSEIRInfer(unittest.TestCase):
 
         # Set toy model, death, serology and NPIs data
         model = TestRocheModel()
-        model.set_initial_conditions()
+        model.set_initial_conditions(len(times))
         deaths, deaths_times = TestDeathData(len(times))()
         tests_data, positives_data, serology_times, sens, spec = \
             TestSerologyData(len(times))()
