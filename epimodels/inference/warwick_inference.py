@@ -171,28 +171,6 @@ class WarwickLogLik(pints.LogPDF):
         """
         return 2
 
-    def _update_age_groups(self, parameter_vector):
-        """
-        """
-        new_vector = np.empty(8)
-
-        ind_old = [
-            np.array([0]),
-            np.array([0]),
-            np.array(range(1, 3)),
-            np.array(range(3, 5)),
-            np.array(range(5, 9)),
-            np.array(range(9, 13)),
-            np.array(range(13, 15)),
-            np.array(range(15, 21))]
-
-        for _ in range(8):
-            new_vector[_] = np.average(
-                parameter_vector[ind_old[_][:, None]],
-                weights=self._pop[ind_old[_][:, None]])
-
-        return new_vector
-
     def _log_likelihood(self, var_parameters):
         """
         Computes the log-likelihood of the non-fixed parameters
