@@ -26,7 +26,7 @@ import pints
 import epimodels as em
 
 
-class WarwickLogLik(pints.LogPDF):
+class WarwickLogLik(pints.LogLikelihood):
     """WarwickLogLik Class:
     Controller class to construct the log-likelihood needed for optimisation or
     inference in a PINTS framework.

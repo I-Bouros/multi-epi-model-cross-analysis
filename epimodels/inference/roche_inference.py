@@ -23,7 +23,7 @@ from iteration_utilities import deepflatten
 import epimodels as em
 
 
-class RocheLogLik(pints.LogPDF):
+class RocheLogLik(pints.LogLikelihood):
     """RocheLogLik Class:
     Controller class to construct the log-likelihood needed for optimisation or
     inference in a PINTS framework.

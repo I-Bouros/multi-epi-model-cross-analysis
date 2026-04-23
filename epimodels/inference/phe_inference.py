@@ -24,7 +24,7 @@ from scipy.stats import norm, gamma
 import epimodels as em
 
 
-class PHELogLik(pints.LogPDF):
+class PHELogLik(pints.LogLikelihood):
     """PHELogLik Class:
     Controller class to construct the log-likelihood needed for optimisation or
     inference in a PINTS framework.
